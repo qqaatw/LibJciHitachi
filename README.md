@@ -2,7 +2,7 @@
 
 ## Supported devices
 
-*支援雲端智慧控的以下機種與功能*
+*支援日立雲端模組的以下機種與功能*
 
 - Hitachi Air Conditioner
   - Power

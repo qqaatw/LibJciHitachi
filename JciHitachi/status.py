@@ -26,7 +26,7 @@ class JciHitachiStatusInterpreter:
             var2 = util.cast_bytes(var1, 1)
             var3 = util.cast_bytes(var1 >> 8, 1)
 
-            inner_concat = util.bin_concat(var2, (var1  & 0x80 )!= 0 )
+            inner_concat = util.bin_concat(var2, (var1 & 0x80) != 0)
             mid_concat = util.bin_concat(var3, inner_concat, 1, 2)
             outer_concat = util.bin_concat(self.base64_bytes[stat_idx + 2], mid_concat, 1, 3)
             return outer_concat & 0xffff7fff

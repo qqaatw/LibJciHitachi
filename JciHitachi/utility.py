@@ -1,6 +1,5 @@
 import hashlib
 import math
-import time
 
 def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):
     int_1_bin = bin(int_1)[2:]
