@@ -1,5 +1,7 @@
 # Jci-Hitachi Library
 
+![Python package](https://github.com/qqaatw/LibJciHitachi/workflows/Python%20package/badge.svg)
+
 ## Supported devices
 
 *支援日立雲端模組的以下機種與功能*
