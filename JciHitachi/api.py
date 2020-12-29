@@ -28,6 +28,9 @@ class JciHitachiAPI:
 
         self._code = None
 
+        assert self.device_type in ["AC"], \
+            "The specified device is currently unsupported: {}".format(device_type)
+
     def login(self):
         """Login API.
 
@@ -65,8 +68,7 @@ class JciHitachiAPI:
         """
 
         dev_status = JciHitachiStatusInterpreter(self._code).decode_status()
+        
         if self.device_type == "AC":
             return JciHitachiAC(dev_status)
-        else:
-            raise ValueError("Unsupported device type.")
 
