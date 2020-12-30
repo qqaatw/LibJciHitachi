@@ -1,6 +1,6 @@
 # Jci-Hitachi Library
 
-![Python package](https://github.com/qqaatw/LibJciHitachi/workflows/Python%20package/badge.svg)
+[![Python package](https://github.com/qqaatw/LibJciHitachi/workflows/Python%20package/badge.svg)](https://github.com/qqaatw/LibJciHitachi/actions)
 
 ## Supported devices
 
