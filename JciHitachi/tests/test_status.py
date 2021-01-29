@@ -6,6 +6,7 @@ from JciHitachi.status import JciHitachiStatusInterpreter, JciHitachiAC
 
 MOCK_CODE = os.environ["MOCK_CODE"]
 
+
 class TestACStatus:
     def test_normal(self):
         dev_status = JciHitachiStatusInterpreter(MOCK_CODE).decode_status()
