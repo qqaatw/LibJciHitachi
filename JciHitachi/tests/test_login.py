@@ -21,7 +21,7 @@ class TestLogin:
 
     def test_version(self):
         connection = JciHitachiConnection(TEST_EMAIL, TEST_PASSWORD)
-        assert connection._login_response["results"]["LatestVersion"]["Version"] == APP_VERSION
+        assert connection._login_response["results"]["LatestVersion"]["UpdateSuggestion"] == 0
 
     @pytest.mark.parametrize("mock_device_name", ["NON_EXISTING_NAME"])
     def test_device_name(self, mock_device_name):
