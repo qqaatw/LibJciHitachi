@@ -2,10 +2,10 @@ import hashlib
 import math
 
 def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):
-    """Concate two integer.
+    """Concatenate two integer.
     Steps:
         1. Zero fill integers according to the given byte.
-        2. Concat two integers in binary.
+        2. Concatenate two integers in binary.
 
     Parameters
     ----------
@@ -23,7 +23,7 @@ def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):
     Returns
     -------
     int
-        Concated value.
+        Concatenated value.
     """
 
     int_1_bin = bin(int_1)[2:]
@@ -32,11 +32,11 @@ def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):
     if int_1_byte is not None:
         int_1_bin = int_1_bin.zfill(int_1_byte * 8)
     else:
-        int_1_bin = int_1_bin.zfill( math.ceil(len(int_1_bin) / 8) * 8)
+        int_1_bin = int_1_bin.zfill(math.ceil(len(int_1_bin) / 8) * 8)
     if int_2_byte is not None:
         int_2_bin = int_2_bin.zfill(int_2_byte * 8)
     else:
-        int_2_bin = int_2_bin.zfill( math.ceil(len(int_2_bin) / 8) * 8)
+        int_2_bin = int_2_bin.zfill(math.ceil(len(int_2_bin) / 8) * 8)
 
     return int(int_1_bin + int_2_bin, base=2)
 
@@ -63,7 +63,7 @@ def cast_bytes(v, nbytes):
 def convert_hash(v):
     """Convert md5 from string.
     Steps:
-        1. Use hashlib to convert md5
+        1. Use hashlib to convert md5.
         2. Perfrom "And 255" then "Or 256" to ensure 
            the length of hashed code is limited within 511 (0b111111111).
 
@@ -85,6 +85,9 @@ def convert_hash(v):
 
 def extract_bytes(v, start, end):
     """Extract bytes scope, from start(left) to end(right).
+    Steps:
+        1. Right shift `end` bytes.
+        2. Perform cast_bytes to extract the scope of start-end.
 
     Parameters
     ----------
@@ -102,5 +105,7 @@ def extract_bytes(v, start, end):
     """
 
     assert start > end and end >= 0, \
-        "Invalid start or end : {}, {}".format(start, end)
+        "Starting byte must be greater than ending bytes, \
+         and ending byte must be greater than zero : \
+         {}, {}".format(start, end)
     return cast_bytes(v >> end * 8, start-end)
