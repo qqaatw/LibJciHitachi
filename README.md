@@ -16,6 +16,10 @@
 - ~~Hitachi Dehumidifier 日立除濕機~~ (Under development)
 - ~~Hitachi HeatExchanger 日立全熱交換機~~ (Under development)
 
+## Installation
+
+    pip install LibJciHitachi
+
 ## Usage
 
 See [example](example.py).
