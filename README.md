@@ -4,7 +4,7 @@
 
 ## Supported devices
 
-*支援日立雲端模組的以下機種與功能*
+*支援以下使用日立雲端模組(雲端智慧控)的機種與功能*
 
 - Hitachi Air Conditioner 日立冷氣
   - Power 電源
@@ -22,11 +22,10 @@ See [example](example.py).
 
 ## Todo
 
-*Priority order*
+*Priority*
 
-1. Sending job commands to the API. (connection.py/CreateJob)
-2. Homeassistant support.
-3. Dehumidifier & heat exchanger support.
+1. Homeassistant support.
+2. Dehumidifier & heat exchanger support.
 
 ## License
 

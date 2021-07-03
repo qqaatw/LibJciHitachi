@@ -2,6 +2,49 @@ import base64
 
 from . import utility as util
 
+class JciHitachiCommand:
+    def __init__(self, gateway_mac_address):
+        self.job_info_base = bytearray.fromhex(
+                              "d0d100003c6a9dffff03e0d4ffffffff \
+                               00000100000000000000002000010000 \
+                               000000000000000002000d278050f0d4 \
+                               469dafd3605a6ebbdb130d278052f0d4 \
+                               469dafd3605a6ebbdb13060006010000 \
+                               0000")
+        self.job_info_base[32:40] = bytearray.fromhex(hex(int(gateway_mac_address))[2:])
+    
+    def get_command(self, command, value):
+        raise NotImplementedError
+    
+    def get_b64command(self, command, value):
+        return base64.b64encode(self.get_command(command, value)).decode()
+
+
+class JciHitachiCommandAC(JciHitachiCommand):
+    def __init__(self, gateway_mac_address):
+        super().__init__(gateway_mac_address)
+
+    def get_command(self, command, value):
+        job_info = self.job_info_base.copy()
+        
+        # command (eg. target_temp)
+        job_info[78] = 128 + JciHitachiAC.idx[command]
+
+        # value (eg. 27)
+        job_info[80] = value
+
+        # checksum 
+        # Algorithm: 
+        # 1. command xor value 
+        # 2. flip last 3 bits
+        job_info[81] = job_info[78] ^ job_info[80] ^ 0x7
+
+        assert len(job_info) == 82, \
+            "The length of job_info should be 82 bytes."
+
+        return job_info
+
+
 class JciHitachiStatusInterpreter:
     def __init__(self, code):
         assert len(code) == 92, \
@@ -43,9 +86,18 @@ class JciHitachiStatusInterpreter:
 
     
 class JciHitachiAC:
+    idx = {
+        'power': 0,
+        'mode': 1,
+        'air_speed': 2,
+        'target_temp': 3,
+        'indoor_temp': 4,
+        'sleep_timer': 6
+    }
+
     def __init__(self, status):
         self._status = status
-
+        
     @property
     def status(self):
         return {
@@ -59,7 +111,7 @@ class JciHitachiAC:
 
     @property
     def power(self):
-        v = self._status[0]
+        v = self._status[JciHitachiAC.idx['power']]
         if v == 0:
             return "off"
         elif v == 1:
@@ -69,7 +121,7 @@ class JciHitachiAC:
 
     @property
     def mode(self):
-        v = self._status[1]
+        v = self._status[JciHitachiAC.idx['mode']]
         if v == 0:
             return "cool"
         elif v == 1:
@@ -85,7 +137,7 @@ class JciHitachiAC:
 
     @property
     def air_speed(self):
-        v = self._status[2]
+        v = self._status[JciHitachiAC.idx['air_speed']]
         if v == 0:
             return "auto"
         elif v == 1:
@@ -101,15 +153,15 @@ class JciHitachiAC:
 
     @property
     def target_temp(self):
-        v = self._status[3]
+        v = self._status[JciHitachiAC.idx['target_temp']]
         return v
 
     @property
     def indoor_temp(self):
-        v = self._status[4]
+        v = self._status[JciHitachiAC.idx['indoor_temp']]
         return v
 
     @property
     def sleep_timer(self):
-        v = self._status[6]
+        v = self._status[JciHitachiAC.idx['sleep_timer']]
         return v
