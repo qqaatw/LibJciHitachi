@@ -23,8 +23,7 @@ class TestACStatus:
     def test_online(self):
         api = JciHitachiAPI(
             TEST_EMAIL,
-            TEST_PASSWORD,
-            device_type="AC")
+            TEST_PASSWORD)
         api.login()
         
         # Change air speed

@@ -14,10 +14,13 @@ class Peripheral:
         Peripheral json of specific device.
     """
 
+    supported_device_type = {
+        144: "AC"
+    }
+
     def __init__(self, peripheral_json):
         self._json = peripheral_json
-        self._gateway_id = peripheral_json["ObjectID"]
-        self._gateway_mac_address = peripheral_json["GMACAddress"]
+        self._code = ""
 
     @classmethod
     def from_device_names(cls, peripherals_json, device_names):
@@ -44,7 +47,8 @@ class Peripheral:
         for res in peripherals_json["results"]:
             if device_names is None or \
               (device_names and res["DeviceName"] in device_names):
-                peripherals[res["DeviceName"]] = cls(res)
+                if res["Peripherals"][0]["DeviceType"] in Peripheral.supported_device_type:
+                    peripherals[res["DeviceName"]] = cls(res)
 
         assert device_names is None or len(device_names) == len(peripherals), \
             "Some of device_names are not available from the API."
@@ -52,16 +56,27 @@ class Peripheral:
         return peripherals
 
     @property
-    def device_idx(self):
-        """Device index of self._json.
+    def code(self):
+        """Status code.
 
         Returns
         -------
-        int
-            Device index.
+        str
+            Status code.
         """
 
-        return self._device_idx
+        return self._code
+
+    @code.setter
+    def code(self, x):
+        self._code = x
+
+    @property
+    def commander(self):
+        if self.type == "AC":
+            return JciHitachiCommandAC(self.gateway_mac_address)
+        else:
+            return None
 
     @property
     def gateway_id(self):
@@ -73,7 +88,7 @@ class Peripheral:
             Gateway ID.
         """
 
-        return self._gateway_id
+        return self._json["ObjectID"]
     
     @property
     def gateway_mac_address(self):
@@ -84,8 +99,20 @@ class Peripheral:
         str
             Gateway mac address.
         """
-        return self._gateway_mac_address
+        return self._json["GMACAddress"]
    
+    @property
+    def name(self):
+        """Device name.
+
+        Returns
+        -------
+        str
+            Device name.
+        """
+
+        return self._json['DeviceName']
+
     @property
     def picked_peripheral(self):
         """Picked peripheral.
@@ -97,6 +124,21 @@ class Peripheral:
         """
 
         return self._json
+
+    @property
+    def type(self):
+        """Device type
+
+        Returns
+        -------
+        str
+            Device type (Currently available: `AC`)
+        """
+
+        return Peripheral.supported_device_type.get(
+            self._json['Peripherals'][0]['DeviceType'],
+            'unknown'
+        )
 
 
 class JciHitachiAPI:
@@ -110,30 +152,34 @@ class JciHitachiAPI:
         User password.
     device_names : list of str or str or None, optional
         Device names. If None is given, all available devices will be included, by default None.
-    device_type : str, optional
-        Device type, by default "AC". Currently available types: `AC`.
     max_retries : int, optional
         Maximum number of retries when setting status, by default 5.
     print_response : bool
         If set, all responses of requests will be printed, by default False.
     """
 
-    def __init__(self, email, password, device_names=None, device_type="AC", max_retries=5, print_response=False):
+    def __init__(self, email, password, device_names=None, max_retries=5, print_response=False):
         self.email = email
         self.password = password
         self.device_names = device_names
-        self.device_type = device_type
         self.max_retries = max_retries
         self.print_response = print_response
 
-        self._codes = {}
         self._device_id = random.randint(1000, 6999)
         self._peripherals = {}
         self._session_token = None
         self._task_id = 0
 
-        assert self.device_type in ["AC"], \
-            "The specified device is currently unsupported: {}".format(device_type)
+    @property
+    def peripherals(self):
+        """Picked peripherals.
+
+        Returns
+        -------
+        dict
+            A dict of of Peripherals.
+        """
+        return self._peripherals
 
     @property
     def task_id(self):
@@ -213,12 +259,14 @@ class JciHitachiAPI:
         """
 
         statuses = {}
-        for name, code in self._codes.items():
-            if device_name and name != device_name:
+        for name, peripheral in self._peripherals.items():
+            if (device_name and name != device_name) or \
+                    peripheral.type == "unknown":
                 continue
-            dev_status = JciHitachiStatusInterpreter(code).decode_status()
+            dev_status = JciHitachiStatusInterpreter(
+                peripheral.code).decode_status()
         
-            if self.device_type == "AC":
+            if peripheral.type == "AC":
                 statuses[name] = JciHitachiAC(dev_status)
         return statuses
 
@@ -240,12 +288,13 @@ class JciHitachiAPI:
             print_response=self.print_response
         )
         for name, peripheral in self._peripherals.items():
-            if device_name and name != device_name:
+            if (device_name and name != device_name) or \
+                peripheral.type == "unknown":
                 continue
             comm_status, container_json = container.get_data(
                 peripheral.picked_peripheral
             )
-            self._codes[name] = container_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
+            self._peripherals[name].code = container_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
 
     def set_status(self, status_name, status_value, device_name):
         """Set status to a peripheral.
@@ -270,10 +319,7 @@ class JciHitachiAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
-        if self.device_type == "AC":
-            commander = JciHitachiCommandAC(
-                self._peripherals[device_name].gateway_mac_address
-            )
+        commander = self._peripherals[device_name].commander
 
         job = connection.CreateJob(
             None,

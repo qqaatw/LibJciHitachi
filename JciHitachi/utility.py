@@ -64,7 +64,7 @@ def convert_hash(v):
     """Convert md5 from string.
     Steps:
         1. Use hashlib to convert md5.
-        2. Perfrom "And 255" then "Or 256" to ensure 
+        2. Perform "And 255" then "Or 256" to ensure 
            the length of hashed code is limited within 511 (0b111111111).
 
     Parameters

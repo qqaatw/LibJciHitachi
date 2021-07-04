@@ -17,7 +17,7 @@ class TestLogin:
             TEST_PASSWORD,
             TEST_DEVICE)
         api.login()
-        assert len(api._codes[TEST_DEVICE]) == 92
+        assert len(api._peripherals[TEST_DEVICE].code) == 92
 
     def test_version(self):
         connection = JciHitachiConnection(TEST_EMAIL, TEST_PASSWORD)
@@ -32,6 +32,7 @@ class TestLogin:
                 mock_device_name)
             api.login()
 
+    """
     @pytest.mark.parametrize("mock_device_type", ["Humidifier", "HeatExchanger"])
     def test_device_type(self, mock_device_type):
         with pytest.raises(AssertionError):
@@ -40,3 +41,4 @@ class TestLogin:
                 TEST_PASSWORD,
                 TEST_DEVICE,
                 device_type=mock_device_type)
+    """
