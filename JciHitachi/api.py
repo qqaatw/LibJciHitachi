@@ -219,7 +219,8 @@ class JciHitachiAPI:
 
         if self.device_type == "AC":
             commander = JciHitachiCommandAC(
-                self._peripherals.gateway_mac_address)
+                self._peripherals.gateway_mac_address
+            )
 
         job = connection.CreateJob(
             None,

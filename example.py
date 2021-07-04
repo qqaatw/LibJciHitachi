@@ -10,7 +10,9 @@ api.login()
 ac_status = api.get_status()
 print(ac_status.status)
 
-# Set device status
+# Set device status 
+# For available command names and values, 
+# please refer to status.py->JciHitachiAC
 if api.set_status('target_temp', 27):
     print('Success')
 else:

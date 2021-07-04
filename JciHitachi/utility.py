@@ -105,7 +105,7 @@ def extract_bytes(v, start, end):
     """
 
     assert start > end and end >= 0, \
-        "Starting byte must be greater than ending bytes, \
+        "Starting byte must be greater than ending byte, \
          and ending byte must be greater than zero : \
          {}, {}".format(start, end)
     return cast_bytes(v >> end * 8, start-end)
