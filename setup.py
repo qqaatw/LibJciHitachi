@@ -7,7 +7,7 @@ install_requires = [
     "requests>=2.25",
 ]
 tests_require = [
-    "pytest>=6.1.1"
+    "pytest>=6.2"
 ]
 
 setuptools.setup(

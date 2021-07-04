@@ -24,28 +24,27 @@ class TestACStatus:
         api = JciHitachiAPI(
             TEST_EMAIL,
             TEST_PASSWORD,
-            TEST_DEVICE,
             device_type="AC")
         api.login()
         
         # Change air speed
-        current_air_speed = api.get_status()._status[JciHitachiAC.idx['air_speed']]
+        current_air_speed = api.get_status()[TEST_DEVICE]._status[JciHitachiAC.idx['air_speed']]
         if current_air_speed != 4:
             next_air_speed = 4
         else:
             next_air_speed = 3
-        assert api.set_status('air_speed', next_air_speed)
+        assert api.set_status('air_speed', next_air_speed, TEST_DEVICE)
         # The API seems to be delayed to update status, so wait for 1.5 sec.
         time.sleep(1.5)
         api.refresh_status() 
-        assert api.get_status()._status[JciHitachiAC.idx['air_speed']] == next_air_speed
+        assert api.get_status()[TEST_DEVICE]._status[JciHitachiAC.idx['air_speed']] == next_air_speed
         
         # Change air speed back
-        assert api.set_status('air_speed', current_air_speed)
+        assert api.set_status('air_speed', current_air_speed, TEST_DEVICE)
         # The API seems to be delayed to update status, so wait for 1.5 sec.
         time.sleep(1.5)
         api.refresh_status()
-        assert api.get_status()._status[JciHitachiAC.idx['air_speed']] == current_air_speed
+        assert api.get_status()[TEST_DEVICE]._status[JciHitachiAC.idx['air_speed']] == current_air_speed
 
     def test_code_length(self):
         with pytest.raises(AssertionError):

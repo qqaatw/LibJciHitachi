@@ -17,7 +17,7 @@ class TestLogin:
             TEST_PASSWORD,
             TEST_DEVICE)
         api.login()
-        assert len(api._code) == 92
+        assert len(api._codes[TEST_DEVICE]) == 92
 
     def test_version(self):
         connection = JciHitachiConnection(TEST_EMAIL, TEST_PASSWORD)
@@ -25,7 +25,7 @@ class TestLogin:
 
     @pytest.mark.parametrize("mock_device_name", ["NON_EXISTING_NAME"])
     def test_device_name(self, mock_device_name):
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             api = JciHitachiAPI(
                 TEST_EMAIL,
                 TEST_PASSWORD,

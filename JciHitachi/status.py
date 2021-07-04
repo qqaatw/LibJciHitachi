@@ -84,7 +84,7 @@ class JciHitachiStatusInterpreter:
             table[idx] = ret >> 0x18
         return table
 
-    
+
 class JciHitachiAC:
     idx = {
         'power': 0,
