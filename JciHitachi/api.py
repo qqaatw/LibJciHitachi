@@ -335,7 +335,7 @@ class JciHitachiAPI:
         )
         
         for t in range(self.max_retries):
-            time.sleep(1)
+            time.sleep(0.8)
             job_report = connection.GetJobDoneReport(
                 self.email,
                 self.password,
@@ -351,5 +351,8 @@ class JciHitachiAPI:
                     #reported_status = JciHitachiStatusInterpreter(code).decode_status()
                     #assert reported_status.get(status_name) == status_value, \
                     #    "The Reported status value is not the same as status_value."
+                    
+                    # The API seems to be delayed to update status, so wait for 1.5 sec.
+                    time.sleep(1.5)
                     return True
         return False
