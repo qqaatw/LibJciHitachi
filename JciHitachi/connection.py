@@ -66,23 +66,34 @@ class JciHitachiConnection:
         response_json = response.json()
         code = response_json["status"]["code"]
         if code == 0:
-            return "OK", response_json
+            return code, "OK", response_json
         elif code == 6:
-            return "Invalid email or password", response_json
+            return code, "Invalid email or password", response_json
         elif code == 12:
-            return "Invalid session token", response_json
+            return code, "Invalid session token", response_json
         else:
-            return "Unknown error", response_json
+            return code, "Unknown error", response_json
 
     def _send(self, api_name, json=None):
-        req = requests.post(
-            "{}{}".format(API_ENDPOINT, api_name),
-            headers=self._generate_normal_headers(),
-            json=json,
-            verify=False,
-            proxies=self._proxies
-        )
-        return req
+        code = 12
+        while code == 12:
+            req = requests.post(
+                "{}{}".format(API_ENDPOINT, api_name),
+                headers=self._generate_normal_headers(),
+                json=json,
+                verify=False,
+                proxies=self._proxies
+            )
+            if self._print_response:
+                self.print_response(req)
+
+            code, message, response_json = self._handle_response(req)
+            
+            if code == 12:
+                if not self.login():
+                    break
+
+        return message, response_json
 
     def login(self):
         login_json_data = {
@@ -113,8 +124,8 @@ class JciHitachiConnection:
             self.print_response(login_req)
 
         if login_req.status_code == requests.codes.ok:
-            status, self._login_response = self._handle_response(login_req)
-            if status == "OK":
+            code, message, self._login_response = self._handle_response(login_req)
+            if message == "OK":
                 self._session_token = self._login_response["results"]["sessionToken"]
                 return True
                 
@@ -144,12 +155,8 @@ class RegisterMobileDevice(JciHitachiConnection):
             "DeviceType": APP_PLATFORM,
             "DeviceToken": device_token
         }
-        req = self._send("RegisterMobileDevice.php", json_data)
 
-        if self._print_response:
-            self.print_response(req)
-        
-        return self._handle_response(req)
+        return self._send("RegisterMobileDevice.php", json_data)
 
 
 class UpdateUserCredential(JciHitachiConnection):
@@ -168,12 +175,7 @@ class UpdateUserCredential(JciHitachiConnection):
             }
         }
 
-        req = self._send("UpdateUserCredential.php", json_data)
-
-        if self._print_response:
-            self.print_response(req)
-
-        return self._handle_response(req)
+        return self._send("UpdateUserCredential.php", json_data)
 
 
 class GetServerLastUpdateInfo(JciHitachiConnection):
@@ -183,14 +185,8 @@ class GetServerLastUpdateInfo(JciHitachiConnection):
     def __init__(self, email, password, **kwargs):
         super().__init__(email, password, **kwargs)
 
-    def get_data(self):       
-        
-        req = self._send("GetServerLastUpdateInfo.php")
-
-        if self._print_response:
-            self.print_response(req)
-        
-        return self._handle_response(req)
+    def get_data(self):
+        return self._send("GetServerLastUpdateInfo.php")
 
 
 class GetPeripheralsByUser(JciHitachiConnection):
@@ -201,12 +197,7 @@ class GetPeripheralsByUser(JciHitachiConnection):
         super().__init__(email, password, **kwargs)
     
     def get_data(self):  
-        req = self._send("GetPeripheralsByUser.php")
-
-        if self._print_response:
-            self.print_response(req)
-
-        return self._handle_response(req)
+        return self._send("GetPeripheralsByUser.php")
 
 
 class GetDataContainerByID(JciHitachiConnection):
@@ -233,12 +224,8 @@ class GetDataContainerByID(JciHitachiConnection):
                 }       
             ]
         }
-        req = self._send("GetDataContainerByID.php", json_data)
 
-        if self._print_response:
-            self.print_response(req)
-
-        return self._handle_response(req)
+        return self._send("GetDataContainerByID.php", json_data)
 
 
 class GetPeripheralByGMACAddress(JciHitachiConnection):
@@ -255,12 +242,8 @@ class GetPeripheralByGMACAddress(JciHitachiConnection):
                 {"GMACAddress": GMACAddress}
             ]
         }
-        req = self._send("GetPeripheralByGMACAddress.php", json_data)
 
-        if self._print_response:
-            self.print_response(req)
-        
-        return self._handle_response(req)
+        return self._send("GetPeripheralByGMACAddress.php", json_data)
 
 
 class CreateJob(JciHitachiConnection):
@@ -281,12 +264,8 @@ class CreateJob(JciHitachiConnection):
                 }
             ]
         }
-        req = self._send("CreateJob.php", json_data)
 
-        if self._print_response:
-            self.print_response(req)
-
-        return self._handle_response(req)
+        return self._send("CreateJob.php", json_data)
 
 
 class GetJobDoneReport(JciHitachiConnection):
@@ -300,9 +279,5 @@ class GetJobDoneReport(JciHitachiConnection):
         json_data = {
             "DeviceID": device_id
         }
-        req = self._send("GetJobDoneReport.php", json_data)
 
-        if self._print_response:
-            self.print_response(req)
-
-        return self._handle_response(req)
+        return self._send("GetJobDoneReport.php", json_data)

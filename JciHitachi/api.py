@@ -282,8 +282,8 @@ class JciHitachiAPI:
         """
 
         container = connection.GetDataContainerByID(
-            None,
-            None,
+            self.email,
+            self.password,
             session_token=self._session_token,
             print_response=self.print_response
         )
@@ -322,8 +322,8 @@ class JciHitachiAPI:
         commander = self._peripherals[device_name].commander
 
         job = connection.CreateJob(
-            None,
-            None,
+            self.email,
+            self.password,
             session_token=self._session_token,
             print_response=self.print_response
         )
@@ -337,8 +337,8 @@ class JciHitachiAPI:
         for t in range(self.max_retries):
             time.sleep(1)
             job_report = connection.GetJobDoneReport(
-                None,
-                None,
+                self.email,
+                self.password,
                 session_token=self._session_token,
                 print_response=self.print_response
             )
