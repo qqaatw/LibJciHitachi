@@ -12,7 +12,7 @@ tests_require = [
 
 setuptools.setup(
     name="LibJciHitachi",
-    version="0.0.2",
+    version="0.0.3",
     author="Allan Lin",
     author_email="qqaatw@gmail.com",
     description="A library for controlling Jci Hitachi devices.",
