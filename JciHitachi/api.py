@@ -38,7 +38,7 @@ class Peripheral:
         Parameters
         ----------
         peripherals_json : dict
-            Peripherals_json retrieved from GetPeripheralsByUser
+            Peripherals_json retrieved from GetPeripheralsByUser.
         device_names : list of str or str or None
             Device name. If None is given, all available devices will be included, by default None.
 
@@ -66,7 +66,7 @@ class Peripheral:
 
     @property
     def code(self):
-        """Status code.
+        """Peripheral's status code (LValue) reported by the API.
 
         Returns
         -------
@@ -82,6 +82,14 @@ class Peripheral:
 
     @property
     def commander(self):
+        """Return a new JciHitachiCommand instance based on peripheral's type.
+
+        Returns
+        -------
+        JciHitachiCommand
+            JciHitachiCommand instance.
+        """
+
         if self.type == "AC":
             return JciHitachiCommandAC(self.gateway_mac_address)
         else:
@@ -108,6 +116,7 @@ class Peripheral:
         str
             Gateway mac address.
         """
+
         return self._json["GMACAddress"]
    
     @property
@@ -136,12 +145,13 @@ class Peripheral:
 
     @property
     def type(self):
-        """Device type
+        """Device type.
 
         Returns
         -------
         str
-            Device type (Currently available: `AC`)
+            Device type. 
+            If not supported, 'unknown' will be returned. (Currently available: `AC`)
         """
 
         return Peripheral.supported_device_type.get(
@@ -260,11 +270,6 @@ class JciHitachiAPI:
         dict of JciHitachi status instances.
             Return a list of status instances according to device type.
             For example, if the device type is `AC`, then return JciHitachiAC instance.
-
-        Raises
-        ------
-        ValueError
-            When an unsupported device type is given, ValueError will be raised.
         """
 
         statuses = {}

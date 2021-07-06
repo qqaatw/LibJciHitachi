@@ -2,7 +2,16 @@ import base64
 
 from . import utility as util
 
+
 class JciHitachiCommand:
+    """Sending job command.
+
+    Parameters
+    ----------
+    gateway_mac_address : str
+        Gateway mac address.
+    """
+
     def __init__(self, gateway_mac_address):
         self.job_info_base = bytearray.fromhex(
                               "d0d100003c6a9dffff03e0d4ffffffff \
@@ -27,17 +36,19 @@ class JciHitachiCommandAC(JciHitachiCommand):
     def get_command(self, command, value):
         job_info = self.job_info_base.copy()
         
-        # command (eg. target_temp)
+        # Command (eg. target_temp)
         job_info[78] = 128 + JciHitachiAC.idx[command]
 
-        # value (eg. 27)
+        # Value (eg. 27)
         job_info[80] = value
 
-        # checksum 
-        # Algorithm: 
-        # 1. command xor value 
-        # 2. flip last 3 bits
-        job_info[81] = job_info[78] ^ job_info[80] ^ 0x7
+        # Checksum 
+        # Original algorithm:
+        # xor job_info 76~80
+        # Since byte 76, 77, and 79 are constants,
+        # here is the simplified algorithm:
+        # command ^ value ^ 0x07 (flip last 3 bits) 
+        job_info[81] = job_info[78] ^ job_info[80] ^ 0x07
 
         assert len(job_info) == 82, \
             "The length of job_info should be 82 bytes."
@@ -47,8 +58,6 @@ class JciHitachiCommandAC(JciHitachiCommand):
 
 class JciHitachiStatusInterpreter:
     def __init__(self, code):
-        #assert len(code) == 92, \
-        #    "The length of code should be 92: {}".format(len(code))
         self.base64_bytes = base64.standard_b64decode(code)
         self.status_number = self._decode_status_number()
 

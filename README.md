@@ -28,8 +28,9 @@ See [example](example.py).
 
 *Priority*
 
-1. Homeassistant support.
-2. Dehumidifier & heat exchanger support.
+1. Mold prevention function support.
+2. Wind direction & swingable support.
+3. Dehumidifier & heat exchanger support.
 
 ## License
 
