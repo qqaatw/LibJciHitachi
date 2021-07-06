@@ -21,6 +21,15 @@ class Peripheral:
     def __init__(self, peripheral_json):
         self._json = peripheral_json
         self._code = ""
+    
+    def __repr__(self):
+        ret = f"name: {self.name}\n" + \
+              f"type: {self.type}\n" + \
+              f"code: {self.code}\n" + \
+              f"gateway_id: {self.gateway_id}\n" + \
+              f"gateway_mac_address: {self.gateway_mac_address}"
+        return ret
+                 
 
     @classmethod
     def from_device_names(cls, peripherals_json, device_names):

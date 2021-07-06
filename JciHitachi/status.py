@@ -47,8 +47,8 @@ class JciHitachiCommandAC(JciHitachiCommand):
 
 class JciHitachiStatusInterpreter:
     def __init__(self, code):
-        assert len(code) == 92, \
-            "The length of code should be 92: {}".format(len(code))
+        #assert len(code) == 92, \
+        #    "The length of code should be 92: {}".format(len(code))
         self.base64_bytes = base64.standard_b64decode(code)
         self.status_number = self._decode_status_number()
 

@@ -43,6 +43,6 @@ class TestACStatus:
         api.refresh_status()
         assert api.get_status()[TEST_DEVICE]._status[JciHitachiAC.idx['air_speed']] == current_air_speed
 
-    def test_code_length(self):
-        with pytest.raises(AssertionError):
-            dev_status = JciHitachiStatusInterpreter(MOCK_CODE[:-2])
+    #def test_code_length(self):
+    #    with pytest.raises(AssertionError):
+    #        dev_status = JciHitachiStatusInterpreter(MOCK_CODE[:-2])
