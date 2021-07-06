@@ -101,7 +101,11 @@ class JciHitachiAC:
         'air_speed': 2,
         'target_temp': 3,
         'indoor_temp': 4,
-        'sleep_timer': 6
+        'sleep_timer': 6,
+        'mold_prev': 23,
+        'fast_op': 26,
+        'energy_save': 27,
+        'sound_prompt': 30
     }
 
     def __init__(self, status):
@@ -115,7 +119,11 @@ class JciHitachiAC:
             "air_speed": self.air_speed,
             "target_temp": self.target_temp,
             "indoor_temp": self.indoor_temp,
-            "sleep_timer": self.sleep_timer
+            "sleep_timer": self.sleep_timer,
+            "mold_prev": self.mold_prev,
+            'fast_op': self.fast_op,
+            'energy_save': self.energy_save,
+            'sound_prompt': self.sound_prompt
         }
 
     @property
@@ -162,15 +170,72 @@ class JciHitachiAC:
 
     @property
     def target_temp(self):
+        """Target temperature"""
         v = self._status[JciHitachiAC.idx['target_temp']]
         return v
 
     @property
     def indoor_temp(self):
+        """Indoor temperature"""
         v = self._status[JciHitachiAC.idx['indoor_temp']]
         return v
+    
+    @property
+    def max_temp(self):
+        """Maximum target temperature"""
+        return 32
+    
+    @property
+    def min_temp(self):
+        """Minimum target temperature"""
+        return 16
 
     @property
     def sleep_timer(self):
+        """Sleep timer"""
         v = self._status[JciHitachiAC.idx['sleep_timer']]
         return v
+    
+    @property
+    def mold_prev(self):
+        """Mold prevention"""
+        v = self._status[JciHitachiAC.idx['mold_prev']]
+        if v == 0:
+            return "disabled"
+        elif v == 1:
+            return "enabled"
+        else:
+            return "unknown"
+    
+    @property
+    def fast_op(self):
+        """Fast operation"""
+        v = self._status[JciHitachiAC.idx['fast_op']]
+        if v == 0:
+            return "disabled"
+        elif v == 1:
+            return "enabled"
+        else:
+            return "unknown"
+    
+    @property
+    def energy_save(self):
+        """Energy saving"""
+        v = self._status[JciHitachiAC.idx['energy_save']]
+        if v == 0:
+            return "disabled"
+        elif v == 1:
+            return "enabled"
+        else:
+            return "unknown"
+
+    @property
+    def sound_prompt(self):
+        """Sound prompt"""
+        v = self._status[JciHitachiAC.idx['sound_prompt']]
+        if v == 0:
+            return "enabled"
+        elif v == 1:
+            return "disabled"
+        else:
+            return "unknown"
