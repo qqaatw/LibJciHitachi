@@ -13,6 +13,9 @@
   - Target temperature 目標溫度
   - Indoor temperature 室內溫度
   - Sleep timer 睡眠計時器
+  - Mold prevention 機體防霉
+  - Energy saving 節電
+  - Fast operation 快速運轉
 - ~~Hitachi Dehumidifier 日立除濕機~~ (Under development)
 - ~~Hitachi HeatExchanger 日立全熱交換機~~ (Under development)
 
@@ -28,9 +31,8 @@ See [example](example.py).
 
 *Priority*
 
-1. Mold prevention function support.
-2. Wind direction & swingable support.
-3. Dehumidifier & heat exchanger support.
+1. Wind direction & swingable support.
+2. Dehumidifier & heat exchanger support.
 
 ## License
 
