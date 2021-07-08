@@ -13,12 +13,18 @@ MOCK_CODE = os.environ["MOCK_CODE"]
 TEST_COMMAND = 'sound_prompt'
 
 class TestACStatus:
-    def test_ac_offline(self):
+    def test_supported_func(self):
         dev_status = JciHitachiStatusInterpreter(MOCK_CODE).decode_status()
         ac_status = JciHitachiAC(dev_status).status
         
         for each_stat in ac_status.values():
             assert each_stat != "unknown" and each_stat != None
+
+    def test_unsupported_func(self):
+        dev_status = {}
+        ac_status = JciHitachiAC(dev_status).status
+        for each_stat in ac_status.values():
+            assert each_stat == "unsupported" or each_stat == -1
 
     def test_ac_online(self):
         api = JciHitachiAPI(
@@ -44,7 +50,3 @@ class TestACStatus:
         api.refresh_status()
         assert api.get_status()[
             TEST_DEVICE]._status[JciHitachiAC.idx[TEST_COMMAND]] == current_state
-
-    #def test_code_length(self):
-    #    with pytest.raises(AssertionError):
-    #        dev_status = JciHitachiStatusInterpreter(MOCK_CODE[:-2])
