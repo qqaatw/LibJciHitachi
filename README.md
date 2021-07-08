@@ -12,6 +12,7 @@
   - Air speed 風速
   - Target temperature 目標溫度
   - Indoor temperature 室內溫度
+  - Outdoor temperature 室外溫度
   - Sleep timer 睡眠計時器
   - Mold prevention 機體防霉
   - Energy saving 節電
