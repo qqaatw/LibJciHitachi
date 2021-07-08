@@ -105,7 +105,8 @@ class JciHitachiAC:
         'mold_prev': 23,
         'fast_op': 26,
         'energy_save': 27,
-        'sound_prompt': 30
+        'sound_prompt': 30,
+        'outdoor_temp': 33
     }
 
     def __init__(self, status):
@@ -123,7 +124,8 @@ class JciHitachiAC:
             "mold_prev": self.mold_prev,
             'fast_op': self.fast_op,
             'energy_save': self.energy_save,
-            'sound_prompt': self.sound_prompt
+            'sound_prompt': self.sound_prompt,
+            "outdoor_temp": self.outdoor_temp
         }
 
     @property
@@ -253,3 +255,9 @@ class JciHitachiAC:
             return "disabled"
         else:
             return "unknown"
+
+    @property
+    def outdoor_temp(self):
+        """Outdoor temperature"""
+        v = self._status.get(JciHitachiAC.idx['outdoor_temp'], -1)
+        return v
