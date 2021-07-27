@@ -3,7 +3,7 @@ import os
 import pytest
 
 from JciHitachi.api import JciHitachiAPI
-from JciHitachi.connection import JciHitachiConnection, APP_VERSION
+from JciHitachi.connection import JciHitachiConnection, GetPeripheralsByUser
 
 TEST_EMAIL = os.environ['TEST_EMAIL']
 TEST_PASSWORD = os.environ['TEST_PASSWORD']
@@ -22,6 +22,15 @@ class TestLogin:
     def test_version(self):
         connection = JciHitachiConnection(TEST_EMAIL, TEST_PASSWORD)
         assert connection._login_response["results"]["LatestVersion"]["UpdateSuggestion"] == 0
+
+    def test_session_expiry(self):
+        peripherals = GetPeripheralsByUser(
+            TEST_EMAIL,
+            TEST_PASSWORD,
+            session_token="0000000000000000000000000000000"
+        )
+        comm_status, peripherals_json = peripherals.get_data()
+        assert comm_status == "OK"
 
     @pytest.mark.parametrize("mock_device_name", ["NON_EXISTING_NAME"])
     def test_device_name(self, mock_device_name):
