@@ -35,5 +35,27 @@ jobs:
         TEST_DEVICE: ${{ secrets.TEST_DEVICE }}
         MOCK_CODE: ${{ secrets.MOCK_CODE }}
       run: |
-        python -m pytest ./JciHitachi/tests
-   
+        python -m pytest ./tests
+  
+  deploy:
+    needs: pytest
+    if : ${{ startsWith('refs/tags/[0-9]+.[0-9]+.[0-9]+', github.ref) }}
+    environment: Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.7'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build
+    - name: Build package
+      run: python -m build
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
