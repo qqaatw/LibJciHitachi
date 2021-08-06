@@ -1,8 +1,9 @@
 import random
 import time
+from typing import Dict, List, Optional, Union
 
 from . import connection
-from .status import JciHitachiStatusInterpreter, JciHitachiAC, JciHitachiCommandAC
+from .status import JciHitachiCommand, JciHitachiCommandAC, JciHitachiStatusInterpreter, JciHitachiAC
 
 
 class Peripheral:
@@ -18,21 +19,24 @@ class Peripheral:
         144: "AC"
     }
 
-    def __init__(self, peripheral_json):
+    def __init__(self, peripheral_json : dict) -> None:
         self._json = peripheral_json
         self._code = ""
-    
-    def __repr__(self):
+
+    def __repr__(self) -> str:
         ret = f"name: {self.name}\n" + \
               f"type: {self.type}\n" + \
               f"code: {self.code}\n" + \
               f"gateway_id: {self.gateway_id}\n" + \
               f"gateway_mac_address: {self.gateway_mac_address}"
         return ret
-                 
 
     @classmethod
-    def from_device_names(cls, peripherals_json, device_names):
+    def from_device_names(
+        cls,
+        peripherals_json : dict,
+        device_names : Optional[Union[List[str], str]]
+    ) -> Dict[str, object]:
         """Use device names to pick peripheral_jsons accordingly.
 
         Parameters
@@ -52,10 +56,10 @@ class Peripheral:
 
         if isinstance(device_names, str):
             device_names = [device_names]
-        
+
         for res in peripherals_json["results"]:
             if device_names is None or \
-              (device_names and res["DeviceName"] in device_names):
+                    (device_names and res["DeviceName"] in device_names):
                 if res["Peripherals"][0]["DeviceType"] in Peripheral.supported_device_type:
                     peripherals[res["DeviceName"]] = cls(res)
 
@@ -65,7 +69,7 @@ class Peripheral:
         return peripherals
 
     @property
-    def code(self):
+    def code(self) -> str:
         """Peripheral's status code (LValue) reported by the API.
 
         Returns
@@ -77,16 +81,16 @@ class Peripheral:
         return self._code
 
     @code.setter
-    def code(self, x):
+    def code(self, x : str) -> None:
         self._code = x
 
     @property
-    def commander(self):
+    def commander(self) -> Union[JciHitachiCommand, None]:
         """Return a new JciHitachiCommand instance based on peripheral's type.
 
         Returns
         -------
-        JciHitachiCommand
+        JciHitachiCommand or None
             JciHitachiCommand instance.
         """
 
@@ -96,7 +100,7 @@ class Peripheral:
             return None
 
     @property
-    def gateway_id(self):
+    def gateway_id(self) -> int:
         """Gateway ID.
 
         Returns
@@ -106,9 +110,9 @@ class Peripheral:
         """
 
         return self._json["ObjectID"]
-    
+
     @property
-    def gateway_mac_address(self):
+    def gateway_mac_address(self) -> str:
         """Gateway mac address.
 
         Returns
@@ -118,9 +122,9 @@ class Peripheral:
         """
 
         return self._json["GMACAddress"]
-   
+
     @property
-    def name(self):
+    def name(self) -> str:
         """Device name.
 
         Returns
@@ -132,7 +136,7 @@ class Peripheral:
         return self._json['DeviceName']
 
     @property
-    def picked_peripheral(self):
+    def picked_peripheral(self) -> dict:
         """Picked peripheral.
 
         Returns
@@ -144,7 +148,7 @@ class Peripheral:
         return self._json
 
     @property
-    def type(self):
+    def type(self) -> str:
         """Device type.
 
         Returns
@@ -173,11 +177,17 @@ class JciHitachiAPI:
         Device names. If None is given, all available devices will be included, by default None.
     max_retries : int, optional
         Maximum number of retries when setting status, by default 5.
-    print_response : bool
+    print_response : bool, optional
         If set, all responses of requests will be printed, by default False.
     """
 
-    def __init__(self, email, password, device_names=None, max_retries=5, print_response=False):
+    def __init__(self, 
+        email : str,
+        password : str,
+        device_names : Optional[Union[List[str], str]] = None,
+        max_retries : int = 5,
+        print_response: bool = False
+    ) -> None:
         self.email = email
         self.password = password
         self.device_names = device_names
@@ -190,18 +200,18 @@ class JciHitachiAPI:
         self._task_id = 0
 
     @property
-    def peripherals(self):
+    def peripherals(self) -> Dict[str, Peripheral]:
         """Picked peripherals.
 
         Returns
         -------
         dict
-            A dict of of Peripherals.
+            A dict of Peripherals.
         """
         return self._peripherals
 
     @property
-    def task_id(self):
+    def task_id(self) -> int:
         """Task ID.
 
         Returns
@@ -213,7 +223,7 @@ class JciHitachiAPI:
         self._task_id += 1
         return self._task_id
 
-    def login(self):
+    def login(self) -> None:
         """Login API.
 
         Raises
@@ -230,16 +240,24 @@ class JciHitachiAPI:
 
         if comm_status == "OK":
             self._session_token = peripherals.session_token
-            
-            self._peripherals = Peripheral.from_device_names(peripherals_json, self.device_names)
+
+            self._peripherals = Peripheral.from_device_names(
+                peripherals_json,
+                self.device_names
+            )
             self.device_names = list(self._peripherals.keys())
-            
+
             self.refresh_status()
         else:
             raise RuntimeError("Error: {}.".format(comm_status))
-    
-    def change_password(self, new_password):
+
+    def change_password(self, new_password : str) -> None:
         """Change password.
+
+        Parameters
+        ----------
+        new_password : str
+            New password.
 
         Raises
         ------
@@ -255,7 +273,7 @@ class JciHitachiAPI:
         )
         conn_status, conn_json = conn.get_data(new_password)
 
-    def get_status(self, device_name=None):
+    def get_status(self, device_name : Optional[str] = None) -> dict:
         """Get device status after refreshing status.
 
         Parameters
@@ -277,16 +295,15 @@ class JciHitachiAPI:
             if (device_name and name != device_name) or \
                     peripheral.type == "unknown":
                 continue
-            dev_status = JciHitachiStatusInterpreter(
-                peripheral.code).decode_status()
-        
+            dev_status = JciHitachiStatusInterpreter(peripheral.code).decode_status()
+
             if peripheral.type == "AC":
                 statuses[name] = JciHitachiAC(dev_status)
         return statuses
 
-    def refresh_status(self, device_name=None):
+    def refresh_status(self, device_name : Optional[str] = None) -> None:
         """Refresh device status from the API.
-        
+
         Parameters
         ----------
         device_name : str, optional
@@ -303,14 +320,14 @@ class JciHitachiAPI:
         )
         for name, peripheral in self._peripherals.items():
             if (device_name and name != device_name) or \
-                peripheral.type == "unknown":
+                    peripheral.type == "unknown":
                 continue
             comm_status, container_json = container.get_data(
                 peripheral.picked_peripheral
             )
             self._peripherals[name].code = container_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
 
-    def set_status(self, status_name, status_value, device_name):
+    def set_status(self, status_name : str, status_value : int, device_name : str) -> bool:
         """Set status to a peripheral.
 
         Parameters
@@ -326,7 +343,7 @@ class JciHitachiAPI:
         -------
         bool
             Return True if the command has been successfully executed. Otherwise, return False.
-        
+
         Raise
         -------
         RuntimeError
@@ -347,7 +364,7 @@ class JciHitachiAPI:
             task_id=self.task_id,
             job_info=commander.get_b64command(status_name, status_value)
         )
-        
+
         for t in range(self.max_retries):
             time.sleep(0.8)
             job_report = connection.GetJobDoneReport(
@@ -365,7 +382,7 @@ class JciHitachiAPI:
                     #reported_status = JciHitachiStatusInterpreter(code).decode_status()
                     #assert reported_status.get(status_name) == status_value, \
                     #    "The Reported status value is not the same as status_value."
-                    
+
                     # The API seems to be delayed to update status, so wait for 1.5 sec.
                     time.sleep(1.5)
                     return True

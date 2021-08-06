@@ -130,7 +130,7 @@ class JciHitachiAC:
 
     @property
     def power(self):
-        v = self._status.get(JciHitachiAC.idx['power'], -1)
+        v = self._status.get(self.idx['power'], -1)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -142,7 +142,7 @@ class JciHitachiAC:
 
     @property
     def mode(self):
-        v = self._status.get(JciHitachiAC.idx['mode'], -1)
+        v = self._status.get(self.idx['mode'], -1)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -160,7 +160,7 @@ class JciHitachiAC:
 
     @property
     def air_speed(self):
-        v = self._status.get(JciHitachiAC.idx['air_speed'], -1)
+        v = self._status.get(self.idx['air_speed'], -1)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -179,13 +179,13 @@ class JciHitachiAC:
     @property
     def target_temp(self):
         """Target temperature"""
-        v = self._status.get(JciHitachiAC.idx['target_temp'], -1)
+        v = self._status.get(self.idx['target_temp'], -1)
         return v
 
     @property
     def indoor_temp(self):
         """Indoor temperature"""
-        v = self._status.get(JciHitachiAC.idx['indoor_temp'], -1)
+        v = self._status.get(self.idx['indoor_temp'], -1)
         return v
     
     @property
@@ -201,13 +201,13 @@ class JciHitachiAC:
     @property
     def sleep_timer(self):
         """Sleep timer"""
-        v = self._status.get(JciHitachiAC.idx['sleep_timer'], -1)
+        v = self._status.get(self.idx['sleep_timer'], -1)
         return v
     
     @property
     def mold_prev(self):
         """Mold prevention"""
-        v = self._status.get(JciHitachiAC.idx['mold_prev'], -1)
+        v = self._status.get(self.idx['mold_prev'], -1)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -220,7 +220,7 @@ class JciHitachiAC:
     @property
     def fast_op(self):
         """Fast operation"""
-        v = self._status.get(JciHitachiAC.idx['fast_op'], -1)
+        v = self._status.get(self.idx['fast_op'], -1)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -233,7 +233,7 @@ class JciHitachiAC:
     @property
     def energy_save(self):
         """Energy saving"""
-        v = self._status.get(JciHitachiAC.idx['energy_save'], -1)
+        v = self._status.get(self.idx['energy_save'], -1)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -246,7 +246,7 @@ class JciHitachiAC:
     @property
     def sound_prompt(self):
         """Sound prompt"""
-        v = self._status.get(JciHitachiAC.idx['sound_prompt'], -1)
+        v = self._status.get(self.idx['sound_prompt'], -1)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -259,5 +259,5 @@ class JciHitachiAC:
     @property
     def outdoor_temp(self):
         """Outdoor temperature"""
-        v = self._status.get(JciHitachiAC.idx['outdoor_temp'], -1)
+        v = self._status.get(self.idx['outdoor_temp'], -1)
         return v
