@@ -57,11 +57,13 @@ class Peripheral:
         if isinstance(device_names, str):
             device_names = [device_names]
 
-        for res in peripherals_json["results"]:
-            if device_names is None or \
-                    (device_names and res["DeviceName"] in device_names):
-                if res["Peripherals"][0]["DeviceType"] in Peripheral.supported_device_type:
-                    peripherals[res["DeviceName"]] = cls(res)
+        for result in peripherals_json["results"]:
+            device_name = result["DeviceName"]
+            device_type = result["Peripherals"][0]["DeviceType"]
+
+            if device_names is None or (device_names and device_name in device_names):
+                if device_type in cls.supported_device_type:
+                    peripherals[device_name] = cls(result)
 
         assert device_names is None or len(device_names) == len(peripherals), \
             "Some of device_names are not available from the API."
@@ -158,7 +160,7 @@ class Peripheral:
             If not supported, 'unknown' will be returned. (Currently available: `AC`)
         """
 
-        return Peripheral.supported_device_type.get(
+        return self.supported_device_type.get(
             self._json['Peripherals'][0]['DeviceType'],
             'unknown'
         )
@@ -232,24 +234,24 @@ class JciHitachiAPI:
             If a login error occurs, RuntimeError will be raised.
         """
 
-        peripherals = connection.GetPeripheralsByUser(
+        conn = connection.GetPeripheralsByUser(
             self.email,
             self.password,
             print_response=self.print_response)
-        comm_status, peripherals_json = peripherals.get_data()
+        conn_status, conn_json = conn.get_data()
+        self._session_token = conn.session_token
 
-        if comm_status == "OK":
-            self._session_token = peripherals.session_token
-
+        if conn_status == "OK":
             self._peripherals = Peripheral.from_device_names(
-                peripherals_json,
+                conn_json,
                 self.device_names
             )
             self.device_names = list(self._peripherals.keys())
 
             self.refresh_status()
         else:
-            raise RuntimeError("Error: {}.".format(comm_status))
+            raise RuntimeError(
+                f"An error occurred when API login: {conn_status}.")
 
     def change_password(self, new_password : str) -> None:
         """Change password.
@@ -272,6 +274,7 @@ class JciHitachiAPI:
             print_response=self.print_response
         )
         conn_status, conn_json = conn.get_data(new_password)
+        self._session_token = conn.session_token
 
     def get_status(self, device_name : Optional[str] = None) -> dict:
         """Get device status after refreshing status.
@@ -312,7 +315,7 @@ class JciHitachiAPI:
             by default None.
         """
 
-        container = connection.GetDataContainerByID(
+        conn = connection.GetDataContainerByID(
             self.email,
             self.password,
             session_token=self._session_token,
@@ -322,10 +325,16 @@ class JciHitachiAPI:
             if (device_name and name != device_name) or \
                     peripheral.type == "unknown":
                 continue
-            comm_status, container_json = container.get_data(
+            conn_status, conn_json = conn.get_data(
                 peripheral.picked_peripheral
             )
-            self._peripherals[name].code = container_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
+            self._session_token = conn.session_token
+
+            if conn_status == 'OK':
+                self._peripherals[name].code = conn_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
+            else:
+                raise RuntimeError(
+                    f"An error occurred when refreshing status: {conn_status}")
 
     def set_status(self, status_name : str, status_value : int, device_name : str) -> bool:
         """Set status to a peripheral.
@@ -333,7 +342,7 @@ class JciHitachiAPI:
         Parameters
         ----------
         status_name : str
-            Status name, which has to be in idx dict. Eg. JciHitachiAC.idx
+            Status name, which has to be in idx dict. E.g. JciHitachiAC.idx
         status_value : int
             Status value.
         device_name : str
@@ -352,33 +361,34 @@ class JciHitachiAPI:
 
         commander = self._peripherals[device_name].commander
 
-        job = connection.CreateJob(
+        conn = connection.CreateJob(
             self.email,
             self.password,
             session_token=self._session_token,
             print_response=self.print_response
         )
-        comm_status, job_json = job.get_data(
+        conn_status, conn_json = conn.get_data(
             gateway_id=self._peripherals[device_name].gateway_id,
             device_id=self._device_id,
             task_id=self.task_id,
             job_info=commander.get_b64command(status_name, status_value)
         )
+        self._session_token = conn.session_token
 
-        for t in range(self.max_retries):
+        for _ in range(self.max_retries):
             time.sleep(0.8)
-            job_report = connection.GetJobDoneReport(
+            conn = connection.GetJobDoneReport(
                 self.email,
                 self.password,
                 session_token=self._session_token,
                 print_response=self.print_response
             )
-            comm_status, job_report_json = job_report.get_data(
+            conn_status, conn_json = conn.get_data(
                 device_id=self._device_id
             )
-            if comm_status == 'OK' and len(job_report_json['results']) != 0:
-                if job_report_json['results'][0]['JobStatus'] == 0:
-                    #code = job_report_json['results'][0]['ReportedData']
+            if conn_status == 'OK' and len(conn_json['results']) != 0:
+                if conn_json['results'][0]['JobStatus'] == 0:
+                    #code = conn_json['results'][0]['ReportedData']
                     #reported_status = JciHitachiStatusInterpreter(code).decode_status()
                     #assert reported_status.get(status_name) == status_value, \
                     #    "The Reported status value is not the same as status_value."
