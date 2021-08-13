@@ -164,6 +164,9 @@ class JciHitachiAC:
         'target_temp': 3,
         'indoor_temp': 4,
         'sleep_timer': 6,
+        'vertical_wind_swingable': 14,
+        'vertical_wind_direction': 15,
+        'horizontal_wind_direction': 17, 
         'mold_prev': 23,
         'fast_op': 26,
         'energy_save': 27,
@@ -191,6 +194,9 @@ class JciHitachiAC:
             "target_temp": self.target_temp,
             "indoor_temp": self.indoor_temp,
             "sleep_timer": self.sleep_timer,
+            'vertical_wind_swingable': self.vertical_wind_swingable,
+            'vertical_wind_direction': self.vertical_wind_direction,
+            'horizontal_wind_direction': self.horizontal_wind_direction,
             "mold_prev": self.mold_prev,
             'fast_op': self.fast_op,
             'energy_save': self.energy_save,
@@ -333,6 +339,70 @@ class JciHitachiAC:
         v = self._status.get(self.idx['sleep_timer'], -1)
         return v
     
+    @property
+    def vertical_wind_swingable(self):
+        """Vertical wind swingable.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "disabled", "enabled", "unknown").
+        """
+        
+        v = self._status.get(self.idx['vertical_wind_swingable'], -1)
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "disabled"
+        elif v == 1:
+            return "enabled"
+        else:
+            return "unknown"
+
+    @property
+    def vertical_wind_direction(self):
+        """Vertical wind direction.
+
+        Returns
+        -------
+        int
+            Value between 0 to 15.
+        """
+
+        v = self._status.get(self.idx['vertical_wind_direction'], -1)
+        return v
+
+    @property
+    def horizontal_wind_direction(self):
+        """Horizontal wind direction.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "auto", "leftmost", "middleleft", "central", "middleright", "rightmost", "unknown").
+        """
+
+        v = self._status.get(self.idx['horizontal_wind_direction'], -1)
+        
+        if v > 0: v = 6-v
+
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "auto"
+        elif v == 1:
+            return "leftmost"
+        elif v == 2:
+            return "middleleft"
+        elif v == 3:
+            return "central"
+        elif v == 4:
+            return "middleright"
+        elif v == 5:
+            return "rightmost"
+        else:
+            return "unknown"
+
     @property
     def mold_prev(self):
         """Mold prevention.
