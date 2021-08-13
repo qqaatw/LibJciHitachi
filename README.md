@@ -26,7 +26,7 @@
 
 ## Usage
 
-See [example](example.py).
+See [example](https://github.com/qqaatw/LibJciHitachi/blob/master/example.py).
 
 ## Todo
 

@@ -1,7 +1,10 @@
 ```{include} ../../README.md
 ```
 
-
+```{toctree}
+:caption: Example
+../example.md
+```
 
 ```{toctree}
 :caption: API
