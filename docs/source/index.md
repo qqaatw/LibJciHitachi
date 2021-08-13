@@ -1,14 +1,13 @@
 ```{include} ../../README.md
 ```
 
-.. toctree::
 
 
-API docs
-========
-
-```{eval-rst}
-.. automodule:: JciHitachi.api
-    :show-inheritance:
-    :members:
+```{toctree}
+:caption: API
+:maxdepth: 2
+_api/api.rst
+_api/connection.rst
+_api/status.rst
+_api/utility.rst
 ```
