@@ -4,7 +4,7 @@ from . import utility as util
 
 
 class JciHitachiCommand:
-    """Sending job command.
+    """Abstract class for sending job command.
 
     Parameters
     ----------
@@ -26,14 +26,52 @@ class JciHitachiCommand:
         raise NotImplementedError
     
     def get_b64command(self, command, value):
+        """A wrapper of get_command, generating base64 command.
+
+        Parameters
+        ----------
+        command : str
+            Status name.
+        value : int
+            Status value.
+
+        Returns
+        -------
+        str
+            Base64 command.
+        """
+
         return base64.b64encode(self.get_command(command, value)).decode()
 
 
 class JciHitachiCommandAC(JciHitachiCommand):
+    """Sending job command to AC.
+
+    Parameters
+    ----------
+    gateway_mac_address : str
+        Gateway mac address.
+    """
+    
     def __init__(self, gateway_mac_address):
         super().__init__(gateway_mac_address)
 
     def get_command(self, command, value):
+        """Get job command.
+
+        Parameters
+        ----------
+        command : str
+            Status name.
+        value : int
+            Status value.
+
+        Returns
+        -------
+        bytearray
+            Bytearray command.
+        """
+
         job_info = self.job_info_base.copy()
         
         # Command (eg. target_temp)
@@ -57,6 +95,14 @@ class JciHitachiCommandAC(JciHitachiCommand):
 
 
 class JciHitachiStatusInterpreter:
+    """Interpreting received status code.
+
+    Parameters
+    ----------
+    code : str
+        status code.
+    """
+
     def __init__(self, code):
         self.base64_bytes = base64.standard_b64decode(code)
         self.status_number = self._decode_status_number()
@@ -86,6 +132,14 @@ class JciHitachiStatusInterpreter:
             return output
 
     def decode_status(self):
+        """Decode all status of a peripheral.
+
+        Returns
+        -------
+        dict
+            Decoded status.
+        """
+
         table = {}
         for i in range(self.status_number):
             ret = self._decode_single_status(self.status_number, i)
@@ -95,6 +149,14 @@ class JciHitachiStatusInterpreter:
 
 
 class JciHitachiAC:
+    """Data class representing AC status.
+
+    Parameters
+    ----------
+    status : dict
+        Status retrieved from JciHitachiStatusInterpreter.decode_status().
+    """
+
     idx = {
         'power': 0,
         'mode': 1,
@@ -114,6 +176,14 @@ class JciHitachiAC:
         
     @property
     def status(self):
+        """All AC status.
+
+        Returns
+        -------
+        dict
+            All AC status.
+        """
+
         return {
             "power": self.power,
             "mode" : self.mode,
@@ -130,6 +200,14 @@ class JciHitachiAC:
 
     @property
     def power(self):
+        """Power.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "off", "on", "unknown").
+        """
+
         v = self._status.get(self.idx['power'], -1)
         if v == -1:
             return "unsupported"
@@ -142,6 +220,14 @@ class JciHitachiAC:
 
     @property
     def mode(self):
+        """Mode.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "cool", "dry", "fan", "auto", "heat", "unknown").
+        """
+
         v = self._status.get(self.idx['mode'], -1)
         if v == -1:
             return "unsupported"
@@ -160,6 +246,14 @@ class JciHitachiAC:
 
     @property
     def air_speed(self):
+        """Air speed.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "auto", "silent", "low", "moderate", "high", "unknown").
+        """
+
         v = self._status.get(self.idx['air_speed'], -1)
         if v == -1:
             return "unsupported"
@@ -178,35 +272,77 @@ class JciHitachiAC:
 
     @property
     def target_temp(self):
-        """Target temperature"""
+        """Target temperature.
+
+        Returns
+        -------
+        int
+            Celsius temperature.
+        """
+
         v = self._status.get(self.idx['target_temp'], -1)
         return v
 
     @property
     def indoor_temp(self):
-        """Indoor temperature"""
+        """Indoor temperature.
+
+        Returns
+        -------
+        int
+            Celsius temperature.
+        """
+
         v = self._status.get(self.idx['indoor_temp'], -1)
         return v
     
     @property
     def max_temp(self):
-        """Maximum target temperature"""
+        """Maximum target temperature.
+
+        Returns
+        -------
+        int
+            Celsius temperature.
+        """
+
         return 32
     
     @property
     def min_temp(self):
-        """Minimum target temperature"""
+        """Minimum target temperature.
+        
+        Returns
+        -------
+        int
+            Celsius temperature.
+        """
+
         return 16
 
     @property
     def sleep_timer(self):
-        """Sleep timer"""
+        """Sleep timer.
+        
+        Returns
+        -------
+        int
+            Sleep timer (hours).
+        """
+
         v = self._status.get(self.idx['sleep_timer'], -1)
         return v
     
     @property
     def mold_prev(self):
-        """Mold prevention"""
+        """Mold prevention.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "disabled", "enabled", "unknown").
+        """
+
         v = self._status.get(self.idx['mold_prev'], -1)
         if v == -1:
             return "unsupported"
@@ -219,7 +355,14 @@ class JciHitachiAC:
     
     @property
     def fast_op(self):
-        """Fast operation"""
+        """Fast operation.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "disabled", "enabled", "unknown").
+        """
+
         v = self._status.get(self.idx['fast_op'], -1)
         if v == -1:
             return "unsupported"
@@ -232,7 +375,14 @@ class JciHitachiAC:
     
     @property
     def energy_save(self):
-        """Energy saving"""
+        """Energy saving.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "disabled", "enabled", "unknown").
+        """
+
         v = self._status.get(self.idx['energy_save'], -1)
         if v == -1:
             return "unsupported"
@@ -245,7 +395,14 @@ class JciHitachiAC:
 
     @property
     def sound_prompt(self):
-        """Sound prompt"""
+        """Sound prompt.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "enabled", "disabled", "unknown").
+        """
+
         v = self._status.get(self.idx['sound_prompt'], -1)
         if v == -1:
             return "unsupported"
@@ -258,6 +415,13 @@ class JciHitachiAC:
 
     @property
     def outdoor_temp(self):
-        """Outdoor temperature"""
+        """Outdoor temperature.
+        
+        Returns
+        -------
+        int
+            Celsius temperature.
+        """
+
         v = self._status.get(self.idx['outdoor_temp'], -1)
         return v
