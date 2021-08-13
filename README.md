@@ -1,6 +1,7 @@
 # Jci-Hitachi Library
 
 [![Python package](https://github.com/qqaatw/LibJciHitachi/workflows/Python%20package/badge.svg)](https://github.com/qqaatw/LibJciHitachi/actions)
+[![docs](https://readthedocs.org/projects/libjcihitachi/badge/?version=latest)](https://libjcihitachi.readthedocs.io/en/latest/?badge=latest)
 
 ## Supported devices
 
@@ -24,9 +25,9 @@
 
     pip install LibJciHitachi
 
-## Usage
+## Documentation
 
-See [example](example.py).
+See [docs](https://libjcihitachi.readthedocs.io/en/latest/).
 
 ## Todo
 

@@ -1,6 +1,7 @@
 import hashlib
 import math
 
+
 def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):
     """Concatenate two integer.
     Steps:

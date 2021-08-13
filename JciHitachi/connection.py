@@ -144,7 +144,14 @@ class JciHitachiConnection:
 
 
 class RegisterMobileDevice(JciHitachiConnection):
-    """Unused.
+    """API internal endpoint. (Unused)
+    
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
     """
 
     def __init__(self, email, password, **kwargs):
@@ -160,7 +167,14 @@ class RegisterMobileDevice(JciHitachiConnection):
 
 
 class UpdateUserCredential(JciHitachiConnection):
-    """Tested.
+    """API internal endpoint. (Tested)
+    
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
     """
 
     def __init__(self, email, password, **kwargs):
@@ -179,7 +193,14 @@ class UpdateUserCredential(JciHitachiConnection):
 
 
 class GetServerLastUpdateInfo(JciHitachiConnection):
-    """Unused.
+    """API internal endpoint. (Unused)
+    
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
     """
 
     def __init__(self, email, password, **kwargs):
@@ -190,7 +211,14 @@ class GetServerLastUpdateInfo(JciHitachiConnection):
 
 
 class GetPeripheralsByUser(JciHitachiConnection):
-    """Tested.
+    """API internal endpoint. (Tested)
+    
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
     """
 
     def __init__(self, email, password, **kwargs):
@@ -201,7 +229,14 @@ class GetPeripheralsByUser(JciHitachiConnection):
 
 
 class GetDataContainerByID(JciHitachiConnection):
-    """Tested.
+    """API internal endpoint. (Tested)
+    
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
     """
 
     def __init__(self, email, password, **kwargs):
@@ -229,7 +264,14 @@ class GetDataContainerByID(JciHitachiConnection):
 
 
 class GetPeripheralByGMACAddress(JciHitachiConnection):
-    """Unused.
+    """API internal endpoint. (Unused)
+    
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
     """
 
     def __init__(self, email, password, **kwargs):
@@ -247,7 +289,14 @@ class GetPeripheralByGMACAddress(JciHitachiConnection):
 
 
 class CreateJob(JciHitachiConnection):
-    """Tested.
+    """API internal endpoint. (Tested)
+    
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
     """
 
     def __init__(self, email, password, **kwargs):
@@ -269,7 +318,14 @@ class CreateJob(JciHitachiConnection):
 
 
 class GetJobDoneReport(JciHitachiConnection):
-    """Tested.
+    """API internal endpoint. (Tested)
+    
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
     """
 
     def __init__(self, email, password, **kwargs):
