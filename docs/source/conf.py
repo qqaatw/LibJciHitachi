@@ -47,6 +47,10 @@ source_suffix = {
     '.md': 'markdown',
 }
 
+autodoc_default_options = {
+    'member-order': 'bysource'
+}
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
