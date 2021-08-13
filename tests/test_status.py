@@ -39,7 +39,7 @@ class TestACStatus:
             'sleep_timer': 0,
             'vertical_wind_swingable': 'unsupported',
             'vertical_wind_direction': -1,
-            'horizontal_wind_direction': -1,
+            'horizontal_wind_direction': 'unsupported',
             'mold_prev': 'disabled',
             'fast_op': 'disabled',
             'energy_save': 'disabled',
@@ -51,6 +51,7 @@ class TestACStatus:
             assert key in mock_status
             assert mock_status[key] == value
 
+    @pytest.mark.skip("Skip online test.")
     def test_ac_online(self):
         api = JciHitachiAPI(
             TEST_EMAIL,
