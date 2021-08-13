@@ -147,9 +147,16 @@ class JciHitachiStatusInterpreter:
             table[idx] = ret >> 0x18
         return table
 
+class JciHitachiStatus:
+    def __init__(self, status) -> None:
+        self._status = status
 
-class JciHitachiAC:
-    """Data class representing AC status.
+    @property
+    def status(self):
+        raise NotImplementedError
+
+class JciHitachiAC(JciHitachiStatus):
+    """Data class representing air conditioner status.
 
     Parameters
     ----------
@@ -175,7 +182,7 @@ class JciHitachiAC:
     }
 
     def __init__(self, status):
-        self._status = status
+        super().__init__(status)
         
     @property
     def status(self):
@@ -495,3 +502,29 @@ class JciHitachiAC:
 
         v = self._status.get(self.idx['outdoor_temp'], -1)
         return v
+
+
+class JciHitachiDH(JciHitachiStatus):
+    """Data class representing dehumidifier status.
+
+    Parameters
+    ----------
+    status : dict
+        Status retrieved from JciHitachiStatusInterpreter.decode_status().
+    """
+
+    def __init__(self, status):
+        super().__init__(status)
+
+
+class JciHitachiHE(JciHitachiStatus):
+    """Data class representing heat exchanger status.
+
+    Parameters
+    ----------
+    status : dict
+        Status retrieved from JciHitachiStatusInterpreter.decode_status().
+    """
+
+    def __init__(self, status):
+        super().__init__(status)

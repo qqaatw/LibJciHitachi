@@ -3,7 +3,7 @@ import time
 from typing import Dict, List, Optional, Union
 
 from . import connection
-from .status import JciHitachiCommand, JciHitachiCommandAC, JciHitachiStatusInterpreter, JciHitachiAC
+from .status import JciHitachiCommand, JciHitachiCommandAC, JciHitachiStatusInterpreter, JciHitachiStatus, JciHitachiAC
 
 
 class Peripheral:
@@ -276,7 +276,7 @@ class JciHitachiAPI:
         conn_status, conn_json = conn.get_data(new_password)
         self._session_token = conn.session_token
 
-    def get_status(self, device_name : Optional[str] = None) -> dict:
+    def get_status(self, device_name: Optional[str] = None) -> Dict[str, JciHitachiStatus]:
         """Get device status after refreshing status.
 
         Parameters
@@ -288,8 +288,8 @@ class JciHitachiAPI:
 
         Returns
         -------
-        dict of JciHitachi status instances.
-            Return a list of status instances according to device type.
+        dict of JciHitachiStatus.
+            Return a dict of JciHitachiStatus instances according to device type.
             For example, if the device type is `AC`, then return JciHitachiAC instance.
         """
 
