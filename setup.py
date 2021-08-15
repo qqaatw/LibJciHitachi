@@ -27,7 +27,7 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(include=['JciHitachi']),
     python_requires=">=3.7",
     install_requires=install_requires,
     tests_require=tests_require
