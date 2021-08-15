@@ -486,7 +486,7 @@ class JciHitachiAC(JciHitachiStatus):
 
 
 class JciHitachiDH(JciHitachiStatus):
-    """Data class representing dehumidifier status.
+    """Data class representing dehumidifier status. Not implemented.
 
     Parameters
     ----------
@@ -533,14 +533,14 @@ class JciHitachiDH(JciHitachiStatus):
     
     @property
     def mode(self):
-        """mode.
+        """Mode.
 
         Returns
         -------
         str
             One of (
-                "unsupported", "auto", "custom", "continuous", "clothes_dry",
-                "air_purify", "mold_prev", "low_humidity", "eco_comfort", "unknown"
+            "unsupported", "auto", "custom", "continuous", "clothes_dry",
+            "air_purify", "mold_prev", "low_humidity", "eco_comfort", "unknown"
             ).
         """
 
@@ -689,7 +689,7 @@ class JciHitachiDH(JciHitachiStatus):
 
 
 class JciHitachiHE(JciHitachiStatus):
-    """Data class representing heat exchanger status.
+    """Data class representing heat exchanger status. Not implemented.
 
     Parameters
     ----------
