@@ -91,9 +91,6 @@ class JciHitachiCommandAC(JciHitachiCommand):
         # command ^ value ^ 0x07 (flip last 3 bits) 
         job_info[81] = job_info[78] ^ job_info[80] ^ 0x07
 
-        assert len(job_info) == 82, \
-            "The length of job_info should be 82 bytes."
-
         return job_info
 
 
@@ -131,7 +128,7 @@ class JciHitachiCommandDH(JciHitachiCommand):
         job_info[77] = 4
 
         # Command (eg. target_temp)
-        job_info[78] = 128 + JciHitachiAC.idx[command]
+        job_info[78] = 128 + JciHitachiDH.idx[command]
 
         # Value (eg. 27)
         job_info[80] = value
@@ -143,9 +140,6 @@ class JciHitachiCommandDH(JciHitachiCommand):
         # here is the simplified algorithm:
         # command ^ value ^ 0x02
         job_info[81] = job_info[78] ^ job_info[80] ^ 0x02
-
-        assert len(job_info) == 82, \
-            "The length of job_info should be 82 bytes."
 
         return job_info
 
@@ -184,7 +178,7 @@ class JciHitachiCommandHE(JciHitachiCommand):
         job_info[77] = 14
 
         # Command (eg. target_temp)
-        job_info[78] = 128 + JciHitachiAC.idx[command]
+        job_info[78] = 128 + JciHitachiHE.idx[command]
 
         # Value (eg. 27)
         job_info[80] = value
@@ -196,9 +190,6 @@ class JciHitachiCommandHE(JciHitachiCommand):
         # here is the simplified algorithm:
         # command ^ value ^ 0x08
         job_info[81] = job_info[78] ^ job_info[80] ^ 0x08
-
-        assert len(job_info) == 82, \
-            "The length of job_info should be 82 bytes."
 
         return job_info
 
@@ -807,6 +798,8 @@ class JciHitachiHE(JciHitachiStatus):
     status : dict
         Status retrieved from JciHitachiStatusInterpreter.decode_status().
     """
+
+    idx = {}
 
     def __init__(self, status):
         super().__init__(status)
