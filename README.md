@@ -40,8 +40,7 @@ See [docs](https://libjcihitachi.readthedocs.io/en/latest/).
 
 *Priority*
 
-1. Wind direction & swingable support.
-2. Dehumidifier & heat exchanger support.
+1. Dehumidifier & heat exchanger supports.
 
 ## License
 
