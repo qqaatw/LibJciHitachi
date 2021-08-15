@@ -1,27 +1,13 @@
-import os
-
 import pytest
 
 from JciHitachi.api import JciHitachiAPI
 from JciHitachi.connection import JciHitachiConnection
 
-TEST_EMAIL = os.environ['TEST_EMAIL']
-TEST_PASSWORD = os.environ['TEST_PASSWORD']
-TEST_DEVICE = os.environ['TEST_DEVICE']
+from . import api, TEST_EMAIL, TEST_PASSWORD, TEST_DEVICE
 
 
 class TestLogin:
-    @pytest.fixture(scope="class")
-    def api(self):
-        api = JciHitachiAPI(
-            TEST_EMAIL,
-            TEST_PASSWORD,
-            TEST_DEVICE)
-        return api
-
     def test_api(self, api):
-        api.login()
-
         assert len(api._session_token) == 31
         assert api._peripherals[TEST_DEVICE].name == TEST_DEVICE
 
