@@ -15,6 +15,9 @@
   - Power 電源
   - Mode 運轉模式
   - Air speed 風速
+  - Vertical wind swingable 導風板垂直擺動 (Untested)
+  - Vertical wind direction 導風板垂直方向 (Untested)
+  - Horizontal wind direction 導風板水平方向 (Untested)
   - Target temperature 目標溫度
   - Indoor temperature 室內溫度
   - Outdoor temperature 室外溫度
