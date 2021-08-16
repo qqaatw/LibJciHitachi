@@ -1,6 +1,16 @@
 import pytest
 
-from JciHitachi.status import JciHitachiStatusInterpreter, JciHitachiCommandAC, JciHitachiAC
+from JciHitachi.status import (
+    JciHitachiStatusInterpreter,
+    JciHitachiCommandAC,
+    JciHitachiCommandDH,
+    JciHitachiCommandHE
+)
+from JciHitachi.model import(
+    JciHitachiAC,
+    JciHitachiDH,
+    JciHitachiHE
+)
 
 from . import api, TEST_DEVICE, MOCK_CODE, TEST_COMMAND
 
@@ -57,7 +67,7 @@ class TestACStatus:
                         0099")
         assert b64command == mock_command
 
-    pytest.mark.skip("Skip online test.")
+    @pytest.mark.skip("Skip online test.")
     def test_ac_online(self, api):
         # Change sound prompt
         current_state = api.get_status()[TEST_DEVICE]._status[JciHitachiAC.idx[TEST_COMMAND]]
@@ -77,3 +87,9 @@ class TestACStatus:
         api.refresh_status()
         assert api.get_status()[
             TEST_DEVICE]._status[JciHitachiAC.idx[TEST_COMMAND]] == current_state
+
+
+class TestCommonStatus:
+    def test_command_nbytes(self):
+        ac_commander = JciHitachiCommandAC('10416149025290813292')
+        assert len(ac_commander.get_command("power", 0)) == 82
