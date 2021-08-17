@@ -238,8 +238,8 @@ class JciHitachiStatusInterpreter:
             output = (output << 16) & 0xffff0000 | max_func_number
         return output
 
-    def _decode_single_support(self, max_func_number, while_counter):
-        stat_idx = while_counter * 3 + 25
+    def _decode_single_support(self, max_func_number, while_counter, init):
+        stat_idx = while_counter * 3 + init
 
         if stat_idx + 3 <= self.base64_bytes[0] - 1:
             status_bytes = bytearray(4)
@@ -251,6 +251,20 @@ class JciHitachiStatusInterpreter:
             output = util.bin_concat(0xff, max_func_number)
             output = (output << 16) & 0xffff0000 | max_func_number
         return output
+
+    def _get_strs(self, start_idx, num_strs):
+        strs = []
+        idx = start_idx
+
+        while len(strs) < num_strs:
+            char = self.base64_bytes[idx]
+            if char == 0:
+                strs.append(self.base64_bytes[start_idx:idx].decode())
+                idx += 1
+                start_idx = idx
+            else:
+                idx += 1
+        return idx, strs
 
     def decode_status(self):
         """Decode all status code of a peripheral.
@@ -277,13 +291,16 @@ class JciHitachiStatusInterpreter:
             Decoded support.
         """
 
+        init, (brand, model) = self._get_strs(8, 2)
+
         table = {
-            'brand': self.base64_bytes[8:15].decode(),
-            'model': self.base64_bytes[16:24].decode()
+            'brand': brand,
+            'model': model
         }
         for i in range(self.num_idx):
-            ret = self._decode_single_support(self.num_idx, i)
+            ret = self._decode_single_support(self.num_idx, i, init)
             idx = util.cast_bytes(ret >> 8, 1)
-            table[idx] = ret >> 0x18 + (ret >> 0x10 * 0x100)
+            # save raw value, the extraction procedure is performed in model.
+            table[idx] = ret
 
         return table

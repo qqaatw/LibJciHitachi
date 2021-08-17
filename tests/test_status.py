@@ -6,13 +6,20 @@ from JciHitachi.status import (
     JciHitachiCommandDH,
     JciHitachiCommandHE
 )
-from JciHitachi.model import(
+from JciHitachi.model import (
     JciHitachiAC,
     JciHitachiDH,
     JciHitachiHE
 )
 
-from . import api, TEST_DEVICE, MOCK_CODE, TEST_COMMAND
+from . import (
+    api,
+    TEST_DEVICE,
+    TEST_COMMAND,
+    MOCK_CODE,
+    MOCK_GATEWAY_MAC
+)
+
 
 
 class TestACStatus:
@@ -55,7 +62,7 @@ class TestACStatus:
             assert mock_status[key] == value
 
     def test_command(self):
-        commander = JciHitachiCommandAC('10416149025290813292')
+        commander = JciHitachiCommandAC(MOCK_GATEWAY_MAC)
         b64command = commander.get_command(TEST_COMMAND, 0)
         
         mock_command = bytearray.fromhex(
@@ -91,5 +98,9 @@ class TestACStatus:
 
 class TestCommonStatus:
     def test_command_nbytes(self):
-        ac_commander = JciHitachiCommandAC('10416149025290813292')
+        ac_commander = JciHitachiCommandAC(MOCK_GATEWAY_MAC)
         assert len(ac_commander.get_command("power", 0)) == 82
+        dh_commander = JciHitachiCommandDH(MOCK_GATEWAY_MAC)
+        assert len(dh_commander.get_command("power", 0)) == 82
+        #he_commander = JciHitachiCommandHE(MOCK_GATEWAY_MAC)
+        #assert len(he_commander.get_command("power", 0)) == 82

@@ -10,6 +10,9 @@ TEST_DEVICE = os.environ['TEST_DEVICE']
 MOCK_CODE = os.environ["MOCK_CODE"]
 TEST_COMMAND = 'sound_prompt'
 
+MOCK_GATEWAY_MAC = '10416149025290813292'
+
+
 @pytest.fixture(scope="session")
 def api():
     api = JciHitachiAPI(

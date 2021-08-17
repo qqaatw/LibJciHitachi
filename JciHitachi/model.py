@@ -3,8 +3,9 @@
 class JciHitachiStatus:
     idx = {}
 
-    def __init__(self, status) -> None:
+    def __init__(self, status, default) -> None:
         self._status = status
+        self._default = default
 
     @property
     def status(self):
@@ -26,6 +27,8 @@ class JciHitachiAC(JciHitachiStatus):
     ----------
     status : dict
         Status retrieved from JciHitachiStatusInterpreter.decode_status().
+    default : int, optional
+        Default value when a status doesn't exist, by default -1.
     """
 
     idx = {
@@ -45,8 +48,8 @@ class JciHitachiAC(JciHitachiStatus):
         'outdoor_temp': 33
     }
 
-    def __init__(self, status):
-        super().__init__(status)
+    def __init__(self, status, default=-1):
+        super().__init__(status, default)
         
     @property
     def power(self):
@@ -58,7 +61,7 @@ class JciHitachiAC(JciHitachiStatus):
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['power'], -1)
+        v = self._status.get(self.idx['power'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -78,7 +81,7 @@ class JciHitachiAC(JciHitachiStatus):
             One of ("unsupported", "cool", "dry", "fan", "auto", "heat", "unknown").
         """
 
-        v = self._status.get(self.idx['mode'], -1)
+        v = self._status.get(self.idx['mode'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -104,7 +107,7 @@ class JciHitachiAC(JciHitachiStatus):
             One of ("unsupported", "auto", "silent", "low", "moderate", "high", "unknown").
         """
 
-        v = self._status.get(self.idx['air_speed'], -1)
+        v = self._status.get(self.idx['air_speed'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -130,7 +133,7 @@ class JciHitachiAC(JciHitachiStatus):
             Celsius temperature.
         """
 
-        v = self._status.get(self.idx['target_temp'], -1)
+        v = self._status.get(self.idx['target_temp'], self._default)
         return v
 
     @property
@@ -143,7 +146,7 @@ class JciHitachiAC(JciHitachiStatus):
             Celsius temperature.
         """
 
-        v = self._status.get(self.idx['indoor_temp'], -1)
+        v = self._status.get(self.idx['indoor_temp'], self._default)
         return v
     
     @property
@@ -180,7 +183,7 @@ class JciHitachiAC(JciHitachiStatus):
             Sleep timer (hours).
         """
 
-        v = self._status.get(self.idx['sleep_timer'], -1)
+        v = self._status.get(self.idx['sleep_timer'], self._default)
         return v
     
     @property
@@ -193,7 +196,7 @@ class JciHitachiAC(JciHitachiStatus):
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
         
-        v = self._status.get(self.idx['vertical_wind_swingable'], -1)
+        v = self._status.get(self.idx['vertical_wind_swingable'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -213,7 +216,7 @@ class JciHitachiAC(JciHitachiStatus):
             Value between 0 to 15.
         """
 
-        v = self._status.get(self.idx['vertical_wind_direction'], -1)
+        v = self._status.get(self.idx['vertical_wind_direction'], self._default)
         return v
 
     @property
@@ -226,7 +229,7 @@ class JciHitachiAC(JciHitachiStatus):
             One of ("unsupported", "auto", "leftmost", "middleleft", "central", "middleright", "rightmost", "unknown").
         """
 
-        v = self._status.get(self.idx['horizontal_wind_direction'], -1)
+        v = self._status.get(self.idx['horizontal_wind_direction'], self._default)
         
         if v > 0: v = 6-v
 
@@ -257,7 +260,7 @@ class JciHitachiAC(JciHitachiStatus):
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['mold_prev'], -1)
+        v = self._status.get(self.idx['mold_prev'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -277,7 +280,7 @@ class JciHitachiAC(JciHitachiStatus):
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['fast_op'], -1)
+        v = self._status.get(self.idx['fast_op'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -297,7 +300,7 @@ class JciHitachiAC(JciHitachiStatus):
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['energy_save'], -1)
+        v = self._status.get(self.idx['energy_save'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -317,7 +320,7 @@ class JciHitachiAC(JciHitachiStatus):
             One of ("unsupported", "enabled", "disabled", "unknown").
         """
 
-        v = self._status.get(self.idx['sound_prompt'], -1)
+        v = self._status.get(self.idx['sound_prompt'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -337,7 +340,7 @@ class JciHitachiAC(JciHitachiStatus):
             Celsius temperature.
         """
 
-        v = self._status.get(self.idx['outdoor_temp'], -1)
+        v = self._status.get(self.idx['outdoor_temp'], self._default)
         return v
 
 
@@ -348,6 +351,8 @@ class JciHitachiDH(JciHitachiStatus):
     ----------
     status : dict
         Status retrieved from JciHitachiStatusInterpreter.decode_status().
+    default : int, optional
+        Default value when a status doesn't exist, by default -1.
     """
 
     idx = {
@@ -364,8 +369,8 @@ class JciHitachiDH(JciHitachiStatus):
         'odor_level': 40
     }
 
-    def __init__(self, status):
-        super().__init__(status)
+    def __init__(self, status, default=-1):
+        super().__init__(status, default)
     
     @property
     def power(self):
@@ -377,7 +382,7 @@ class JciHitachiDH(JciHitachiStatus):
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['power'], -1)
+        v = self._status.get(self.idx['power'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -400,7 +405,7 @@ class JciHitachiDH(JciHitachiStatus):
             ).
         """
 
-        v = self._status.get(self.idx['mode'], -1)
+        v = self._status.get(self.idx['mode'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -432,7 +437,7 @@ class JciHitachiDH(JciHitachiStatus):
             Relative humidity.
         """
 
-        v = self._status.get(self.idx['target_humidity'], -1)
+        v = self._status.get(self.idx['target_humidity'], self._default)
         return v
 
     @property
@@ -445,7 +450,7 @@ class JciHitachiDH(JciHitachiStatus):
             Relative humidity.
         """
 
-        v = self._status.get(self.idx['indoor_humidity'], -1)
+        v = self._status.get(self.idx['indoor_humidity'], self._default)
         return v
         
     @property
@@ -458,7 +463,7 @@ class JciHitachiDH(JciHitachiStatus):
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['power'], -1)
+        v = self._status.get(self.idx['power'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -478,7 +483,7 @@ class JciHitachiDH(JciHitachiStatus):
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['water_full_warning'], -1)
+        v = self._status.get(self.idx['water_full_warning'], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -551,12 +556,14 @@ class JciHitachiHE(JciHitachiStatus):
     ----------
     status : dict
         Status retrieved from JciHitachiStatusInterpreter.decode_status().
+    default : int, optional
+        Default value when a status doesn't exist, by default -1.
     """
 
     idx = {}
 
-    def __init__(self, status):
-        super().__init__(status)
+    def __init__(self, status, default=-1):
+        super().__init__(status, default)
 
 
 class JciHitachiACSupport(JciHitachiStatus):
@@ -566,6 +573,8 @@ class JciHitachiACSupport(JciHitachiStatus):
     ----------
     status : dict
         Supported status retrieved from JciHitachiStatusInterpreter.decode_support().
+    default : int, optional
+        Default value when a status doesn't exist, by default 0.
     """
 
     idx = {
@@ -587,8 +596,30 @@ class JciHitachiACSupport(JciHitachiStatus):
         'outdoor_temp': 33
     }
 
-    def __init__(self, status):
-        super().__init__(status)
+    def __init__(self, status, default=0):
+        super().__init__(status, default)
+
+    def _uni_v(self, v):
+        return (((v >> 0x10 ) & 0xff) << 8) | (v >> 0x18)
+
+    def _dual_v(self, v):
+        low = (v >> 0x10) & 0xff
+        high = (v >> 0x18) & 0xff
+        return low, high
+    
+    def _functional_v(self, v):
+        uni_v = self._uni_v(v)
+        return ((uni_v >> i) & 0x1 for i in range(16))
+
+    @property
+    def brand(self):
+        v = self._status.get(self.idx['brand'], self._default)
+        return v
+
+    @property
+    def model(self):
+        v = self._status.get(self.idx['model'], self._default)
+        return v
 
     @property
     def power(self):
@@ -596,19 +627,14 @@ class JciHitachiACSupport(JciHitachiStatus):
 
         Returns
         -------
-        str
-            One of ("unsupported", "off", "on", "unknown").
+        (bool, int, int)
+            (is_support, off, on).
         """
 
-        v = self._status.get(self.idx['power'], -1)
-        if v == -1:
-            return "unsupported"
-        elif v == 0:
-            return "off"
-        elif v == 1:
-            return "on"
-        else:
-            return "unknown"
+        v = self._status.get(self.idx['power'], self._default)
+        supports = self._functional_v(v)
+
+        return (v != 0, *supports)
 
     @property
     def mode(self):
@@ -616,25 +642,14 @@ class JciHitachiACSupport(JciHitachiStatus):
 
         Returns
         -------
-        str
-            One of ("unsupported", "cool", "dry", "fan", "auto", "heat", "unknown").
+        (bool, Tuple[int])
+            is_support, (cool, dry, fan, auto, heat, 0...).
         """
 
-        v = self._status.get(self.idx['mode'], -1)
-        if v == -1:
-            return "unsupported"
-        elif v == 0:
-            return "cool"
-        elif v == 1:
-            return "dry"
-        elif v == 2:
-            return "fan"
-        elif v == 3:
-            return "auto"
-        elif v == 4:
-            return "heat"
-        else:
-            return "unknown"
+        v = self._status.get(self.idx['mode'], self._default)
+        supports = self._functional_v(v)
+
+        return (v != 0, *supports)
 
     @property
     def air_speed(self):
@@ -642,25 +657,14 @@ class JciHitachiACSupport(JciHitachiStatus):
 
         Returns
         -------
-        str
-            One of ("unsupported", "auto", "silent", "low", "moderate", "high", "unknown").
+        (bool, Tuple[int])
+            is_support, ("auto", "silent", "low", "moderate", "high", 0...).
         """
 
-        v = self._status.get(self.idx['air_speed'], -1)
-        if v == -1:
-            return "unsupported"
-        elif v == 0:
-            return "auto"
-        elif v == 1:
-            return "silent"
-        elif v == 2:
-            return "low"
-        elif v == 3:
-            return "moderate"
-        elif v == 4:
-            return "high"
-        else:
-            return "unknown"
+        v = self._status.get(self.idx['air_speed'], self._default)
+        supports = self._functional_v(v)
+
+        return (v != 0, *supports)
 
     @property
     def target_temp(self):
@@ -668,12 +672,14 @@ class JciHitachiACSupport(JciHitachiStatus):
 
         Returns
         -------
-        int
-            Celsius temperature.
+        (bool, int, int)
+            (is_support, minimum, maximum)
         """
 
-        v = self._status.get(self.idx['target_temp'], -1)
-        return v
+        v = self._status.get(self.idx['target_temp'], 0)
+        supports = self._dual_v(v)
+
+        return (v != 0, *supports)
 
     @property
     def indoor_temp(self):
@@ -681,36 +687,14 @@ class JciHitachiACSupport(JciHitachiStatus):
 
         Returns
         -------
-        int
-            Celsius temperature.
+        (bool, int, int)
+            (is_support, minimum, maximum)
         """
 
-        v = self._status.get(self.idx['indoor_temp'], -1)
-        return v
-    
-    @property
-    def max_temp(self):
-        """Maximum target temperature.
+        v = self._status.get(self.idx['indoor_temp'], 0)
+        supports = self._dual_v(v)
 
-        Returns
-        -------
-        int
-            Celsius temperature.
-        """
-
-        return 32
-    
-    @property
-    def min_temp(self):
-        """Minimum target temperature.
-        
-        Returns
-        -------
-        int
-            Celsius temperature.
-        """
-
-        return 16
+        return (v != 0, *supports)
 
     @property
     def sleep_timer(self):
@@ -718,12 +702,14 @@ class JciHitachiACSupport(JciHitachiStatus):
         
         Returns
         -------
-        int
-            Sleep timer (hours).
+        (bool)
+            (is_support, maximum).
         """
 
-        v = self._status.get(self.idx['sleep_timer'], -1)
-        return v
+        v = self._status.get(self.idx['sleep_timer'], 0)
+        support = self._uni_v(v)
+
+        return (v != 0, support)
     
     @property
     def vertical_wind_swingable(self):
@@ -735,15 +721,10 @@ class JciHitachiACSupport(JciHitachiStatus):
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
         
-        v = self._status.get(self.idx['vertical_wind_swingable'], -1)
-        if v == -1:
-            return "unsupported"
-        elif v == 0:
-            return "disabled"
-        elif v == 1:
-            return "enabled"
-        else:
-            return "unknown"
+        v = self._status.get(self.idx['vertical_wind_swingable'], 0)
+        supports = self._functional_v(v)
+
+        return (v != 0, *supports)
 
     @property
     def vertical_wind_direction(self):
@@ -755,8 +736,10 @@ class JciHitachiACSupport(JciHitachiStatus):
             Value between 0 to 15.
         """
 
-        v = self._status.get(self.idx['vertical_wind_direction'], -1)
-        return v
+        v = self._status.get(self.idx['vertical_wind_direction'], self._default)
+        supports = self._functional_v(v)
+
+        return (v != 0, *supports)
 
     @property
     def horizontal_wind_direction(self):
@@ -768,7 +751,7 @@ class JciHitachiACSupport(JciHitachiStatus):
             One of ("unsupported", "auto", "leftmost", "middleleft", "central", "middleright", "rightmost", "unknown").
         """
 
-        v = self._status.get(self.idx['horizontal_wind_direction'], -1)
+        v = self._status.get(self.idx['horizontal_wind_direction'], self._default)
         
         if v > 0: v = 6-v
 
@@ -799,15 +782,10 @@ class JciHitachiACSupport(JciHitachiStatus):
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['mold_prev'], -1)
-        if v == -1:
-            return "unsupported"
-        elif v == 0:
-            return "disabled"
-        elif v == 1:
-            return "enabled"
-        else:
-            return "unknown"
+        v = self._status.get(self.idx['mold_prev'], self._default)
+        supports = self._functional_v(v)
+
+        return (v != 0, *supports)
     
     @property
     def fast_op(self):
@@ -819,15 +797,10 @@ class JciHitachiACSupport(JciHitachiStatus):
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['fast_op'], -1)
-        if v == -1:
-            return "unsupported"
-        elif v == 0:
-            return "disabled"
-        elif v == 1:
-            return "enabled"
-        else:
-            return "unknown"
+        v = self._status.get(self.idx['fast_op'], self._default)
+        supports = self._functional_v(v)
+
+        return (v != 0, *supports)
     
     @property
     def energy_save(self):
@@ -839,15 +812,10 @@ class JciHitachiACSupport(JciHitachiStatus):
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['energy_save'], -1)
-        if v == -1:
-            return "unsupported"
-        elif v == 0:
-            return "disabled"
-        elif v == 1:
-            return "enabled"
-        else:
-            return "unknown"
+        v = self._status.get(self.idx['energy_save'], self._default)
+        supports = self._functional_v(v)
+
+        return (v != 0, *supports)
 
     @property
     def sound_prompt(self):
@@ -859,15 +827,10 @@ class JciHitachiACSupport(JciHitachiStatus):
             One of ("unsupported", "enabled", "disabled", "unknown").
         """
 
-        v = self._status.get(self.idx['sound_prompt'], -1)
-        if v == -1:
-            return "unsupported"
-        elif v == 0:
-            return "enabled"
-        elif v == 1:
-            return "disabled"
-        else:
-            return "unknown"
+        v = self._status.get(self.idx['sound_prompt'], self._default)
+        supports = self._functional_v(v)
+
+        return (v != 0, *supports)
 
     @property
     def outdoor_temp(self):
@@ -879,5 +842,7 @@ class JciHitachiACSupport(JciHitachiStatus):
             Celsius temperature.
         """
 
-        v = self._status.get(self.idx['outdoor_temp'], -1)
-        return v
+        v = self._status.get(self.idx['outdoor_temp'], self._default)
+        supports = self._dual_v(v)
+
+        return (v != 0, *supports)
