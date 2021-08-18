@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 
 from . import connection
 from .status import JciHitachiCommand, JciHitachiCommandAC, JciHitachiStatusInterpreter
-from .model import JciHitachiACSupport, JciHitachiStatus, JciHitachiAC
+from .model import JciHitachiStatusSupport, JciHitachiACSupport, JciHitachiStatus, JciHitachiAC
 
 
 class Peripheral:
@@ -26,6 +26,7 @@ class Peripheral:
         self._json = peripheral_json
         self._status_code = ""
         self._support_code = ""
+        self._supports = None
 
     def __repr__(self) -> str:
         ret = f"name: {self.name}\n" + \
@@ -168,6 +169,21 @@ class Peripheral:
     @support_code.setter
     def support_code(self, x : str) -> None:
         self._support_code = x
+        self._supports = JciHitachiACSupport(
+            JciHitachiStatusInterpreter(x, True).decode_support()
+        )
+
+    @property
+    def supports(self) -> JciHitachiStatusSupport:
+        """Peripheral's supported status converted from support_code.
+
+        Returns
+        -------
+        JciHitachiStatusSupport
+            Supported status.
+        """
+
+        return self._supports
 
     @property
     def type(self) -> str:
@@ -413,7 +429,16 @@ class JciHitachiAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
-        commander = self._peripherals[device_name].commander
+        peripheral = self._peripherals[device_name]
+
+        commander = peripheral.commander
+
+        # limit value in a suitable range.
+        status_value = peripheral.supports.limit(status_name, status_value)
+
+        # invalid command
+        if status_value is None:
+            return False
 
         conn = connection.CreateJob(
             self.email,
@@ -422,7 +447,7 @@ class JciHitachiAPI:
             print_response=self.print_response
         )
         conn_status, conn_json = conn.get_data(
-            gateway_id=self._peripherals[device_name].gateway_id,
+            gateway_id=peripheral.gateway_id,
             device_id=self._device_id,
             task_id=self.task_id,
             job_info=commander.get_b64command(status_name, status_value)

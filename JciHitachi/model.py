@@ -566,7 +566,38 @@ class JciHitachiHE(JciHitachiStatus):
         super().__init__(status, default)
 
 
-class JciHitachiACSupport(JciHitachiStatus):
+class JciHitachiStatusSupport:
+    supported_type = {}
+    
+    def _uni_v(self, v):
+        return (((v >> 0x10) & 0xff) << 8) | (v >> 0x18)
+
+    def _dual_v(self, v):
+        low = (v >> 0x10) & 0xff
+        high = (v >> 0x18) & 0xff
+        return low, high
+
+    def _functional_v(self, v):
+        uni_v = self._uni_v(v)
+        return ((uni_v >> i) & 0x1 for i in range(16))
+    
+    def limit(self, command, value):
+        is_support, *v = getattr(self, command)
+        if not is_support:
+            return None
+        
+        supported_type = self.supported_type[command]
+        if supported_type == "uni":
+            return min(value, v[0])
+        elif supported_type == "dual":
+            return max(v[0], min(value, v[1]))
+        elif supported_type == "functional":
+            if v[value]:
+                return value
+        return None
+
+
+class JciHitachiACSupport(JciHitachiStatus, JciHitachiStatusSupport):
     """Data model representing supported air conditioner status.
 
     Parameters
@@ -596,20 +627,27 @@ class JciHitachiACSupport(JciHitachiStatus):
         'outdoor_temp': 33
     }
 
+    supported_type = {
+        'brand': 'str',
+        'model': 'str',
+        'power': 'functional',
+        'mode': 'functional',
+        'air_speed': 'functional',
+        'target_temp': 'dual',
+        'indoor_temp': 'dual',
+        'sleep_timer': 'uni',
+        'vertical_wind_swingable': 'functional',
+        'vertical_wind_direction': 'functional',
+        'horizontal_wind_direction': 'functional',
+        'mold_prev': 'functional',
+        'fast_op': 'functional',
+        'energy_save': 'functional',
+        'sound_prompt': 'functional',
+        'outdoor_temp': 'dual'
+    }
+
     def __init__(self, status, default=0):
         super().__init__(status, default)
-
-    def _uni_v(self, v):
-        return (((v >> 0x10 ) & 0xff) << 8) | (v >> 0x18)
-
-    def _dual_v(self, v):
-        low = (v >> 0x10) & 0xff
-        high = (v >> 0x18) & 0xff
-        return low, high
-    
-    def _functional_v(self, v):
-        uni_v = self._uni_v(v)
-        return ((uni_v >> i) & 0x1 for i in range(16))
 
     @property
     def brand(self):
