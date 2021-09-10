@@ -18,7 +18,7 @@ class JciHitachiCommand:
                                00000100000000000000002000010000 \
                                000000000000000002000d278050f0d4 \
                                469dafd3605a6ebbdb130d278052f0d4 \
-                               469dafd3605a6ebbdb13060006010000 \
+                               469dafd3605a6ebbdb13060006000000 \
                                0000")
         self.job_info_base[32:40] = bytearray.fromhex(hex(int(gateway_mac_address))[2:])
     
@@ -45,7 +45,7 @@ class JciHitachiCommand:
 
 
 class JciHitachiCommandAC(JciHitachiCommand):
-    """Sending job command to AC.
+    """Sending job command to air conditioner.
 
     Parameters
     ----------
@@ -74,6 +74,9 @@ class JciHitachiCommandAC(JciHitachiCommand):
 
         job_info = self.job_info_base.copy()
         
+        # Device type
+        job_info[77] = 1
+
         # Command (eg. target_temp)
         job_info[78] = 128 + JciHitachiAC.idx[command]
 
@@ -83,13 +86,110 @@ class JciHitachiCommandAC(JciHitachiCommand):
         # Checksum 
         # Original algorithm:
         # xor job_info 76~80
-        # Since byte 76, 77, and 79 are constants,
+        # Since byte 76(0x06), 77(device type), and 79(0x00) are constants,
         # here is the simplified algorithm:
         # command ^ value ^ 0x07 (flip last 3 bits) 
         job_info[81] = job_info[78] ^ job_info[80] ^ 0x07
 
-        assert len(job_info) == 82, \
-            "The length of job_info should be 82 bytes."
+        return job_info
+
+
+class JciHitachiCommandDH(JciHitachiCommand):
+    """Sending job command to Dehumidifier.
+
+    Parameters
+    ----------
+    gateway_mac_address : str
+        Gateway mac address.
+    """
+
+    def __init__(self, gateway_mac_address):
+        super().__init__(gateway_mac_address)
+
+    def get_command(self, command, value):
+        """Get job command.
+
+        Parameters
+        ----------
+        command : str
+            Status name.
+        value : int
+            Status value.
+
+        Returns
+        -------
+        bytearray
+            Bytearray command.
+        """
+
+        job_info = self.job_info_base.copy()
+        
+        # Device type
+        job_info[77] = 4
+
+        # Command (eg. target_temp)
+        job_info[78] = 128 + JciHitachiDH.idx[command]
+
+        # Value (eg. 27)
+        job_info[80] = value
+
+        # Checksum
+        # Original algorithm:
+        # xor job_info 76~80
+        # Since byte 76(0x06), 77(device type), and 79(0x00) are constants,
+        # here is the simplified algorithm:
+        # command ^ value ^ 0x02
+        job_info[81] = job_info[78] ^ job_info[80] ^ 0x02
+
+        return job_info
+
+
+class JciHitachiCommandHE(JciHitachiCommand):
+    """Sending job command to heat exchanger.
+
+    Parameters
+    ----------
+    gateway_mac_address : str
+        Gateway mac address.
+    """
+
+    def __init__(self, gateway_mac_address):
+        super().__init__(gateway_mac_address)
+
+    def get_command(self, command, value):
+        """Get job command.
+
+        Parameters
+        ----------
+        command : str
+            Status name.
+        value : int
+            Status value.
+
+        Returns
+        -------
+        bytearray
+            Bytearray command.
+        """
+
+        job_info = self.job_info_base.copy()
+        
+        # Device type
+        job_info[77] = 14
+
+        # Command (eg. target_temp)
+        job_info[78] = 128 + JciHitachiHE.idx[command]
+
+        # Value (eg. 27)
+        job_info[80] = value
+
+        # Checksum
+        # Original algorithm:
+        # xor job_info 76~80
+        # Since byte 76(0x06), 77(device type), and 79(0x00) are constants,
+        # here is the simplified algorithm:
+        # command ^ value ^ 0x08
+        job_info[81] = job_info[78] ^ job_info[80] ^ 0x08
 
         return job_info
 
@@ -122,7 +222,7 @@ class JciHitachiStatusInterpreter:
             status_bytes[1] = self.base64_bytes[stat_idx] & 0xffff7fff
             status_bytes[2:4] = self.base64_bytes[stat_idx + 1: stat_idx + 3]
 
-            output = int.from_bytes(status_bytes, byteorder='little') 
+            output = int.from_bytes(status_bytes, byteorder='little')
             return output
         else:
             output = util.bin_concat(0xff, max_func_number)
@@ -145,6 +245,7 @@ class JciHitachiStatusInterpreter:
             table[idx] = ret >> 0x18 + (ret >> 0x10 * 0x100) 
         return table
 
+
 class JciHitachiStatus:
     idx = {}
 
@@ -162,6 +263,7 @@ class JciHitachiStatus:
         """
 
         return dict((key, getattr(self, key)) for key in self.idx)
+
 
 class JciHitachiAC(JciHitachiStatus):
     """Data class representing air conditioner status.
@@ -186,7 +288,8 @@ class JciHitachiAC(JciHitachiStatus):
         'fast_op': 26,
         'energy_save': 27,
         'sound_prompt': 30,
-        'outdoor_temp': 33
+        'outdoor_temp': 33,
+        'power_kwh': 40,
     }
 
     def __init__(self, status):
@@ -483,7 +586,21 @@ class JciHitachiAC(JciHitachiStatus):
 
         v = self._status.get(self.idx['outdoor_temp'], -1)
         return v
+    
+    @property
+    def power_kwh(self):
+        """Accumulated KH/H in a day.
 
+        Returns
+        -------
+        flaot
+            KH/H.
+        """
+
+        v = self._status.get(self.idx['power_kwh'], -1)
+        if v == -1:
+            return v
+        return v / 10.0
 
 class JciHitachiDH(JciHitachiStatus):
     """Data class representing dehumidifier status. Not implemented.
@@ -696,6 +813,8 @@ class JciHitachiHE(JciHitachiStatus):
     status : dict
         Status retrieved from JciHitachiStatusInterpreter.decode_status().
     """
+
+    idx = {}
 
     def __init__(self, status):
         super().__init__(status)

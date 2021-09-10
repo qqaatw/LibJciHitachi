@@ -1,16 +1,9 @@
-import os
-
 import pytest
 
-from JciHitachi.api import JciHitachiAPI
-from JciHitachi.status import JciHitachiStatusInterpreter, JciHitachiAC
+from JciHitachi.status import JciHitachiStatusInterpreter, JciHitachiCommandAC, JciHitachiAC
 
-TEST_EMAIL = os.environ['TEST_EMAIL']
-TEST_PASSWORD = os.environ['TEST_PASSWORD']
-TEST_DEVICE = os.environ['TEST_DEVICE']
-MOCK_CODE = os.environ["MOCK_CODE"]
+from . import api, TEST_DEVICE, MOCK_CODE, TEST_COMMAND
 
-TEST_COMMAND = 'sound_prompt'
 
 class TestACStatus:
     def test_supported_func(self):
@@ -44,20 +37,29 @@ class TestACStatus:
             'fast_op': 'disabled',
             'energy_save': 'disabled',
             'sound_prompt': 'enabled',
-            'outdoor_temp': 24
+            'outdoor_temp': 24,
+            'power_kwh': 0.0
         }
 
         for key, value in ac_status.items():
             assert key in mock_status
             assert mock_status[key] == value
 
-    @pytest.mark.skip("Skip online test.")
-    def test_ac_online(self):
-        api = JciHitachiAPI(
-            TEST_EMAIL,
-            TEST_PASSWORD)
-        api.login()
+    def test_command(self):
+        commander = JciHitachiCommandAC('10416149025290813292')
+        b64command = commander.get_command(TEST_COMMAND, 0)
         
+        mock_command = bytearray.fromhex(
+                        "d0d100003c6a9dffff03e0d4ffffffff \
+                        00000100000000000000002000010000 \
+                        908D9859F3FD7f6c02000d278050f0d4 \
+                        469dafd3605a6ebbdb130d278052f0d4 \
+                        469dafd3605a6ebbdb13060006019E00 \
+                        0099")
+        assert b64command == mock_command
+
+    @pytest.mark.skip("Skip online test.")
+    def test_ac_online(self, api):
         # Change sound prompt
         current_state = api.get_status()[TEST_DEVICE]._status[JciHitachiAC.idx[TEST_COMMAND]]
         if current_state != 1:
