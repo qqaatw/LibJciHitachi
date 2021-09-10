@@ -37,7 +37,8 @@ class TestACStatus:
             'fast_op': 'disabled',
             'energy_save': 'disabled',
             'sound_prompt': 'enabled',
-            'outdoor_temp': 24
+            'outdoor_temp': 24,
+            'power_kwh': 0.0
         }
 
         for key, value in ac_status.items():
@@ -57,7 +58,7 @@ class TestACStatus:
                         0099")
         assert b64command == mock_command
 
-    pytest.mark.skip("Skip online test.")
+    @pytest.mark.skip("Skip online test.")
     def test_ac_online(self, api):
         # Change sound prompt
         current_state = api.get_status()[TEST_DEVICE]._status[JciHitachiAC.idx[TEST_COMMAND]]

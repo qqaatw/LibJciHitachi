@@ -288,7 +288,8 @@ class JciHitachiAC(JciHitachiStatus):
         'fast_op': 26,
         'energy_save': 27,
         'sound_prompt': 30,
-        'outdoor_temp': 33
+        'outdoor_temp': 33,
+        'power_kwh': 40,
     }
 
     def __init__(self, status):
@@ -585,7 +586,21 @@ class JciHitachiAC(JciHitachiStatus):
 
         v = self._status.get(self.idx['outdoor_temp'], -1)
         return v
+    
+    @property
+    def power_kwh(self):
+        """Accumulated KH/H in a day.
 
+        Returns
+        -------
+        flaot
+            KH/H.
+        """
+
+        v = self._status.get(self.idx['power_kwh'], -1)
+        if v == -1:
+            return v
+        return v / 10.0
 
 class JciHitachiDH(JciHitachiStatus):
     """Data class representing dehumidifier status. Not implemented.
