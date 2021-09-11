@@ -25,6 +25,7 @@
   - Mold prevention 機體防霉
   - Energy saving 節電
   - Fast operation 快速運轉
+  - Power consumption 用電統計
 - ~~Hitachi Dehumidifier 日立除濕機~~ (Under development)
 - ~~Hitachi HeatExchanger 日立全熱交換機~~ (Under development)
 
