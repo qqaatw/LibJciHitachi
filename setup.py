@@ -1,5 +1,7 @@
 import setuptools
 
+from JciHitachi import __author__, __version__
+
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
@@ -7,13 +9,13 @@ install_requires = [
     "requests>=2.25",
 ]
 tests_require = [
-    "pytest>=6.2"
+    "pytest>=6.2",
 ]
 
 setuptools.setup(
     name="LibJciHitachi",
-    version="0.1.0",
-    author="Allan Lin",
+    version=__version__,
+    author=__author__,
     author_email="qqaatw@gmail.com",
     description="A library for controlling Jci Hitachi devices.",
     long_description=long_description,
@@ -21,6 +23,7 @@ setuptools.setup(
     url="https://github.com/qqaatw/LibJciHitachi",
     project_urls={
         "Issue Tracker": "https://github.com/qqaatw/LibJciHitachi/issues",
+        "Documentation": "https://libjcihitachi.readthedocs.io/en/latest/",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -30,5 +33,5 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['JciHitachi']),
     python_requires=">=3.7",
     install_requires=install_requires,
-    tests_require=tests_require
+    tests_require=tests_require,
 )
