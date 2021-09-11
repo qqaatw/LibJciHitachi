@@ -589,12 +589,12 @@ class JciHitachiAC(JciHitachiStatus):
     
     @property
     def power_kwh(self):
-        """Accumulated KH/H in a day.
+        """Accumulated Kwh in a day.
 
         Returns
         -------
-        flaot
-            KH/H.
+        float
+            Kwh.
         """
 
         v = self._status.get(self.idx['power_kwh'], -1)
