@@ -209,7 +209,7 @@ class JciHitachiStatusInterpreter:
 
     def _decode_status_number(self):
         if 6 < self.base64_bytes[0] and (self.base64_bytes[1], self.base64_bytes[2]) == (0, 8):
-            return int((self.base64_bytes[0]-4)/3)
+            return int((self.base64_bytes[0] - 4) / 3)
         else:
             return 0
 
@@ -242,7 +242,7 @@ class JciHitachiStatusInterpreter:
         for i in range(self.status_number):
             ret = self._decode_single_status(self.status_number, i)
             idx = util.cast_bytes(ret >> 8, 1)
-            table[idx] = ret >> 0x18 + (ret >> 0x10 * 0x100) 
+            table[idx] = ret >> 0x18 + (ret >> 0x10 * 0x100)
         return table
 
 
@@ -297,7 +297,7 @@ class JciHitachiAC(JciHitachiStatus):
         
     @property
     def power(self):
-        """Power.
+        """Power. Controlable.
 
         Returns
         -------
@@ -317,7 +317,7 @@ class JciHitachiAC(JciHitachiStatus):
 
     @property
     def mode(self):
-        """Mode.
+        """Mode. Controlable.
 
         Returns
         -------
@@ -343,7 +343,7 @@ class JciHitachiAC(JciHitachiStatus):
 
     @property
     def air_speed(self):
-        """Air speed.
+        """Air speed. Controlable.
 
         Returns
         -------
@@ -369,7 +369,7 @@ class JciHitachiAC(JciHitachiStatus):
 
     @property
     def target_temp(self):
-        """Target temperature.
+        """Target temperature. Controlable.
 
         Returns
         -------
@@ -419,7 +419,7 @@ class JciHitachiAC(JciHitachiStatus):
 
     @property
     def sleep_timer(self):
-        """Sleep timer.
+        """Sleep timer. Controlable.
         
         Returns
         -------
@@ -432,7 +432,7 @@ class JciHitachiAC(JciHitachiStatus):
     
     @property
     def vertical_wind_swingable(self):
-        """Vertical wind swingable.
+        """Vertical wind swingable. Controlable.
 
         Returns
         -------
@@ -452,7 +452,7 @@ class JciHitachiAC(JciHitachiStatus):
 
     @property
     def vertical_wind_direction(self):
-        """Vertical wind direction.
+        """Vertical wind direction. Controlable.
 
         Returns
         -------
@@ -465,7 +465,7 @@ class JciHitachiAC(JciHitachiStatus):
 
     @property
     def horizontal_wind_direction(self):
-        """Horizontal wind direction.
+        """Horizontal wind direction. Controlable.
 
         Returns
         -------
@@ -496,7 +496,7 @@ class JciHitachiAC(JciHitachiStatus):
 
     @property
     def mold_prev(self):
-        """Mold prevention.
+        """Mold prevention. Controlable.
 
         Returns
         -------
@@ -516,7 +516,7 @@ class JciHitachiAC(JciHitachiStatus):
     
     @property
     def fast_op(self):
-        """Fast operation.
+        """Fast operation. Controlable.
 
         Returns
         -------
@@ -536,7 +536,7 @@ class JciHitachiAC(JciHitachiStatus):
     
     @property
     def energy_save(self):
-        """Energy saving.
+        """Energy saving. Controlable.
 
         Returns
         -------
@@ -556,7 +556,7 @@ class JciHitachiAC(JciHitachiStatus):
 
     @property
     def sound_prompt(self):
-        """Sound prompt.
+        """Sound prompt. Controlable.
 
         Returns
         -------
@@ -602,8 +602,9 @@ class JciHitachiAC(JciHitachiStatus):
             return v
         return v / 10.0
 
+
 class JciHitachiDH(JciHitachiStatus):
-    """Data class representing dehumidifier status. Not implemented.
+    """Data class representing dehumidifier status.
 
     Parameters
     ----------
@@ -618,11 +619,17 @@ class JciHitachiDH(JciHitachiStatus):
         'indoor_humidity': 7,
         'wind_swingable': 8,
         'water_full_warning': 10,
+        'clean_filter_notify': 11,
+        'air_purify_level': 13,
         'air_speed': 14,
+        'error_code': 18,
+        'power_kwh': 29,
         'air_quality_value': 35,
         'air_quality_level': 36,
         'pm25_value': 37,
-        'odor_level': 40
+        'display_brightness': 39,
+        'odor_level': 40,
+        'air_cleaning_filter': 41
     }
 
     def __init__(self, status):
@@ -630,7 +637,7 @@ class JciHitachiDH(JciHitachiStatus):
     
     @property
     def power(self):
-        """Power.
+        """Power. Controlable.
 
         Returns
         -------
@@ -650,7 +657,7 @@ class JciHitachiDH(JciHitachiStatus):
     
     @property
     def mode(self):
-        """Mode.
+        """Mode. Controlable.
 
         Returns
         -------
@@ -685,7 +692,7 @@ class JciHitachiDH(JciHitachiStatus):
 
     @property
     def target_humidity(self):
-        """Target humidity.
+        """Target humidity. Controlable.
 
         Returns
         -------
@@ -708,10 +715,34 @@ class JciHitachiDH(JciHitachiStatus):
 
         v = self._status.get(self.idx['indoor_humidity'], -1)
         return v
-        
+    
+    @property
+    def max_humidity(self):
+        """Maximum target humidity.
+
+        Returns
+        -------
+        int
+            Relative humidity.
+        """
+
+        return 70
+
+    @property
+    def min_humidity(self):
+        """Minimum target humidity.
+
+        Returns
+        -------
+        int
+            Relative humidity.
+        """
+
+        return 40
+
     @property
     def wind_swingable(self):
-        """Wind swingable.
+        """Wind swingable. Controlable.
 
         Returns
         -------
@@ -719,7 +750,7 @@ class JciHitachiDH(JciHitachiStatus):
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['power'], -1)
+        v = self._status.get(self.idx['wind_swingable'], -1)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -748,10 +779,30 @@ class JciHitachiDH(JciHitachiStatus):
             return "on"
         else:
             return "unknown"
+    
+    @property
+    def clean_filter_notify(self):
+        """Clean filter notify control.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "disabled", "enabled", "unknown").
+        """
+
+        v = self._status.get(self.idx['clean_filter_notify'], -1)
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "disabled"
+        elif v == 1:
+            return "enabled"
+        else:
+            return "unknown"
 
     @property
-    def air_speed(self):
-        """Air speed. Not implemented.
+    def air_purify_level(self):
+        """Air purify level. Not implemented.
 
         Returns
         -------
@@ -759,6 +810,60 @@ class JciHitachiDH(JciHitachiStatus):
             Not implemented.
         """
         pass
+
+    @property
+    def air_speed(self):
+        """Air speed.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "auto", "silent", "low", "moderate", "high", "unknown").
+        """
+
+        v = self._status.get(self.idx['air_speed'], -1)
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "auto"
+        elif v == 1:
+            return "silent"
+        elif v == 2:
+            return "low"
+        elif v == 3:
+            return "moderate"
+        elif v == 4:
+            return "high"
+        else:
+            return "unknown"
+
+    @property
+    def error_code(self):
+        """Error code.
+
+        Returns
+        -------
+        int
+            Error code.
+        """
+
+        v = self._status.get(self.idx['error_code'], -1)
+        return v
+
+    @property
+    def power_kwh(self):
+        """Accumulated Kwh in a day.
+
+        Returns
+        -------
+        float
+            Kwh.
+        """
+
+        v = self._status.get(self.idx['power_kwh'], -1)
+        if v == -1:
+            return v
+        return v / 10.0
 
     @property
     def air_quality_value(self):
@@ -784,25 +889,80 @@ class JciHitachiDH(JciHitachiStatus):
     
     @property
     def pm25_value(self):
-        """PM2.5 value. Not implemented.
+        """PM2.5 value.
 
         Returns
         -------
         int
-            Not implemented.
+            PM2.5 value.
         """
-        pass
+
+        v = self._status.get(self.idx['pm25_value'], -1)
+        return v
     
     @property
-    def odor_level(self):
-        """Odor level. Not implemented.
+    def display_brightness(self):
+        """Display brightness.
 
         Returns
         -------
         str
-            Not implemented.
+            One of ("unsupported", "bright", "dark", "off", "all_off" "unknown").
         """
-        pass
+        v = self._status.get(self.idx['display_brightness'], -1)
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "bright"
+        elif v == 1:
+            return "dark"
+        elif v == 2:
+            return "off"
+        elif v == 3:
+            return "all_off"
+        else:
+            return "unknown"
+
+    @property
+    def odor_level(self):
+        """Odor level.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "low", "middle", "high", "unknown").
+        """
+        v = self._status.get(self.idx['odor_level'], -1)
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "low"
+        elif v == 1:
+            return "middle"
+        elif v == 2:
+            return "high"
+        else:
+            return "unknown"
+    
+    @property
+    def air_cleaning_filter(self):
+        """Air cleaning filter setting.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "disabled", "enabled", "unknown").
+        """
+
+        v = self._status.get(self.idx['air_cleaning_filter'], -1)
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "disabled"
+        elif v == 1:
+            return "enabled"
+        else:
+            return "unknown"
 
 
 class JciHitachiHE(JciHitachiStatus):

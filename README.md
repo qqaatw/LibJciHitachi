@@ -26,7 +26,21 @@
   - Energy saving 節電
   - Fast operation 快速運轉
   - Power consumption 用電統計
-- ~~Hitachi Dehumidifier 日立除濕機~~ (Under development)
+- Hitachi Dehumidifier 日立除濕機
+  - Power 電源
+  - Mode 運轉模式
+  - Air speed 風速
+  - Wind swingable 導風板擺動
+  - Target humidity 目標濕度
+  - Indoor humidity 室內溼度
+  - Water full warning 滿水警示
+  - Clean filter notify 濾網清潔通知
+  - Air purify level 空氣清淨等級 (not sure)
+  - Error code 錯誤代碼
+  - PM2.5 value PM2.5數值
+  - Didplay brightness 顯示器亮度
+  - Odor level 異味等級
+  - Air cleaning filter setting 空氣清淨濾網設定
 - ~~Hitachi HeatExchanger 日立全熱交換機~~ (Under development)
 
 ## Installation
