@@ -95,7 +95,7 @@ class JciHitachiCommandAC(JciHitachiCommand):
 
 
 class JciHitachiCommandDH(JciHitachiCommand):
-    """Sending job command to Dehumidifier.
+    """Sending job command to dehumidifier.
 
     Parameters
     ----------
@@ -862,7 +862,7 @@ class JciHitachiDH(JciHitachiStatus):
 
     @property
     def sound_control(self):
-        """Sound control.
+        """Sound control. Controlable.
 
         Returns
         -------
@@ -967,7 +967,7 @@ class JciHitachiDH(JciHitachiStatus):
     
     @property
     def display_brightness(self):
-        """Display brightness.
+        """Display brightness. Controlable.
 
         Returns
         -------

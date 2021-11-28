@@ -3,9 +3,9 @@
 [![Python package](https://github.com/qqaatw/LibJciHitachi/workflows/Python%20package/badge.svg)](https://github.com/qqaatw/LibJciHitachi/actions)
 [![docs](https://readthedocs.org/projects/libjcihitachi/badge/?version=latest)](https://libjcihitachi.readthedocs.io/en/latest/?badge=latest)
 
-**Help wanted: I've been developing heat exchanger supports, but I've no such device to test their functionality. If you want to help with the development, please contact me via email: `qqaatw[a-t]gmail.com`. Thank you.**
+**Help wanted: I've been developing the heat exchanger support, but I've no such device to test their functionality. If you want to help with the development, please contact me via email: `qqaatw[a-t]gmail.com`. Thank you.**
 
-**Help wanted: 我目前正在開發支援除濕機以及全熱交換機，但是沒有裝置可以測試。若您願意協助此功能的開發，請透過email: `qqaatw[a-t]gmail.com` 聯繫我。Thank you.**
+**Help wanted: 我目前正在開發支援全熱交換機，但是沒有裝置可以測試。若您願意協助此功能的開發，請透過email: `qqaatw[a-t]gmail.com` 聯繫我。Thank you.**
 
 ## Supported devices
 
@@ -40,7 +40,7 @@
   - Error code 錯誤代碼
   - PM2.5 value PM2.5數值
   - Sound control 聲音控制
-  - Didplay brightness 顯示器亮度
+  - Display brightness 顯示器亮度
   - Odor level 異味等級
   - Air cleaning filter setting 空氣清淨濾網設定
   - Power consumption 用電統計
