@@ -622,6 +622,8 @@ class JciHitachiDH(JciHitachiStatus):
         'clean_filter_notify': 11,
         'air_purify_level': 13,
         'air_speed': 14,
+        'side_vent': 15,
+        'sound_control': 16,
         'error_code': 18,
         'power_kwh': 29,
         'air_quality_value': 35,
@@ -834,6 +836,48 @@ class JciHitachiDH(JciHitachiStatus):
             return "moderate"
         elif v == 4:
             return "high"
+        else:
+            return "unknown"
+
+    @property
+    def side_vent(self):
+        """Side vent.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "off", "on", "unknown").
+        """
+
+        v = self._status.get(self.idx['side_vent'], -1)
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "off"
+        elif v == 1:
+            return "on"
+        else:
+            return "unknown"
+
+    @property
+    def sound_control(self):
+        """Sound control.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "silent", "button", "button+waterfull", "unknown").
+        """
+
+        v = self._status.get(self.idx['sound_control'], -1)
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "silent"
+        elif v == 1:
+            return "button"
+        elif v == 2:
+            return "button+waterfull"
         else:
             return "unknown"
 
