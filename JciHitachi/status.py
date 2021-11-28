@@ -812,7 +812,7 @@ class JciHitachiDH(JciHitachiStatus):
         str
             Not implemented.
         """
-        pass
+        return "unsupported"
 
     @property
     def air_speed(self):
@@ -939,7 +939,7 @@ class JciHitachiDH(JciHitachiStatus):
         int
             Not implemented.
         """
-        pass
+        return -1
 
     @property
     def air_quality_level(self):
@@ -950,7 +950,7 @@ class JciHitachiDH(JciHitachiStatus):
         str
             Not implemented.
         """
-        pass
+        return "unsupported"
     
     @property
     def pm25_value(self):
