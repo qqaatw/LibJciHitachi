@@ -777,9 +777,9 @@ class JciHitachiDH(JciHitachiStatus):
         if v == -1:
             return "unsupported"
         elif v == 0:
-            return "off"
+            return "off"  # not activated
         elif v == 1:
-            return "on"
+            return "on"  # activated
         else:
             return "unknown"
     
