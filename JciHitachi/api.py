@@ -326,6 +326,11 @@ class JciHitachiAPI:
             Refreshing a device's status by its name.
             If None is given, all devices' status will be refreshed,
             by default None.
+        
+        Raise
+        -------
+        RuntimeError
+            If an error occurs, RuntimeError will be raised.
         """
 
         conn = connection.GetDataContainerByID(
