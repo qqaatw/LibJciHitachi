@@ -625,6 +625,7 @@ class JciHitachiDH(JciHitachiStatus):
         'side_vent': 15,
         'sound_control': 16,
         'error_code': 18,
+        'mold_prev': 19,
         'power_kwh': 29,
         'air_quality_value': 35,
         'air_quality_level': 36,
@@ -784,7 +785,7 @@ class JciHitachiDH(JciHitachiStatus):
     
     @property
     def clean_filter_notify(self):
-        """Clean filter notify control.
+        """Clean filter notify control. Controlable.
 
         Returns
         -------
@@ -815,7 +816,7 @@ class JciHitachiDH(JciHitachiStatus):
 
     @property
     def air_speed(self):
-        """Air speed.
+        """Air speed. Controlable.
 
         Returns
         -------
@@ -893,6 +894,26 @@ class JciHitachiDH(JciHitachiStatus):
 
         v = self._status.get(self.idx['error_code'], -1)
         return v
+
+    @property
+    def mold_prev(self):
+        """Mold prevention. Controlable.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "off", "on", "unknown").
+        """
+
+        v = self._status.get(self.idx['mold_prev'], -1)
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "off"
+        elif v == 1:
+            return "on"
+        else:
+            return "unknown"
 
     @property
     def power_kwh(self):
