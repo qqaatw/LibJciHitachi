@@ -48,7 +48,13 @@
 
 ## Installation
 
+### Python Library
+
     pip install LibJciHitachi
+
+### Home Assistant Integration
+
+See [JciHitachiHA](https://github.com/qqaatw/JciHitachiHA)
 
 ## Documentation
 
@@ -56,9 +62,11 @@ See [docs](https://libjcihitachi.readthedocs.io/en/latest/).
 
 ## Todo
 
-*Priority*
-
 1. Heat exchanger support.
+
+## Acknowledgement
+
+- @narensankar0529 - Assisting with the dehumidifier support.
 
 ## License
 
