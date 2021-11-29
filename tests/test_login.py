@@ -3,13 +3,13 @@ import pytest
 from JciHitachi.api import JciHitachiAPI
 from JciHitachi.connection import JciHitachiConnection
 
-from . import api, TEST_EMAIL, TEST_PASSWORD, TEST_DEVICE
+from . import api, TEST_EMAIL, TEST_PASSWORD, TEST_DEVICE_AC
 
 
 class TestLogin:
     def test_api(self, api):
         assert len(api._session_token) == 31
-        assert api._peripherals[TEST_DEVICE].name == TEST_DEVICE
+        assert api._peripherals[TEST_DEVICE_AC].name == TEST_DEVICE_AC
 
     def test_version(self):
         connection = JciHitachiConnection(TEST_EMAIL, TEST_PASSWORD)

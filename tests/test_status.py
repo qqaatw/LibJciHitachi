@@ -58,7 +58,7 @@ class TestACStatus:
                         0099")
         assert b64command == mock_command
 
-    @pytest.mark.skip("Skip online test.")
+    @pytest.mark.slow("online test is a slow test.")
     def test_online(self, api):
         # Change sound prompt
         current_state = api.get_status()[TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]]
