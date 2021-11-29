@@ -16,7 +16,7 @@ jobs:
       max-parallel: 1
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ['3.7', '3.9']
+        python-version: ['3.7', '3.9', '3.10']
 
     steps:
     - uses: actions/checkout@v2
@@ -32,7 +32,9 @@ jobs:
       env:
         TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
         TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
-        TEST_DEVICE: ${{ secrets.TEST_DEVICE }}
-        MOCK_CODE: ${{ secrets.MOCK_CODE }}
+        TEST_DEVICE_AC: ${{ secrets.TEST_DEVICE_AC }}
+        MOCK_CODE_AC: ${{ secrets.MOCK_CODE_AC }}
+        TEST_DEVICE_DH: ${{ secrets.TEST_DEVICE_DH }}
+        MOCK_CODE_DH: ${{ secrets.MOCK_CODE_DH }}
       run: |
         python -m pytest ./tests

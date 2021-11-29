@@ -181,6 +181,19 @@ class UpdateUserCredential(JciHitachiConnection):
         super().__init__(email, password, **kwargs)
 
     def get_data(self, new_password):
+        """Get data from the endpoint.
+
+        Parameters
+        ----------
+        new_password : str
+            New password.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
+
         json_data = {
             "ServerLogin": {
                 "OldEmail": self._email,
@@ -207,6 +220,14 @@ class GetServerLastUpdateInfo(JciHitachiConnection):
         super().__init__(email, password, **kwargs)
 
     def get_data(self):
+        """Get data from the endpoint.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
+
         return self._send("GetServerLastUpdateInfo.php")
 
 
@@ -224,7 +245,15 @@ class GetPeripheralsByUser(JciHitachiConnection):
     def __init__(self, email, password, **kwargs):
         super().__init__(email, password, **kwargs)
     
-    def get_data(self):  
+    def get_data(self):
+        """Get data from the endpoint.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
+
         return self._send("GetPeripheralsByUser.php")
 
 
@@ -243,6 +272,19 @@ class GetDataContainerByID(JciHitachiConnection):
         super().__init__(email, password, **kwargs)
     
     def get_data(self, picked_peripheral_json):
+        """Get data from the endpoint.
+
+        Parameters
+        ----------
+        picked_peripheral_json : dict
+            Picked peripheral_json.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
+
         ContMID = picked_peripheral_json["Peripherals"][0]["DataContainer"][0]["ContMID"]
         ContDID_1 = picked_peripheral_json["Peripherals"][0]["DataContainer"][0]["ContDetails"][0]["ContDID"]
         ContDID_2 = picked_peripheral_json["Peripherals"][0]["DataContainer"][0]["ContDetails"][1]["ContDID"]
@@ -278,6 +320,19 @@ class GetPeripheralByGMACAddress(JciHitachiConnection):
         super().__init__(email, password, **kwargs)
     
     def get_data(self, peripheral_json):
+        """Get data from the endpoint.
+
+        Parameters
+        ----------
+        peripheral_json : dict
+            peripheral_json.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
+
         GMACAddress = peripheral_json["results"][0]["GMACAddress"]
         json_data = {
             "Data" : [
@@ -303,6 +358,25 @@ class CreateJob(JciHitachiConnection):
         super().__init__(email, password, **kwargs)
     
     def get_data(self, gateway_id, device_id, task_id, job_info):
+        """Get data from the endpoint.
+
+        Parameters
+        ----------
+        gateway_id : int
+            Peripheral.gateway_id.
+        device_id : int
+            Random device ID.
+        task_id : int
+            Task ID (serial number).
+        job_info : str
+            Base64 job info.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
+
         json_data = {
             "Data": [
                 {
@@ -332,6 +406,19 @@ class GetJobDoneReport(JciHitachiConnection):
         super().__init__(email, password, **kwargs)
 
     def get_data(self, device_id):
+        """Get data from the endpoint.
+
+        Parameters
+        ----------
+        device_id : int
+            Random device ID.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
+        
         json_data = {
             "DeviceID": device_id
         }

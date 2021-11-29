@@ -3,7 +3,15 @@ import time
 from typing import Dict, List, Optional, Union
 
 from . import connection
-from .status import JciHitachiCommand, JciHitachiCommandAC, JciHitachiStatusInterpreter, JciHitachiStatus, JciHitachiAC
+from .status import (
+    JciHitachiCommand,
+    JciHitachiCommandAC,
+    JciHitachiCommandDH,
+    JciHitachiStatusInterpreter,
+    JciHitachiStatus,
+    JciHitachiAC,
+    JciHitachiDH,
+)
 
 
 class Peripheral:
@@ -16,7 +24,8 @@ class Peripheral:
     """
 
     supported_device_type = {
-        144: "AC"
+        144: "AC",
+        146: "DH", # experimental
     }
 
     def __init__(self, peripheral_json : dict) -> None:
@@ -98,6 +107,8 @@ class Peripheral:
 
         if self.type == "AC":
             return JciHitachiCommandAC(self.gateway_mac_address)
+        elif self.type == "DH":
+            return JciHitachiCommandDH(self.gateway_mac_address)
         else:
             return None
 
@@ -157,7 +168,7 @@ class Peripheral:
         -------
         str
             Device type. 
-            If not supported, 'unknown' will be returned. (Currently available: `AC`)
+            If not supported, 'unknown' will be returned. (currently supports: `AC`, experimental supports: `DH`)
         """
 
         return self.supported_device_type.get(
@@ -302,6 +313,8 @@ class JciHitachiAPI:
 
             if peripheral.type == "AC":
                 statuses[name] = JciHitachiAC(dev_status)
+            elif peripheral.type == "DH":
+                statuses[name] = JciHitachiDH(dev_status)
         return statuses
 
     def refresh_status(self, device_name : Optional[str] = None) -> None:
@@ -313,6 +326,11 @@ class JciHitachiAPI:
             Refreshing a device's status by its name.
             If None is given, all devices' status will be refreshed,
             by default None.
+        
+        Raise
+        -------
+        RuntimeError
+            If an error occurs, RuntimeError will be raised.
         """
 
         conn = connection.GetDataContainerByID(
