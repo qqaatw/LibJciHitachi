@@ -2,6 +2,8 @@
 
 [![Python package](https://github.com/qqaatw/LibJciHitachi/workflows/Python%20package/badge.svg)](https://github.com/qqaatw/LibJciHitachi/actions)
 [![docs](https://readthedocs.org/projects/libjcihitachi/badge/?version=latest)](https://libjcihitachi.readthedocs.io/en/latest/?badge=latest)
+[![Python Versions](https://img.shields.io/pypi/pyversions/LibJciHitachi.svg)](https://pypi.python.org/pypi/LibJciHitachi/)
+[![Downloads](https://pepy.tech/badge/libjcihitachi)](https://pepy.tech/project/libjcihitachi)
 
 **Help wanted: I've been developing the heat exchanger support, but I've no such device to test its functionality. If you want to help with the development, please contact me via email: `qqaatw[a-t]gmail.com`. Thank you.**
 
