@@ -355,7 +355,7 @@ class JciHitachiAPI:
             if (device_name and name != device_name) or \
                     peripheral.type == "unknown":
                 continue
-            dev_status = JciHitachiStatusInterpreter(peripheral.code).decode_status()
+            dev_status = JciHitachiStatusInterpreter(peripheral.status_code).decode_status()
 
             if peripheral.type == "AC":
                 statuses[name] = JciHitachiAC(dev_status)
