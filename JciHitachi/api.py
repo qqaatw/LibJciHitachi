@@ -8,6 +8,11 @@ from .status import (
     JciHitachiCommandAC,
     JciHitachiCommandDH,
     JciHitachiStatusInterpreter,
+)
+from .model import (
+    JciHitachiStatusSupport,
+    JciHitachiACSupport,
+    JciHitachiDHSupport,
     JciHitachiStatus,
     JciHitachiAC,
     JciHitachiDH,
@@ -25,17 +30,21 @@ class Peripheral:
 
     supported_device_type = {
         144: "AC",
-        146: "DH", # experimental
+        146: "DH",
+        #148: "HE",
     }
 
     def __init__(self, peripheral_json : dict) -> None:
         self._json = peripheral_json
-        self._code = ""
+        self._status_code = ""
+        self._support_code = ""
+        self._supported_status = None
 
     def __repr__(self) -> str:
         ret = f"name: {self.name}\n" + \
               f"type: {self.type}\n" + \
-              f"code: {self.code}\n" + \
+              f"status_code: {self.status_code}\n" + \
+              f"support_code: {self.support_code}\n" + \
               f"gateway_id: {self.gateway_id}\n" + \
               f"gateway_mac_address: {self.gateway_mac_address}"
         return ret
@@ -79,21 +88,6 @@ class Peripheral:
 
         return peripherals
 
-    @property
-    def code(self) -> str:
-        """Peripheral's status code (LValue) reported by the API.
-
-        Returns
-        -------
-        str
-            Status code.
-        """
-
-        return self._code
-
-    @code.setter
-    def code(self, x : str) -> None:
-        self._code = x
 
     @property
     def commander(self) -> Union[JciHitachiCommand, None]:
@@ -159,6 +153,58 @@ class Peripheral:
         """
 
         return self._json
+    
+    @property
+    def status_code(self) -> str:
+        """Peripheral's status code (LValue) reported by the API.
+
+        Returns
+        -------
+        str
+            Status code.
+        """
+
+        return self._status_code
+
+    @status_code.setter
+    def status_code(self, x : str) -> None:
+        self._status_code = x
+    
+    @property
+    def support_code(self) -> str:
+        """Peripheral's support code (LValue) reported by the API.
+
+        Returns
+        -------
+        str
+            Status code.
+        """
+
+        return self._support_code
+
+    @support_code.setter
+    def support_code(self, x : str) -> None:
+        self._support_code = x
+        if self.type == "AC" :
+            self._supported_status = JciHitachiACSupport(
+                JciHitachiStatusInterpreter(x).decode_support()
+            )
+        elif self.type == "DH":
+            self._supported_status = JciHitachiDHSupport(
+                JciHitachiStatusInterpreter(x).decode_support()
+            )
+
+    @property
+    def supported_status(self) -> JciHitachiStatusSupport:
+        """Peripheral's supported status converted from support_code.
+
+        Returns
+        -------
+        JciHitachiStatusSupport
+            Supported status.
+        """
+
+        return self._supported_status
 
     @property
     def type(self) -> str:
@@ -168,7 +214,7 @@ class Peripheral:
         -------
         str
             Device type. 
-            If not supported, 'unknown' will be returned. (currently supports: `AC`, experimental supports: `DH`)
+            If not supported, 'unknown' will be returned. (currently supports: `AC`, `DH`)
         """
 
         return self.supported_device_type.get(
@@ -316,6 +362,32 @@ class JciHitachiAPI:
             elif peripheral.type == "DH":
                 statuses[name] = JciHitachiDH(dev_status)
         return statuses
+    
+    def get_supported_status(self, device_name: Optional[str] = None) -> Dict[str, JciHitachiStatus]:
+        """Get supported device status after refreshing status.
+
+        Parameters
+        ----------
+        device_name : str, optional
+            Getting a device's status by its name.
+            If None is given, all devices' status will be returned,
+            by default None.
+
+        Returns
+        -------
+        dict of JciHitachiStatus.
+            Return a dict of JciHitachiStatus instances according to device type.
+            For example, if the device type is `AC`, then return JciHitachiACSupport instance.
+        """
+
+        supported_statuses = {}
+        for name, peripheral in self._peripherals.items():
+            if (device_name and name != device_name) or \
+                    peripheral.type == "unknown":
+                continue
+            supported_statuses[name] = peripheral.supported_status
+        
+        return supported_statuses
 
     def refresh_status(self, device_name : Optional[str] = None) -> None:
         """Refresh device status from the API.
@@ -349,7 +421,8 @@ class JciHitachiAPI:
             self._session_token = conn.session_token
 
             if conn_status == 'OK':
-                self._peripherals[name].code = conn_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
+                self._peripherals[name].support_code = conn_json["results"]["DataContainer"][0]["ContDetails"][0]["LValue"]
+                self._peripherals[name].status_code = conn_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
             else:
                 raise RuntimeError(
                     f"An error occurred when refreshing status: {conn_status}")
