@@ -34,7 +34,9 @@ jobs:
         TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
         TEST_DEVICE_AC: ${{ secrets.TEST_DEVICE_AC }}
         MOCK_CODE_AC: ${{ secrets.MOCK_CODE_AC }}
+        MORK_SUPPORT_CODE_AC: ${{ secrets.MORK_SUPPORT_CODE_AC }}
         TEST_DEVICE_DH: ${{ secrets.TEST_DEVICE_DH }}
         MOCK_CODE_DH: ${{ secrets.MOCK_CODE_DH }}
+        MORK_SUPPORT_CODE_DH: ${{ secrets.MORK_SUPPORT_CODE_DH }}
       run: |
         python -m pytest ./tests

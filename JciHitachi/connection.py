@@ -10,6 +10,7 @@ API_KEY = "23f26d38921dda92c1c2939e733bca5e"
 APP_PLATFORM = 2  # 1=IOS 2=Android
 APP_VERSION = "10.20.900"
 
+
 class JciHitachiConnection:
     """Connecting to Jci-Hitachi API to get data or send commands.
 
