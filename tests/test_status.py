@@ -4,7 +4,7 @@ from JciHitachi.status import (
     JciHitachiStatusInterpreter,
     JciHitachiCommandAC,
     JciHitachiCommandDH,
-    JciHitachiCommandHE
+    JciHitachiCommandHE,
 )
 from JciHitachi.model import (
     JciHitachiAC,
@@ -30,6 +30,14 @@ from . import (
 
 
 class TestACStatus:
+    def test_model_brand(self):
+        dev_support = JciHitachiStatusInterpreter(
+            MOCK_SUPPORT_CODE_AC).decode_support()
+        ac_support = JciHitachiACSupport(dev_support)
+
+        assert ac_support.brand == "HITACHI"
+        assert ac_support.model == "RAD-90NF"
+    
     def test_supported_status(self):
         dev_status = JciHitachiStatusInterpreter(MOCK_CODE_AC).decode_status()
         ac_status = JciHitachiAC(dev_status).status
@@ -136,6 +144,14 @@ class TestACStatus:
 
 
 class TestDHStatus:
+    def test_model_brand(self):
+        dev_support = JciHitachiStatusInterpreter(
+            MOCK_SUPPORT_CODE_DH).decode_support()
+        dh_support = JciHitachiDHSupport(dev_support)
+
+        assert dh_support.brand == "HITACHI"
+        assert dh_support.model == "RD-360HH"
+
     def test_supported_status(self):
         dev_status = JciHitachiStatusInterpreter(MOCK_CODE_DH).decode_status()
         dh_status = JciHitachiDH(dev_status).status
@@ -217,7 +233,7 @@ class TestDHStatus:
 
 
 class TestCommonStatus:
-    def test_command_nbytes(self):
+    def test_command_num_bytes(self):
         ac_commander = JciHitachiCommandAC(MOCK_GATEWAY_MAC)
         assert len(ac_commander.get_command("power", 0)) == 82
         dh_commander = JciHitachiCommandDH(MOCK_GATEWAY_MAC)

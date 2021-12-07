@@ -42,6 +42,8 @@ class Peripheral:
 
     def __repr__(self) -> str:
         ret = f"name: {self.name}\n" + \
+              f"brand: {self.brand}\n" + \
+              f"model: {self.model}\n" + \
               f"type: {self.type}\n" + \
               f"status_code: {self.status_code}\n" + \
               f"support_code: {self.support_code}\n" + \
@@ -88,6 +90,17 @@ class Peripheral:
 
         return peripherals
 
+    @property
+    def brand(self) -> str:
+        """Device brand.
+
+        Returns
+        -------
+        str
+            Device brand.
+        """
+        
+        return getattr(self.supported_status, "brand")
 
     @property
     def commander(self) -> Union[JciHitachiCommand, None]:
@@ -129,6 +142,18 @@ class Peripheral:
         """
 
         return self._json["GMACAddress"]
+
+    @property
+    def model(self) -> str:
+        """Device model.
+
+        Returns
+        -------
+        str
+            Device model.
+        """
+
+        return getattr(self.supported_status, "model")
 
     @property
     def name(self) -> str:
