@@ -320,6 +320,7 @@ class JciHitachiAPI:
         dict
             A dict of Peripherals.
         """
+
         return self._peripherals
     
     @property
@@ -492,7 +493,7 @@ class JciHitachiAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
-        device_access_time = self._mqtt.mqtt_event["device_access_time"]
+        device_access_time = self._mqtt.mqtt_events.device_access_time
 
         conn = connection.GetDataContainerByID(
             self.email,
@@ -560,8 +561,13 @@ class JciHitachiAPI:
             print_response=self.print_response
         )
 
-        self._mqtt.wait_job.clear()
-        self._mqtt.wait_peripheral.clear()
+        # The mqtt events occurring order:
+        # job (occurs one time) -> 
+        # job_done_report (occurs many times until the job status is successful) ->
+        # peripheral (occurs one time, if this step is timed out, the job command fails)
+        self._mqtt.mqtt_events.job.clear()
+        self._mqtt.mqtt_events.peripheral.clear()
+
         conn_status, conn_json = conn.get_data(
             gateway_id=self._peripherals[device_name].gateway_id,
             device_id=self._device_id,
@@ -569,13 +575,12 @@ class JciHitachiAPI:
             job_info=commander.get_b64command(status_name, status_value)
         )
         self._session_token = conn.session_token
-        if not self._mqtt.wait_job.wait(timeout=10.0):
-            raise Exception("Wait job failed")
+
+        if not self._mqtt.mqtt_events.job.wait(timeout=10.0):
             return False
-        
         for _ in range(self.max_retries):
-            self._mqtt.wait_job_done_report.clear()
-            if not self._mqtt.wait_job_done_report.wait(timeout=10.0):
+            self._mqtt.mqtt_events.job_done_report.clear()
+            if not self._mqtt.mqtt_events.job_done_report.wait(timeout=10.0):
                 continue
             conn_status, conn_json = conn2.get_data(
                 device_id=self._device_id
@@ -583,8 +588,8 @@ class JciHitachiAPI:
             if conn_status == 'OK' and \
                 len(conn_json['results']) != 0 and \
                 conn_json['results'][0]['JobStatus'] == 0:
-                if not self._mqtt.wait_peripheral.wait(timeout=10.0):
-                    raise Exception("Wait peripheral failed")
+                if not self._mqtt.mqtt_events.peripheral.wait(timeout=10.0):
+                    return False
+                time.sleep(0.5) # still needs to wait a moment.
                 return True
-            # FIXME: Resolve delayed status update problem
         return False

@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 import json
 import os
 import ssl
@@ -12,6 +13,13 @@ MQTT_PORT = 8893
 MQTT_VERSION = 4
 MQTT_SSL_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/mqtt-jci-hitachi-smarthome-com-chain.pem")
 
+@dataclass
+class JciHitachiMqttEvents:
+    device_access_time: dict[str, int] = field(default_factory=dict)
+    job: threading.Event = field(default_factory=threading.Event)
+    job_done_report: threading.Event = field(default_factory=threading.Event)
+    peripheral: threading.Event = field(default_factory=threading.Event)
+
 
 class JciHitachiMqttConnection:
     def __init__(self, email, password, user_id, print_response=False):
@@ -21,18 +29,11 @@ class JciHitachiMqttConnection:
         self._print_response = print_response
         
         self._mqttc = mqtt.Client()
-        self.wait_job = threading.Event()
-        self.wait_job_done_report = threading.Event()
-        self.wait_peripheral = threading.Event()
-        self._mqtt_event = {
-            "device_access_time": {},
-            "job": False,
-            "job_done_report": False,
-        }
+        self._mqtt_events = JciHitachiMqttEvents()
 
     @property
-    def mqtt_event(self):
-        return self._mqtt_event
+    def mqtt_events(self):
+        return self._mqtt_events
 
     def _on_connect(self, client, userdata, flags, rc):
         if self._print_response:
@@ -43,6 +44,11 @@ class JciHitachiMqttConnection:
     def _on_disconnect(self, client, userdata, rc):
         if self._print_response:
             print(f"Mqtt disconnected with result code {rc}")
+        
+        if rc == mqtt.MQTT_ERR_SUCCESS:
+            self._mqttc.loop_stop()
+        else:
+            raise RuntimeError("Unexpected disconnection.")
 
     def _on_message(self, client, userdata, msg):
         if self._print_response:
@@ -53,15 +59,15 @@ class JciHitachiMqttConnection:
         if len(splitted_topic) == 6 and splitted_topic[-1] == "status":
             gateway_id = payload["args"]["ObjectID"]
             time = payload["time"]
-            self._mqtt_event["device_access_time"][gateway_id] = time
+            self._mqtt_events.device_access_time[gateway_id] = time
         elif len(splitted_topic) == 4 and splitted_topic[-1] == "resp":
             if payload["args"]["Name"] == "JobDoneReport":
-                self.wait_job_done_report.set()
+                self._mqtt_events.job_done_report.set()
             elif payload["args"]["Name"] == "Peripheral":
-                self.wait_peripheral.set()
+                self._mqtt_events.peripheral.set()
         elif len(splitted_topic) == 4 and splitted_topic[-1] == "job":
             if payload["args"]["Name"] == "Job":
-                self.wait_job.set()
+                self._mqtt_events.job.set()
 
     def configure(self):
         self._mqttc.username_pw_set(f"$MAIL${self._email}", f"{self._email}{convert_hash(f'{self._email}{self._password}')}")
