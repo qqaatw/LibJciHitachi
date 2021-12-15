@@ -388,7 +388,7 @@ class JciHitachiAPI:
                 statuses[name] = JciHitachiDH(dev_status)
         return statuses
     
-    def get_supported_status(self, device_name: Optional[str] = None) -> Dict[str, JciHitachiStatus]:
+    def get_supported_status(self, device_name: Optional[str] = None) -> Dict[str, JciHitachiStatusSupport]:
         """Get supported device status after refreshing status.
 
         Parameters
@@ -400,8 +400,8 @@ class JciHitachiAPI:
 
         Returns
         -------
-        dict of JciHitachiStatus.
-            Return a dict of JciHitachiStatus instances according to device type.
+        dict of JciHitachiStatusSupport.
+            Return a dict of JciHitachiStatusSupport instances according to device type.
             For example, if the device type is `AC`, then return JciHitachiACSupport instance.
         """
 
