@@ -240,3 +240,5 @@ class TestCommonStatus:
         assert len(dh_commander.get_command("power", 0)) == 82
         #he_commander = JciHitachiCommandHE(MOCK_GATEWAY_MAC)
         #assert len(he_commander.get_command("power", 0)) == 82
+
+    # TODO: Add device availablity test

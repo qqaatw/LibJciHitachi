@@ -31,6 +31,9 @@ class JciHitachiMqttConnection:
         self._mqttc = mqtt.Client()
         self._mqtt_events = JciHitachiMqttEvents()
 
+    def __del__(self):
+        self.disconnect()
+
     @property
     def mqtt_events(self):
         return self._mqtt_events

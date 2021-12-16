@@ -308,9 +308,6 @@ class JciHitachiAPI:
         self._user_id = None
         self._task_id = 0
 
-    def __del__(self):
-        self.logout()
-
     @property
     def peripherals(self) -> Dict[str, Peripheral]:
         """Picked peripherals.
@@ -347,6 +344,15 @@ class JciHitachiAPI:
 
         self._task_id += 1
         return self._task_id
+
+    def _sync_peripherals_availablity(self) -> None:
+        device_access_time = self._mqtt.mqtt_events.device_access_time
+        for peripheral in self._peripherals.values():
+            if peripheral.gateway_id in device_access_time and \
+                abs(time.time() - device_access_time[peripheral.gateway_id]) < self.timeout:
+                peripheral.available = True
+            else:
+                peripheral.available = False
 
     def login(self) -> None:
         """Login API.
@@ -493,7 +499,7 @@ class JciHitachiAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
-        device_access_time = self._mqtt.mqtt_events.device_access_time
+        self._sync_peripherals_availablity()
 
         conn = connection.GetDataContainerByID(
             self.email,
@@ -511,13 +517,8 @@ class JciHitachiAPI:
             self._session_token = conn.session_token
 
             if conn_status == 'OK':
-                if self._peripherals[name].gateway_id in device_access_time and \
-                    abs(time.time() - device_access_time[self._peripherals[name].gateway_id]) < self.timeout:
-                    self._peripherals[name].available = True
-                else:
-                    self._peripherals[name].available = False
-                self._peripherals[name].support_code = conn_json["results"]["DataContainer"][0]["ContDetails"][0]["LValue"]
-                self._peripherals[name].status_code = conn_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
+                peripheral.support_code = conn_json["results"]["DataContainer"][0]["ContDetails"][0]["LValue"]
+                peripheral.status_code = conn_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
             else:
                 raise RuntimeError(
                     f"An error occurred when refreshing status: {conn_status}"
@@ -545,6 +546,10 @@ class JciHitachiAPI:
         RuntimeError
             If an error occurs, RuntimeError will be raised.
         """
+
+        self._sync_peripherals_availablity()
+        if not self._peripherals[device_name].available:
+            return False
 
         commander = self._peripherals[device_name].commander
 
