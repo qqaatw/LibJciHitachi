@@ -1246,11 +1246,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):
         Returns
         -------
         (bool, Tuple[int])
-            is_support, (
-                auto, custom, continuous, clothes_dry, air_purify, 
-                mold_prev, air_supply, human_comfort, low_humidity, 
-                eco_comfort, 0...
-            ). 
+            is_support, (auto, custom, continuous, clothes_dry, air_purify, mold_prev, air_supply, human_comfort, low_humidity, eco_comfort, 0...). 
         """
 
         v = self._status.get(self.idx['mode'], self._default)

@@ -1,8 +1,9 @@
-from dataclasses import dataclass, field
 import json
 import os
 import ssl
 import threading
+from dataclasses import dataclass, field
+from typing import Dict
 
 import paho.mqtt.client as mqtt
 
@@ -15,7 +16,7 @@ MQTT_SSL_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/m
 
 @dataclass
 class JciHitachiMqttEvents:
-    device_access_time: dict[str, int] = field(default_factory=dict)
+    device_access_time: Dict[str, int] = field(default_factory=dict)
     job: threading.Event = field(default_factory=threading.Event)
     job_done_report: threading.Event = field(default_factory=threading.Event)
     peripheral: threading.Event = field(default_factory=threading.Event)
