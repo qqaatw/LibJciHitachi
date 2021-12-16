@@ -37,6 +37,7 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=setuptools.find_packages(include=['JciHitachi']),
+        package_data={'JciHitachi': ['cert/*.pem']},
         python_requires=">=3.7",
         install_requires=install_requires,
         tests_require=tests_require,
