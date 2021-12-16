@@ -28,7 +28,7 @@ jobs:
         MOCK_CODE_DH: ${{ secrets.MOCK_CODE_DH }}
         MOCK_SUPPORT_CODE_DH: ${{ secrets.MOCK_SUPPORT_CODE_DH }}
       run: |
-        python -m pytest --no-skip ./tests
+        python -m pytest ./tests
   deploy:
     needs: pytest
     environment: Deploy
@@ -38,7 +38,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.7'
+        python-version: '3.9'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
