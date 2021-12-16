@@ -1,0 +1,90 @@
+from dataclasses import dataclass, field
+import json
+import os
+import ssl
+import threading
+
+import paho.mqtt.client as mqtt
+
+from .utility import convert_hash
+
+MQTT_ENDPOINT = "mqtt.jci-hitachi-smarthome.com"
+MQTT_PORT = 8893
+MQTT_VERSION = 4
+MQTT_SSL_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/mqtt-jci-hitachi-smarthome-com-chain.pem")
+
+@dataclass
+class JciHitachiMqttEvents:
+    device_access_time: dict[str, int] = field(default_factory=dict)
+    job: threading.Event = field(default_factory=threading.Event)
+    job_done_report: threading.Event = field(default_factory=threading.Event)
+    peripheral: threading.Event = field(default_factory=threading.Event)
+
+
+class JciHitachiMqttConnection:
+    def __init__(self, email, password, user_id, print_response=False):
+        self._email = email
+        self._password = password
+        self._user_id = user_id
+        self._print_response = print_response
+        
+        self._mqttc = mqtt.Client()
+        self._mqtt_events = JciHitachiMqttEvents()
+
+    def __del__(self):
+        self.disconnect()
+
+    @property
+    def mqtt_events(self):
+        return self._mqtt_events
+
+    def _on_connect(self, client, userdata, flags, rc):
+        if self._print_response:
+            print(f"Mqtt connected with result code {rc}")
+
+        client.subscribe(f"out/ugroup/{self._user_id}/#")
+    
+    def _on_disconnect(self, client, userdata, rc):
+        if self._print_response:
+            print(f"Mqtt disconnected with result code {rc}")
+        
+        if rc == mqtt.MQTT_ERR_SUCCESS:
+            self._mqttc.loop_stop()
+        else:
+            raise RuntimeError("Unexpected disconnection.")
+
+    def _on_message(self, client, userdata, msg):
+        if self._print_response:
+            print(f"{msg.topic} {str(msg.payload)}")
+        
+        splitted_topic = msg.topic.split('/')
+        payload = json.loads(msg.payload)
+        if len(splitted_topic) == 6 and splitted_topic[-1] == "status":
+            gateway_id = payload["args"]["ObjectID"]
+            time = payload["time"]
+            self._mqtt_events.device_access_time[gateway_id] = time
+        elif len(splitted_topic) == 4 and splitted_topic[-1] == "resp":
+            if payload["args"]["Name"] == "JobDoneReport":
+                self._mqtt_events.job_done_report.set()
+            elif payload["args"]["Name"] == "Peripheral":
+                self._mqtt_events.peripheral.set()
+        elif len(splitted_topic) == 4 and splitted_topic[-1] == "job":
+            if payload["args"]["Name"] == "Job":
+                self._mqtt_events.job.set()
+
+    def configure(self):
+        self._mqttc.username_pw_set(f"$MAIL${self._email}", f"{self._email}{convert_hash(f'{self._email}{self._password}')}")
+        self._mqttc.tls_set(ca_certs=MQTT_SSL_CERT, cert_reqs=ssl.CERT_OPTIONAL)
+        self._mqttc.on_connect = self._on_connect
+        self._mqttc.on_disconnect = self._on_disconnect
+        self._mqttc.on_message = self._on_message
+
+        if self._print_response:
+            self._mqttc.enable_logger(logger=None)
+
+    def connect(self):
+        self._mqttc.connect_async(MQTT_ENDPOINT, port=MQTT_PORT, keepalive=60, bind_address="")
+        self._mqttc.loop_start()
+
+    def disconnect(self):
+        self._mqttc.disconnect()

@@ -812,11 +812,27 @@ class JciHitachiStatusSupport(JciHitachiStatus):
 
     @property
     def brand(self):
+        """Device brand.
+
+        Returns
+        -------
+        str
+            Device brand.
+        """
+
         v = self._status.get(self.idx['brand'], self._default)
         return v
 
     @property
     def model(self):
+        """Device model.
+
+        Returns
+        -------
+        str
+            Device model.
+        """
+
         v = self._status.get(self.idx['model'], self._default)
         return v
 
@@ -832,18 +848,34 @@ class JciHitachiStatusSupport(JciHitachiStatus):
         uni_v = self._uni_v(v)
         return ((uni_v >> i) & 0x1 for i in range(16))
     
-    def limit(self, command, value):
-        is_support, *v = getattr(self, command)
+    def limit(self, status_name, status_value):
+        """Limit status_value within an acceptable range.
+
+        Parameters
+        ----------
+        status_name : str
+            Status name, which has to be in idx dict. E.g. JciHitachiAC.idx
+        status_value : int
+            Status value.
+
+        Returns
+        -------
+        int or None
+            If the status_value can be limited with an acceptable raneg, return int. 
+            Otherwise, if the status_value is invalid, return None.
+        """
+
+        is_support, *v = getattr(self, status_name)
         if not is_support:
             return None
         
-        supported_type = self.supported_type[command]
+        supported_type = self.supported_type[status_name]
         if supported_type == "uni":
-            return min(value, v[0])
+            return min(status_value, v[0])
         elif supported_type == "dual":
-            return min(v[1], max(value, v[0]))
+            return min(v[1], max(status_value, v[0]))
         elif supported_type == "functional":
-            if v[value]: return value
+            if v[status_value]: return status_value
         return None
 
 

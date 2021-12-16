@@ -1,3 +1,4 @@
+import os
 import json
 import requests
 
@@ -6,6 +7,7 @@ from .utility import convert_hash
 API_ENDPOINT = "https://api.jci-hitachi-smarthome.com/3.6/"
 API_ID = "ODM-HITACHI-APP-168d7d31bbd2b7cbbd"
 API_KEY = "23f26d38921dda92c1c2939e733bca5e"
+API_SSL_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/api-jci-hitachi-smarthome-com-chain.pem")
 
 APP_PLATFORM = 2  # 1=IOS 2=Android
 APP_VERSION = "10.20.900"
@@ -82,8 +84,8 @@ class JciHitachiConnection:
                 "{}{}".format(API_ENDPOINT, api_name),
                 headers=self._generate_normal_headers(),
                 json=json,
-                verify=False,
-                proxies=self._proxies
+                verify=API_SSL_CERT,
+                proxies=self._proxies,
             )
             if self._print_response:
                 self.print_response(req)
@@ -118,7 +120,7 @@ class JciHitachiConnection:
         login_req = requests.post("{}{}".format(API_ENDPOINT, "UserLogin.php"), 
             json=login_json_data,
             headers=login_headers,
-            verify=False
+            verify=API_SSL_CERT
         )
 
         if self._print_response:

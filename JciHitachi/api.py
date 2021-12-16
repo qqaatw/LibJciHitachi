@@ -1,8 +1,9 @@
 import random
 import time
+import threading
 from typing import Dict, List, Optional, Union
 
-from . import connection
+from . import connection, mqtt_connection
 from .status import (
     JciHitachiCommand,
     JciHitachiCommandAC,
@@ -36,6 +37,7 @@ class Peripheral:
 
     def __init__(self, peripheral_json : dict) -> None:
         self._json = peripheral_json
+        self._available = False
         self._status_code = ""
         self._support_code = ""
         self._supported_status = None
@@ -45,6 +47,7 @@ class Peripheral:
               f"brand: {self.brand}\n" + \
               f"model: {self.model}\n" + \
               f"type: {self.type}\n" + \
+              f"available: {self.available}\n" + \
               f"status_code: {self.status_code}\n" + \
               f"support_code: {self.support_code}\n" + \
               f"gateway_id: {self.gateway_id}\n" + \
@@ -89,6 +92,22 @@ class Peripheral:
             "Some of device_names are not available from the API."
 
         return peripherals
+
+    @property
+    def available(self) -> bool:
+        """Whether the device is available.
+
+        Returns
+        -------
+        bool
+            Return True if the device is available.
+        """
+
+        return self._available
+
+    @available.setter
+    def available(self, x) -> None:
+        self._available = x
 
     @property
     def brand(self) -> str:
@@ -261,6 +280,8 @@ class JciHitachiAPI:
         Device names. If None is given, all available devices will be included, by default None.
     max_retries : int, optional
         Maximum number of retries when setting status, by default 5.
+    timeout: float, optional
+        Device available timeout, by default 30.0.
     print_response : bool, optional
         If set, all responses of requests will be printed, by default False.
     """
@@ -270,17 +291,21 @@ class JciHitachiAPI:
         password : str,
         device_names : Optional[Union[List[str], str]] = None,
         max_retries : int = 5,
+        timeout : float = 30.0,
         print_response: bool = False
     ) -> None:
         self.email = email
         self.password = password
         self.device_names = device_names
         self.max_retries = max_retries
+        self.timeout = timeout
         self.print_response = print_response
 
+        self._mqtt = None
         self._device_id = random.randint(1000, 6999)
         self._peripherals = {}
         self._session_token = None
+        self._user_id = None
         self._task_id = 0
 
     @property
@@ -292,7 +317,20 @@ class JciHitachiAPI:
         dict
             A dict of Peripherals.
         """
+
         return self._peripherals
+    
+    @property
+    def user_id(self) -> Optional[int]:
+        """User ID.
+
+        Returns
+        -------
+        int
+            User ID.
+        """
+
+        return self._user_id
 
     @property
     def task_id(self) -> int:
@@ -306,6 +344,15 @@ class JciHitachiAPI:
 
         self._task_id += 1
         return self._task_id
+
+    def _sync_peripherals_availablity(self) -> None:
+        device_access_time = self._mqtt.mqtt_events.device_access_time
+        for peripheral in self._peripherals.values():
+            if peripheral.gateway_id in device_access_time and \
+                abs(time.time() - device_access_time[peripheral.gateway_id]) < self.timeout:
+                peripheral.available = True
+            else:
+                peripheral.available = False
 
     def login(self) -> None:
         """Login API.
@@ -324,16 +371,38 @@ class JciHitachiAPI:
         self._session_token = conn.session_token
 
         if conn_status == "OK":
+            if len(conn_json["results"]) != 0:
+                self._user_id = conn_json["results"][0]["Owner"]
+
+            # peripherals
             self._peripherals = Peripheral.from_device_names(
                 conn_json,
                 self.device_names
             )
             self.device_names = list(self._peripherals.keys())
 
+            # mqtt
+            self._mqtt = mqtt_connection.JciHitachiMqttConnection(
+                self.email,
+                self.password,
+                self._user_id,
+                print_response=self.print_response,
+            )
+            self._mqtt.configure()
+            self._mqtt.connect()
+
+            # status
             self.refresh_status()
+
         else:
             raise RuntimeError(
                 f"An error occurred when API login: {conn_status}.")
+    
+    def logout(self) -> None:
+        """Logout API.
+        """
+        
+        self._mqtt.disconnect()
 
     def change_password(self, new_password : str) -> None:
         """Change password.
@@ -388,7 +457,7 @@ class JciHitachiAPI:
                 statuses[name] = JciHitachiDH(dev_status)
         return statuses
     
-    def get_supported_status(self, device_name: Optional[str] = None) -> Dict[str, JciHitachiStatus]:
+    def get_supported_status(self, device_name: Optional[str] = None) -> Dict[str, JciHitachiStatusSupport]:
         """Get supported device status after refreshing status.
 
         Parameters
@@ -400,8 +469,8 @@ class JciHitachiAPI:
 
         Returns
         -------
-        dict of JciHitachiStatus.
-            Return a dict of JciHitachiStatus instances according to device type.
+        dict of JciHitachiStatusSupport.
+            Return a dict of JciHitachiStatusSupport instances according to device type.
             For example, if the device type is `AC`, then return JciHitachiACSupport instance.
         """
 
@@ -430,6 +499,8 @@ class JciHitachiAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
+        self._sync_peripherals_availablity()
+
         conn = connection.GetDataContainerByID(
             self.email,
             self.password,
@@ -446,11 +517,12 @@ class JciHitachiAPI:
             self._session_token = conn.session_token
 
             if conn_status == 'OK':
-                self._peripherals[name].support_code = conn_json["results"]["DataContainer"][0]["ContDetails"][0]["LValue"]
-                self._peripherals[name].status_code = conn_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
+                peripheral.support_code = conn_json["results"]["DataContainer"][0]["ContDetails"][0]["LValue"]
+                peripheral.status_code = conn_json["results"]["DataContainer"][0]["ContDetails"][1]["LValue"]
             else:
                 raise RuntimeError(
-                    f"An error occurred when refreshing status: {conn_status}")
+                    f"An error occurred when refreshing status: {conn_status}"
+                )
 
     def set_status(self, status_name : str, status_value : int, device_name : str) -> bool:
         """Set status to a peripheral.
@@ -475,6 +547,10 @@ class JciHitachiAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
+        self._sync_peripherals_availablity()
+        if not self._peripherals[device_name].available:
+            return False
+
         commander = self._peripherals[device_name].commander
 
         conn = connection.CreateJob(
@@ -483,6 +559,20 @@ class JciHitachiAPI:
             session_token=self._session_token,
             print_response=self.print_response
         )
+        conn2 = connection.GetJobDoneReport(
+            self.email,
+            self.password,
+            session_token=self._session_token,
+            print_response=self.print_response
+        )
+
+        # The mqtt events occurring order:
+        # job (occurs one time) -> 
+        # job_done_report (occurs many times until the job status is successful) ->
+        # peripheral (occurs one time, if this step is timed out, the job command fails)
+        self._mqtt.mqtt_events.job.clear()
+        self._mqtt.mqtt_events.peripheral.clear()
+
         conn_status, conn_json = conn.get_data(
             gateway_id=self._peripherals[device_name].gateway_id,
             device_id=self._device_id,
@@ -491,25 +581,20 @@ class JciHitachiAPI:
         )
         self._session_token = conn.session_token
 
+        if not self._mqtt.mqtt_events.job.wait(timeout=10.0):
+            return False
         for _ in range(self.max_retries):
-            time.sleep(0.8)
-            conn = connection.GetJobDoneReport(
-                self.email,
-                self.password,
-                session_token=self._session_token,
-                print_response=self.print_response
-            )
-            conn_status, conn_json = conn.get_data(
+            self._mqtt.mqtt_events.job_done_report.clear()
+            if not self._mqtt.mqtt_events.job_done_report.wait(timeout=10.0):
+                continue
+            conn_status, conn_json = conn2.get_data(
                 device_id=self._device_id
             )
-            if conn_status == 'OK' and len(conn_json['results']) != 0:
-                if conn_json['results'][0]['JobStatus'] == 0:
-                    #code = conn_json['results'][0]['ReportedData']
-                    #reported_status = JciHitachiStatusInterpreter(code).decode_status()
-                    #assert reported_status.get(status_name) == status_value, \
-                    #    "The Reported status value is not the same as status_value."
-
-                    # The API seems to be delayed to update status, so wait for 1.5 sec.
-                    time.sleep(1.5)
-                    return True
+            if conn_status == 'OK' and \
+                len(conn_json['results']) != 0 and \
+                conn_json['results'][0]['JobStatus'] == 0:
+                if not self._mqtt.mqtt_events.peripheral.wait(timeout=10.0):
+                    return False
+                time.sleep(0.5) # still needs to wait a moment.
+                return True
         return False
