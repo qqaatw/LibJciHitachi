@@ -1,6 +1,7 @@
 import os
+import ssl
 import json
-import requests
+import httpx
 
 from .utility import convert_hash
 
@@ -8,6 +9,11 @@ API_ENDPOINT = "https://api.jci-hitachi-smarthome.com/3.6/"
 API_ID = "ODM-HITACHI-APP-168d7d31bbd2b7cbbd"
 API_KEY = "23f26d38921dda92c1c2939e733bca5e"
 API_SSL_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/api-jci-hitachi-smarthome-com-chain.pem")
+API_SSL_CONTEXT = httpx.create_ssl_context()
+API_SSL_CONTEXT.load_verify_locations(cafile=API_SSL_CERT)
+API_SSL_CONTEXT.set_ciphers("SSLv3:DES-EDE3-CBC") # the cert uses SHA1-RSA1024bits ciphers
+API_SSL_CONTEXT.hostname_checks_common_name=True # the cert lacks of a subjectaltname
+
 
 APP_PLATFORM = 2  # 1=IOS 2=Android
 APP_VERSION = "10.20.900"
@@ -29,7 +35,7 @@ class JciHitachiConnection:
     proxy : str, optional
         Proxy setting. Format:"IP:port", by default None. 
     print_response : bool, optional
-        If set, all responses of requests will be printed, by default False.
+        If set, all responses of httpx will be printed, by default False.
     """
     
     def __init__(self, email, password, session_token=None, proxy=None, print_response=False):
@@ -37,14 +43,13 @@ class JciHitachiConnection:
         self._email = email
         self._password = password
         self._print_response = print_response
+        self._proxies = {'http': proxy, 'https': proxy} if proxy else None
 
         if session_token:
             self._session_token = session_token
         else:
-            self._session_token = None
+            self._session_token = ""
             self.login()
-        
-        self._proxies = {'http': proxy, 'https': proxy} if proxy else None
     
     @property
     def logged(self):
@@ -61,7 +66,7 @@ class JciHitachiConnection:
             "X-DK-Session-Token" : self._session_token, 
             "User-Agent": "Dalvik/2.1.0",
             "content-type" : "application/json",
-            "Accept" : "application/json"
+            "Accept" : "application/json",
         }
         return normal_headers
 
@@ -80,11 +85,11 @@ class JciHitachiConnection:
     def _send(self, api_name, json=None):
         code = 12
         while code == 12:
-            req = requests.post(
+            req = httpx.post(
                 "{}{}".format(API_ENDPOINT, api_name),
                 headers=self._generate_normal_headers(),
                 json=json,
-                verify=API_SSL_CERT,
+                verify=API_SSL_CONTEXT,
                 proxies=self._proxies,
             )
             if self._print_response:
@@ -113,20 +118,22 @@ class JciHitachiConnection:
         login_headers = {
             "X-DK-Application-Id" : API_ID,
             "X-DK-API-Key" : API_KEY,
+            "User-Agent": "Dalvik/2.1.0",
             "content-type" : "application/json",
-            "Accept" : "application/json"
+            "Accept" : "application/json",
         }
 
-        login_req = requests.post("{}{}".format(API_ENDPOINT, "UserLogin.php"), 
+        login_req = httpx.post("{}{}".format(API_ENDPOINT, "UserLogin.php"), 
             json=login_json_data,
             headers=login_headers,
-            verify=API_SSL_CERT
+            verify=API_SSL_CONTEXT,
+            proxies=self._proxies,
         )
 
         if self._print_response:
             self.print_response(login_req)
 
-        if login_req.status_code == requests.codes.ok:
+        if login_req.status_code == httpx.codes.ok:
             code, message, self._login_response = self._handle_response(login_req)
             if message == "OK":
                 self._session_token = self._login_response["results"]["sessionToken"]

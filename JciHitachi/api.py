@@ -280,10 +280,10 @@ class JciHitachiAPI:
         Device names. If None is given, all available devices will be included, by default None.
     max_retries : int, optional
         Maximum number of retries when setting status, by default 5.
-    timeout: float, optional
-        Device available timeout, by default 30.0.
+    device_offline_timeout: float, optional
+        Device offline timeout, by default 45.0.
     print_response : bool, optional
-        If set, all responses of requests will be printed, by default False.
+        If set, all responses of httpx and MQTT will be printed, by default False.
     """
 
     def __init__(self, 
@@ -291,14 +291,14 @@ class JciHitachiAPI:
         password : str,
         device_names : Optional[Union[List[str], str]] = None,
         max_retries : int = 5,
-        timeout : float = 30.0,
+        device_offline_timeout : float = 45.0,
         print_response: bool = False
     ) -> None:
         self.email = email
         self.password = password
         self.device_names = device_names
         self.max_retries = max_retries
-        self.timeout = timeout
+        self.device_offline_timeout = device_offline_timeout
         self.print_response = print_response
 
         self._mqtt = None
@@ -349,7 +349,7 @@ class JciHitachiAPI:
         device_access_time = self._mqtt.mqtt_events.device_access_time
         for peripheral in self._peripherals.values():
             if peripheral.gateway_id in device_access_time and \
-                abs(time.time() - device_access_time[peripheral.gateway_id]) < self.timeout:
+                abs(time.time() - device_access_time[peripheral.gateway_id]) < self.device_offline_timeout:
                 peripheral.available = True
             else:
                 peripheral.available = False
@@ -571,6 +571,7 @@ class JciHitachiAPI:
         # job_done_report (occurs many times until the job status is successful) ->
         # peripheral (occurs one time, if this step is timed out, the job command fails)
         self._mqtt.mqtt_events.job.clear()
+        self._mqtt.mqtt_events.job_done_report.clear()
         self._mqtt.mqtt_events.peripheral.clear()
 
         conn_status, conn_json = conn.get_data(
@@ -584,8 +585,8 @@ class JciHitachiAPI:
         if not self._mqtt.mqtt_events.job.wait(timeout=10.0):
             return False
         for _ in range(self.max_retries):
-            self._mqtt.mqtt_events.job_done_report.clear()
             if not self._mqtt.mqtt_events.job_done_report.wait(timeout=10.0):
+                self._mqtt.mqtt_events.job_done_report.clear()
                 continue
             conn_status, conn_json = conn2.get_data(
                 device_id=self._device_id

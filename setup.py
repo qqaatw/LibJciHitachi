@@ -6,8 +6,8 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 install_requires = [
+    "httpx==0.21.0",
     "paho-mqtt",
-    "requests>=2.25",
 ]
 tests_require = [
     "pytest>=6.2",

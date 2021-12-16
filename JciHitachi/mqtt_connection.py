@@ -13,6 +13,10 @@ MQTT_ENDPOINT = "mqtt.jci-hitachi-smarthome.com"
 MQTT_PORT = 8893
 MQTT_VERSION = 4
 MQTT_SSL_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/mqtt-jci-hitachi-smarthome-com-chain.pem")
+MQTT_SSL_CONTEXT = ssl.create_default_context(cafile=MQTT_SSL_CERT)
+MQTT_SSL_CONTEXT.set_ciphers("SSLv3:DES-EDE3-CBC")  # the cert uses SHA1-RSA1024bits ciphers
+MQTT_SSL_CONTEXT.hostname_checks_common_name = True  # the cert lacks of a subjectaltname
+
 
 @dataclass
 class JciHitachiMqttEvents:
@@ -34,7 +38,7 @@ class JciHitachiMqttConnection:
     user_id : int
         User ID.
     print_response : bool, optional
-        If set, all responses of requests will be printed, by default False.
+        If set, all responses of MQTT will be printed, by default False.
     """
 
     def __init__(self, email, password, user_id, print_response=False):
@@ -100,7 +104,8 @@ class JciHitachiMqttConnection:
         """
 
         self._mqttc.username_pw_set(f"$MAIL${self._email}", f"{self._email}{convert_hash(f'{self._email}{self._password}')}")
-        self._mqttc.tls_set(ca_certs=MQTT_SSL_CERT, cert_reqs=ssl.CERT_OPTIONAL)
+        #self._mqttc.tls_set(ca_certs=MQTT_SSL_CERT, cert_reqs=ssl.CERT_OPTIONAL)
+        self._mqttc.tls_set_context(MQTT_SSL_CONTEXT)
         self._mqttc.on_connect = self._on_connect
         self._mqttc.on_disconnect = self._on_disconnect
         self._mqttc.on_message = self._on_message
