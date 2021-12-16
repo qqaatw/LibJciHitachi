@@ -22,6 +22,20 @@ class JciHitachiMqttEvents:
 
 
 class JciHitachiMqttConnection:
+    """Connecting to Jci-Hitachi MQTT to get latest events.
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    user_id : int
+        User ID.
+    print_response : bool, optional
+        If set, all responses of requests will be printed, by default False.
+    """
+
     def __init__(self, email, password, user_id, print_response=False):
         self._email = email
         self._password = password
@@ -36,6 +50,14 @@ class JciHitachiMqttConnection:
 
     @property
     def mqtt_events(self):
+        """MQTT events.
+
+        Returns
+        -------
+        JciHitachiMqttEvents
+            See JciHitachiMqttEvents.
+        """
+
         return self._mqtt_events
 
     def _on_connect(self, client, userdata, flags, rc):
@@ -73,6 +95,9 @@ class JciHitachiMqttConnection:
                 self._mqtt_events.job.set()
 
     def configure(self):
+        """Configure MQTT.
+        """
+
         self._mqttc.username_pw_set(f"$MAIL${self._email}", f"{self._email}{convert_hash(f'{self._email}{self._password}')}")
         self._mqttc.tls_set(ca_certs=MQTT_SSL_CERT, cert_reqs=ssl.CERT_OPTIONAL)
         self._mqttc.on_connect = self._on_connect
@@ -83,8 +108,14 @@ class JciHitachiMqttConnection:
             self._mqttc.enable_logger(logger=None)
 
     def connect(self):
+        """Connect to the MQTT broker and start loop.
+        """
+
         self._mqttc.connect_async(MQTT_ENDPOINT, port=MQTT_PORT, keepalive=60, bind_address="")
         self._mqttc.loop_start()
 
     def disconnect(self):
+        """Disconnect from the MQTT broker.
+        """
+
         self._mqttc.disconnect()
