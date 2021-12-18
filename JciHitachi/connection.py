@@ -11,7 +11,7 @@ API_KEY = "23f26d38921dda92c1c2939e733bca5e"
 API_SSL_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/api-jci-hitachi-smarthome-com-chain.pem")
 API_SSL_CONTEXT = httpx.create_ssl_context()
 API_SSL_CONTEXT.load_verify_locations(cafile=API_SSL_CERT)
-API_SSL_CONTEXT.set_ciphers("DEFAULT@SECLEVEL=1")  # the cert uses SHA1-RSA1024bits ciphers so unfortunately we have to lower the security level
+API_SSL_CONTEXT.set_ciphers("ECDHE-RSA-AES128-GCM-SHA256")  # the cert uses SHA1-RSA1024bits ciphers so unfortunately we have to lower the security level
 API_SSL_CONTEXT.hostname_checks_common_name=True  # the cert lacks of a subjectaltname
 
 
