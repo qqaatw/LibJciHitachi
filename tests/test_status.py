@@ -16,7 +16,7 @@ from JciHitachi.model import (
 )
 
 from . import (
-    api,
+    fixture_api,
     TEST_COMMAND_AC,
     TEST_DEVICE_AC,
     MOCK_CODE_AC,
@@ -122,24 +122,24 @@ class TestACStatus:
         assert b64command == mock_command
 
     @pytest.mark.slow("online test is a slow test.")
-    def test_online(self, api):
+    def test_online(self, fixture_api):
         # Change sound prompt
-        current_state = api.get_status()[TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]]
+        current_state = fixture_api.get_status()[TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]]
         if current_state != 1:
             changed_state = 1
         else:
             changed_state = 0
-        assert api.set_status(TEST_COMMAND_AC, changed_state, TEST_DEVICE_AC)
+        assert fixture_api.set_status(TEST_COMMAND_AC, changed_state, TEST_DEVICE_AC)
 
-        api.refresh_status() 
-        assert api.get_status()[
+        fixture_api.refresh_status() 
+        assert fixture_api.get_status()[
             TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]] == changed_state
         
         # Change sound prompt back
-        assert api.set_status(TEST_COMMAND_AC, current_state, TEST_DEVICE_AC)
+        assert fixture_api.set_status(TEST_COMMAND_AC, current_state, TEST_DEVICE_AC)
         
-        api.refresh_status()
-        assert api.get_status()[
+        fixture_api.refresh_status()
+        assert fixture_api.get_status()[
             TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]] == current_state
 
 
@@ -210,25 +210,25 @@ class TestDHStatus:
         assert b64command == mock_command
 
     @pytest.mark.skip("Skip online test as no usable account to test.")
-    def test_online(self, api):
+    def test_online(self, fixture_api):
         # Change sound control
-        current_state = api.get_status(
+        current_state = fixture_api.get_status(
         )[TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]]
         if current_state != 1:
             changed_state = 1
         else:
             changed_state = 0
-        assert api.set_status(TEST_COMMAND_DH, changed_state, TEST_DEVICE_DH)
+        assert fixture_api.set_status(TEST_COMMAND_DH, changed_state, TEST_DEVICE_DH)
 
-        api.refresh_status()
-        assert api.get_status()[
+        fixture_api.refresh_status()
+        assert fixture_api.get_status()[
             TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]] == changed_state
 
         # Change Change sound control back
-        assert api.set_status(TEST_COMMAND_DH, current_state, TEST_DEVICE_DH)
+        assert fixture_api.set_status(TEST_COMMAND_DH, current_state, TEST_DEVICE_DH)
 
-        api.refresh_status()
-        assert api.get_status()[
+        fixture_api.refresh_status()
+        assert fixture_api.get_status()[
             TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]] == current_state
 
 
