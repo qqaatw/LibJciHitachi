@@ -14,8 +14,8 @@ MQTT_PORT = 8893
 MQTT_VERSION = 4
 MQTT_SSL_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/mqtt-jci-hitachi-smarthome-com-chain.pem")
 MQTT_SSL_CONTEXT = ssl.create_default_context(cafile=MQTT_SSL_CERT)
-MQTT_SSL_CONTEXT.set_ciphers("ECDHE-RSA-AES128-GCM-SHA256")  # the cert uses SHA1-RSA1024bits ciphers so unfortunately we have to lower the security level
-MQTT_SSL_CONTEXT.hostname_checks_common_name = True  # the cert lacks of a subjectaltname
+MQTT_SSL_CONTEXT.set_ciphers("TLSv1.2")  # the cert uses SHA1-RSA1024bits ciphers so unfortunately we have to lower the security level
+MQTT_SSL_CONTEXT.hostname_checks_common_name = True  # the cert lacks a subjectaltname
 
 
 @dataclass
