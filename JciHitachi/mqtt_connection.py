@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import ssl
 import threading
@@ -16,6 +17,8 @@ MQTT_SSL_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/m
 MQTT_SSL_CONTEXT = ssl.create_default_context(cafile=MQTT_SSL_CERT)
 MQTT_SSL_CONTEXT.set_ciphers("TLSv1.2")  # the cert uses SHA1-RSA1024bits ciphers so unfortunately we have to lower the security level
 MQTT_SSL_CONTEXT.hostname_checks_common_name = True  # the cert lacks a subjectaltname
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -78,7 +81,7 @@ class JciHitachiMqttConnection:
         if rc == mqtt.MQTT_ERR_SUCCESS:
             self._mqttc.loop_stop()
         else:
-            raise RuntimeError("Unexpected disconnection.")
+            _LOGGER.error(f"Unexpected MQTT disconnection: {mqtt.error_string(rc)}.")
 
     def _on_message(self, client, userdata, msg):
         if self._print_response:
@@ -110,7 +113,7 @@ class JciHitachiMqttConnection:
         self._mqttc.on_message = self._on_message
 
         if self._print_response:
-            self._mqttc.enable_logger(logger=None)
+            self._mqttc.enable_logger(logger=_LOGGER)
 
     def connect(self):
         """Connect to the MQTT broker and start loop.
