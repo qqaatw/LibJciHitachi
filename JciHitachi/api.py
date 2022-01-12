@@ -1,9 +1,9 @@
 import random
 import time
-import threading
+import warnings
 from typing import Dict, List, Optional, Union
 
-from . import connection, mqtt_connection
+from . import aws_connection, connection, mqtt_connection
 from .status import (
     JciHitachiCommand,
     JciHitachiCommandAC,
@@ -17,6 +17,8 @@ from .model import (
     JciHitachiStatus,
     JciHitachiAC,
     JciHitachiDH,
+    JciHitachiAWSStatusSupport,
+    JciHitachiAWSStatus,
 )
 
 
@@ -41,6 +43,8 @@ class Peripheral:
         self._status_code = ""
         self._support_code = ""
         self._supported_status = None
+
+        warnings.warn("This API has been deprecated.", DeprecationWarning)
 
     def __repr__(self) -> str:
         ret = f"name: {self.name}\n" + \
@@ -307,6 +311,8 @@ class JciHitachiAPI:
         self._session_token = None
         self._user_id = None
         self._task_id = 0
+
+        warnings.warn("This API has been deprecated.", DeprecationWarning)
 
     @property
     def peripherals(self) -> Dict[str, Peripheral]:
@@ -598,4 +604,485 @@ class JciHitachiAPI:
                     return False
                 time.sleep(0.5) # still needs to wait a moment.
                 return True
+        return False
+
+
+class AWSThing:
+    """AWS thing (device) information.
+
+    Parameters
+    ----------
+    thing_json : dict
+        Thing json of specific device.
+    """
+
+    supported_device_type = {
+        "1": "AC",
+        "2": "DH",
+        #3: "HE",
+        #4: "PM25_PANEL",
+    }
+
+    def __init__(self, thing_json : dict) -> None:
+        self._json = thing_json
+        self._available = True
+        self._status_code = None
+        self._support_code = None
+
+    def __repr__(self) -> str:
+        ret = f"name: {self.name}\n" + \
+              f"brand: {self.brand}\n" + \
+              f"model: {self.model}\n" + \
+              f"type: {self.type}\n" + \
+              f"available: {self.available}\n" + \
+              f"status_code: {self.status_code}\n" + \
+              f"support_code: {self.support_code}\n" + \
+              f"gateway_mac_address: {self.gateway_mac_address}"
+        return ret
+
+    @classmethod
+    def from_device_names(
+        cls,
+        things_json : dict,
+        device_names : Optional[Union[List[str], str]]
+    ) -> Dict[str, object]:
+        """Use device names to pick peripheral_jsons accordingly.
+
+        Parameters
+        ----------
+        peripherals_json : dict
+            Peripherals_json retrieved from GetPeripheralsByUser.
+        device_names : list of str or str or None
+            Device name. If None is given, all available devices will be included, by default None.
+
+        Returns
+        -------
+        dict
+            A dict of Peripheral instances with device name key.
+        """
+
+        things = {}
+
+        if isinstance(device_names, str):
+            device_names = [device_names]
+
+        for thing in things_json["results"]["Things"]:
+            device_name = thing["CustomDeviceName"]
+            device_type = thing["DeviceType"]
+
+            if device_names is None or (device_names and device_name in device_names):
+                if device_type in cls.supported_device_type:
+                    things[device_name] = cls(thing)
+
+        assert device_names is None or len(device_names) == len(things), \
+            "Some of device_names are not available from the API."
+
+        return things
+
+    @property
+    def available(self) -> bool:
+        """Whether the device is available.
+
+        Returns
+        -------
+        bool
+            Return True if the device is available.
+        """
+
+        return self._available
+
+    @available.setter
+    def available(self, x) -> None:
+        self._available = x
+
+    @property
+    def brand(self) -> str:
+        """Device brand.
+
+        Returns
+        -------
+        str
+            Device brand.
+        """
+        
+        return getattr(self._support_code, "Brand")
+
+    @property
+    def gateway_mac_address(self) -> str:
+        """Gateway mac address.
+
+        Returns
+        -------
+        str
+            Gateway mac address.
+        """
+
+        return self._json["ThingName"].split("_")[-1]
+
+    @property
+    def model(self) -> str:
+        """Device model.
+
+        Returns
+        -------
+        str
+            Device model.
+        """
+
+        return getattr(self._support_code, "Model")
+
+    @property
+    def name(self) -> str:
+        """Device name.
+
+        Returns
+        -------
+        str
+            Device name.
+        """
+
+        return self._json['CustomDeviceName']
+
+    @property
+    def picked_thing(self) -> dict:
+        """Picked thing.
+
+        Returns
+        -------
+        dict
+            Picked thing.
+        """
+
+        return self._json
+    
+    @property
+    def status_code(self) -> JciHitachiAWSStatus:
+        """Peripheral's status code reported by the API.
+
+        Returns
+        -------
+        str
+            Status code.
+        """
+
+        return self._status_code
+
+    @status_code.setter
+    def status_code(self, x : str) -> None:
+        self._status_code = x
+    
+    @property
+    def support_code(self) -> JciHitachiAWSStatusSupport:
+        """Peripheral's support code reported by the API.
+
+        Returns
+        -------
+        str
+            Status code.
+        """
+
+        return self._support_code
+
+    @support_code.setter
+    def support_code(self, x : str) -> None:
+        return
+
+    @property
+    def supported_status(self) -> JciHitachiStatusSupport:
+        """Peripheral's supported status converted from support_code.
+
+        Returns
+        -------
+        JciHitachiStatusSupport
+            Supported status.
+        """
+
+        return self._supported_status
+
+    @property
+    def thing_name(self):
+        return self._json["ThingName"]
+
+    @property
+    def type(self) -> str:
+        """Device type.
+
+        Returns
+        -------
+        str
+            Device type. 
+            If not supported, 'unknown' will be returned. (currently supports: `AC`, `DH`)
+        """
+
+        return self.supported_device_type.get(
+            self._json['DeviceType'],
+            'unknown'
+        )
+
+
+class JciHitachiAWSAPI:
+    """Jci-Hitachi API.
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    device_names : list of str or str or None, optional
+        Device names. If None is given, all available devices will be included, by default None.
+    max_retries : int, optional
+        Maximum number of retries when setting status, by default 5.
+    device_offline_timeout: float, optional
+        Device offline timeout, by default 45.0.
+    print_response : bool, optional
+        If set, all responses of httpx and MQTT will be printed, by default False.
+    """
+
+    def __init__(self, 
+        email : str,
+        password : str,
+        device_names : Optional[Union[List[str], str]] = None,
+        max_retries : int = 5,
+        device_offline_timeout : float = 45.0,
+        print_response: bool = False
+    ) -> None:
+        self.email = email
+        self.password = password
+        self.device_names = device_names
+        self.max_retries = max_retries
+        self.device_offline_timeout = device_offline_timeout
+        self.print_response = print_response
+
+        self._mqtt = None
+        self._device_id = random.randint(1000, 6999)
+        self._things = {}
+        self._aws_tokens = None
+        self._aws_identity = None
+        self._aws_credentials = None
+        self._refresh_token_counter = 0
+        self._user_id = None
+        self._task_id = 0
+
+    @property
+    def things(self) -> Dict[str, AWSThing]:
+        """Picked things.
+
+        Returns
+        -------
+        dict
+            A dict of Thing.
+        """
+
+        return self._things
+    
+    @property
+    def user_id(self) -> Optional[int]:
+        """User ID.
+
+        Returns
+        -------
+        int
+            User ID.
+        """
+
+        return self._user_id
+
+    @property
+    def task_id(self) -> int:
+        """Task ID.
+
+        Returns
+        -------
+        int
+            Serial number counted from 0.
+        """
+
+        self._task_id += 1
+        return self._task_id
+
+    def _sync_peripherals_availablity(self) -> None:
+        return
+        """
+        device_access_time = self._mqtt.mqtt_events.device_access_time
+        for peripheral in self._peripherals.values():
+            if peripheral.gateway_id in device_access_time and \
+                abs(time.time() - device_access_time[peripheral.gateway_id]) < self.device_offline_timeout:
+                peripheral.available = True
+            else:
+                peripheral.available = False
+        """
+
+    def login(self) -> None:
+        """Login API.
+
+        Raises
+        ------
+        RuntimeError
+            If a login error occurs, RuntimeError will be raised.
+        """
+
+        conn = aws_connection.GetUser(
+            email=self.email,
+            password=self.password,
+            print_response=True
+        )
+        self._aws_tokens = conn.aws_tokens
+        conn_status, self._aws_identity = conn.get_data()
+
+        conn = aws_connection.GetCredentials(
+            email=self.email,
+            password=self.password,
+            aws_tokens=self._aws_tokens,
+            print_response=True
+        )
+
+        conn_status, self._aws_credentials = conn.get_data(self._aws_identity)
+
+        conn = aws_connection.GetAllDevice(self._aws_tokens, print_response=self.print_response)
+        conn_status, conn_json = conn.get_data()
+
+        if conn_status == "OK":
+            # Things
+            self._things = AWSThing.from_device_names(
+                conn_json,
+                self.device_names
+            )
+            self.device_names = list(self._things.keys())
+
+            # mqtt
+            self._mqtt = aws_connection.JciHitachiAWSMqttConnection(self._aws_credentials, print_response=self.print_response)
+            self._mqtt.configure()
+
+            topics = [f"{self._aws_identity.identity_id}_{thing.gateway_mac_address}/#" for thing in self._things.values()]
+            self._mqtt.connect(topics=topics)
+
+            # status
+            self.refresh_status()
+
+        else:
+            raise RuntimeError(f"An error occurred when signing into AWS Cognito API: {conn_status}")
+    
+    def logout(self) -> None:
+        """Logout API.
+        """
+        
+        self._mqtt.disconnect()
+
+    def change_password(self, new_password : str) -> None:
+        """Change password. (Not implemented yet)
+
+        Parameters
+        ----------
+        new_password : str
+            New password.
+
+        Raises
+        ------
+        RuntimeError
+            If an error occurs, RuntimeError will be raised.
+        """
+
+        return
+
+    def refresh_status(self, device_name : Optional[str] = None) -> None:
+        """Refresh device status from the API.
+
+        Parameters
+        ----------
+        device_name : str, optional
+            Refreshing a device's status by its name.
+            If None is given, all devices' status will be refreshed,
+            by default None.
+        
+        Raise
+        -------
+        RuntimeError
+            If an error occurs, RuntimeError will be raised.
+        """
+
+        #self._sync_peripherals_availablity()
+
+        for name, thing in self._things.items():
+            if (device_name and name != device_name) or \
+                    thing.type == "unknown":
+                continue
+
+            self._mqtt.publish(f"{self._aws_identity.identity_id}_{thing.gateway_mac_address}/status/request", {"Timestamp": time.time()})
+            if not self._mqtt.mqtt_events.device_status_event.wait(timeout=10.0):
+                device_status = None
+            else:
+                device_status = self._mqtt.mqtt_events.device_status.get(thing.thing_name)
+            
+            self._mqtt.publish(f"{self._aws_identity.identity_id}_{thing.gateway_mac_address}/registration/request", {"Timestamp": time.time()})
+            if not self._mqtt.mqtt_events.device_support_event.wait(timeout=10.0):
+                device_support = None
+            else:
+                device_support = self._mqtt.mqtt_events.device_support.get(thing.thing_name)
+
+            if device_status and device_support:
+                if abs(time.time() - device_status.RequestTimestamp) < 5 and abs(time.time() - device_support.RequestTimestamp) < 5:
+                    thing.support_code = device_support
+                    thing.status_code = device_status
+            else:
+                raise RuntimeError(
+                    f"An error occurred when refreshing status."
+                )
+
+    def set_status(self, status_name : str, status_value : int, device_name : str) -> bool:
+        """Set status to a thing.
+
+        Parameters
+        ----------
+        status_name : str
+            Status name, which has to be in idx dict. E.g. JciHitachiAC.idx
+        status_value : int
+            Status value.
+        device_name : str
+            Device name.
+
+        Returns
+        -------
+        bool
+            Return True if the command has been successfully executed. Otherwise, return False.
+
+        Raise
+        -------
+        RuntimeError
+            If an error occurs, RuntimeError will be raised.
+        """
+
+        #self._sync_peripherals_availablity()
+        #if not self._peripherals[device_name].available:
+        #    return False
+
+        thing_name = self._things[device_name].thing_name
+        thing_type = self._things[device_name].type
+        gateway_mac_address = self._things[device_name].gateway_mac_address
+        if status_name not in JciHitachiAWSStatus.compability_mapping:
+            status_name = JciHitachiAWSStatus.convert_old_to_new(thing_type, status_name)
+
+        self._mqtt.publish(f"{self._aws_identity.identity_id}_{gateway_mac_address}/control/request", {
+            "Condition": {
+                "ThingName": thing_name,
+                "Index": 0,
+                "Geofencing": {
+                    "Arrive": None,
+                    "Leave": None,
+                },
+            },
+            status_name: status_value,
+            "TaskID": self.task_id,
+            "Timestamp": time.time(),
+        })
+
+        for _ in range(self.max_retries):
+            if not self._mqtt.mqtt_events.device_control_event.wait(timeout=10.0):
+                device_control = None
+            else:
+                device_control = self._mqtt.mqtt_events.device_control.get(thing_name)
+                if abs(time.time() - device_control["RequestTimestamp"]) < 5 and \
+                    device_control.get(status_name) == status_value:
+                    return True
+            time.sleep(0.5)
         return False

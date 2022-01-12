@@ -10,7 +10,8 @@ from . import fixture_api, fixture_mqtt, TEST_EMAIL, TEST_PASSWORD, TEST_DEVICE_
 class TestAPILogin:
     def test_api(self, fixture_api):
         assert len(fixture_api._session_token) == 31
-        assert fixture_api._peripherals[TEST_DEVICE_AC].name == TEST_DEVICE_AC
+        # No peripheral available as we have switched to the new API.
+        #assert fixture_api._peripherals[TEST_DEVICE_AC].name == TEST_DEVICE_AC
 
     def test_version(self):
         connection = JciHitachiConnection(TEST_EMAIL, TEST_PASSWORD)
@@ -19,7 +20,7 @@ class TestAPILogin:
     def test_session_expiry(self, fixture_api):
         invalid_token = "0000000000000000000000000000000"
         fixture_api._session_token = invalid_token
-        fixture_api.refresh_status()
+        fixture_api.login()
 
         assert len(fixture_api._session_token) == 31
         assert fixture_api._session_token != invalid_token

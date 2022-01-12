@@ -24,7 +24,6 @@ def fixture_api():
     api = JciHitachiAPI(
         TEST_EMAIL,
         TEST_PASSWORD,
-        TEST_DEVICE_AC,
     )
     api.login()
     return api
@@ -34,6 +33,6 @@ def fixture_mqtt(fixture_api):
     mqtt = JciHitachiMqttConnection(
         TEST_EMAIL,
         TEST_PASSWORD,
-        fixture_api.user_id,    
+        fixture_api.user_id, 
     )
     return mqtt

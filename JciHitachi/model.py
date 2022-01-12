@@ -1,3 +1,5 @@
+import copy
+
 class JciHitachiStatus:
     idx = {}
 
@@ -1529,3 +1531,141 @@ class JciHitachiHESupport(JciHitachiStatusSupport):
 
     def __init__(self, status, default=0):
         super().__init__(status, default)
+
+
+
+class JciHitachiAWSStatus:
+    compability_mapping = {
+        "AC": {
+            'Switch': 'power',
+            'Mode': 'mode',
+            'FanSpeed': 'air_speed',
+            'TemperatureSetting': 'target_temp',
+            'IndoorTemperature': 'indoor_temp',
+            'OutdoorTemperature': 'outdoor_temp',
+            'SleepModeRemainingTime': 'sleep_timer',
+            'VerticalWindDirectionSwitch': 'vertical_wind_swingable', 
+            'VerticalWindDirectionSetting': 'vertical_wind_direction',
+            'HorizontalWindDirectionSetting': 'horizontal_wind_direction',
+            'MildewProof': 'mold_prev',
+            'QuickMode': 'fast_op',
+            'PowerSaving': 'energy_save',
+            'ControlTone': 'sound_prompt',
+            'PowerConsumption': 'power_kwh',
+            'TaiseiaError': None,
+            'FilterElapsedHour': None,
+            'CleanSwitch': None,
+            'CleanNotification': None,
+            'CleanStatus': None,
+            'Error': None,
+        },
+        "DH": {
+            'Switch': 'power',
+            'Mode': 'mode',
+            'FanSpeed': 'air_speed',
+            'MildewProof': 'mold_prev',
+            'ControlTone': 'sound_control',
+            'SaaControlTone': None,
+            'PowerConsumption': 'power_kwh',
+            'Ion': None,
+            'HumiditySetting': 'target_humidity',
+            'AutoWindDirection': 'wind_swingable',
+            'KeypadLock': None,
+            'DisplayBrightness': 'display_brightness',
+            'FilterControl': None,
+            'PM25': 'pm25_value',
+            'IndoorHumidity': 'indoor_humidity',
+            'SideAirOutlet': 'side_vent',
+            'Defrost': None,
+            'SmellIndex': 'odor_level',
+            'CleanFilterNotification': 'clean_filter_notify',
+            'TankFullNotification': 'water_full_warning'
+            #'air_purify_level': 13,
+            #'error_code': 18,
+            #'air_quality_value': 35,
+            #'air_quality_level': 36,
+            #'air_cleaning_filter': 41
+        }
+    }
+    device_type_mapping = {
+        1: "AC",
+        2: "DH",
+        3: "HE",
+        4: "PM25_PANEL",
+    }
+
+    def __init__(self, status: dict) -> None:
+        self._status: dict = self._preprocess(status)
+
+    def __getattr__(self, item):
+        print(item)
+        return self._status[item]
+
+    def _preprocess(self, status):
+        # device type
+        if status.get("DeviceType"):
+            status["DeviceType"] = self.device_type_mapping[status["DeviceType"]]
+        
+        if not status.get("OutdoorTemperature"):
+            status["OutdoorTemperature"] = 0
+        
+        return status
+
+    @property
+    def status(self):
+        """All status.
+
+        Returns
+        -------
+        dict
+            All status.
+        """
+
+        return self._status
+
+    @staticmethod
+    def convert_old_to_new(device_type, old_status_name):
+        for key, value in __class__.compability_mapping[device_type].items():
+            if value == old_status_name:
+                return key
+        return None
+
+class JciHitachiAWSStatusSupport:
+    extended_mapping = {
+        "Model": "model",
+        "Brand": "brand",
+        "FindMe": None,
+    }
+
+    compability_mapping = copy.deepcopy(JciHitachiAWSStatus.compability_mapping).update(extended_mapping)
+    device_type_mapping = JciHitachiAWSStatus.device_type_mapping
+
+    def __init__(self, status: dict) -> None:
+        self._status: dict = self._preprocess(status)
+
+    def __getattr__(self, item):
+        return self._status[item]
+
+    def _preprocess(self, status):
+        # device type
+        if status.get("DeviceType"):
+            status["DeviceType"] = self.device_type_mapping[status["DeviceType"]]
+        
+        if not status.get("OutdoorTemperature"):
+            status["OutdoorTemperature"] = 0
+        
+        status["Brand"] = "HITACHI"
+        
+        return status
+
+    @property
+    def status(self):
+        """All status.
+
+        Returns
+        -------
+        dict
+            All status.
+        """
+
+        return self._status
