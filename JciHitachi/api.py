@@ -761,14 +761,14 @@ class AWSThing:
 
         Returns
         -------
-        str
+        JciHitachiAWSStatus
             Status code.
         """
 
         return self._status_code
 
     @status_code.setter
-    def status_code(self, x : str) -> None:
+    def status_code(self, x : JciHitachiAWSStatus) -> None:
         self._status_code = x
     
     @property
@@ -777,15 +777,15 @@ class AWSThing:
 
         Returns
         -------
-        str
+        JciHitachiAWSStatusSupport
             Status code.
         """
 
         return self._support_code
 
     @support_code.setter
-    def support_code(self, x : str) -> None:
-        return
+    def support_code(self, x : JciHitachiAWSStatusSupport) -> None:
+        self._support_code = x
 
     @property
     def supported_status(self) -> JciHitachiStatusSupport:
@@ -1028,6 +1028,35 @@ class JciHitachiAWSAPI:
                 raise RuntimeError(
                     f"An error occurred when refreshing status."
                 )
+    
+    def get_status(self, device_name: Optional[str] = None, legacy=False) -> Dict[str, JciHitachiAWSStatus]:
+        """Get device status after refreshing status.
+
+        Parameters
+        ----------
+        device_name : str, optional
+            Getting a device's status by its name.
+            If None is given, all devices' status will be returned,
+            by default None.
+        legacy : bool, optional
+            Whether or not to return legacy (old) status class.
+
+        Returns
+        -------
+        dict of JciHitachiAWSStatus.
+            Return a dict of JciHitachiAWSStatus instances.
+        """
+        
+        statuses = {}
+        for name, thing in self._things.items():
+            if (device_name and name != device_name) or \
+                    thing.type == "unknown":
+                continue
+            if legacy:
+                statuses[name] = thing.status_code.legacy_status_class
+            else:
+                statuses[name] = thing.status_code
+        return statuses
 
     def set_status(self, status_name : str, status_value : int, device_name : str) -> bool:
         """Set status to a thing.

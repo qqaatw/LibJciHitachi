@@ -1537,6 +1537,7 @@ class JciHitachiHESupport(JciHitachiStatusSupport):
 class JciHitachiAWSStatus:
     compability_mapping = {
         "AC": {
+            'DeviceType': None,
             'Switch': 'power',
             'Mode': 'mode',
             'FanSpeed': 'air_speed',
@@ -1560,6 +1561,7 @@ class JciHitachiAWSStatus:
             'Error': None,
         },
         "DH": {
+            'DeviceType': None,
             'Switch': 'power',
             'Mode': 'mode',
             'FanSpeed': 'air_speed',
@@ -1622,6 +1624,36 @@ class JciHitachiAWSStatus:
         """
 
         return self._status
+    
+    @property
+    def legacy_status_class(self):
+        """All legacy status used by the old API.
+
+        Returns
+        -------
+        JciHitachiStatus
+            status.
+        """
+
+        class mock_idx(dict):
+            def __getitem__(self, key):
+                return key
+
+        mapped_status = {self.compability_mapping[self._status["DeviceType"]].get(key): value for key, value in self._status.items()}
+
+        if self._status["DeviceType"] == "AC":
+            if None in mapped_status:
+                del mapped_status[None]
+            ac = JciHitachiAC(mapped_status)
+            ac.idx = mock_idx(ac.idx)
+            return ac
+        elif self._status["DeviceType"] == "DH":
+            if None in mapped_status:
+                del mapped_status[None]
+            dh = JciHitachiDH(mapped_status)
+            dh.idx = mock_idx(dh.idx)
+            return dh
+        return None
 
     @staticmethod
     def convert_old_to_new(device_type, old_status_name):
