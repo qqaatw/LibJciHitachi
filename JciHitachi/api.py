@@ -1013,7 +1013,7 @@ class JciHitachiAWSAPI:
                 device_status = None
             else:
                 device_status = self._mqtt.mqtt_events.device_status.get(thing.thing_name)
-            
+            time.sleep(0.5)
             self._mqtt.publish(f"{self._aws_identity.identity_id}_{thing.gateway_mac_address}/registration/request", {"Timestamp": time.time()})
             if not self._mqtt.mqtt_events.device_support_event.wait(timeout=10.0):
                 device_support = None
@@ -1021,13 +1021,12 @@ class JciHitachiAWSAPI:
                 device_support = self._mqtt.mqtt_events.device_support.get(thing.thing_name)
 
             if device_status and device_support:
-                if abs(time.time() - device_status.RequestTimestamp) < 5 and abs(time.time() - device_support.RequestTimestamp) < 5:
-                    thing.support_code = device_support
-                    thing.status_code = device_status
-            else:
-                raise RuntimeError(
-                    f"An error occurred when refreshing status."
-                )
+                thing.status_code = device_status
+                thing.support_code = device_support
+                return
+            raise RuntimeError(
+                f"An error occurred when refreshing status: {device_status} {device_support}"
+            )
     
     def get_status(self, device_name: Optional[str] = None, legacy=False) -> Dict[str, JciHitachiAWSStatus]:
         """Get device status after refreshing status.

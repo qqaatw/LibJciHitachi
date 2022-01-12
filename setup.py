@@ -6,8 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 install_requires = [
-    "awsiotsdk",
-    "cmake",
+    "AWSIoTPythonSDK",
     "httpx==0.21.0",
     "paho-mqtt",
 ]

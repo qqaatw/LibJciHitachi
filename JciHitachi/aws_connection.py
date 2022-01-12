@@ -6,9 +6,11 @@ from dataclasses import dataclass, field
 from typing import Dict
 
 import httpx
-import awscrt
-import awsiot
-from awsiot import mqtt_connection_builder
+# For apiv2
+#import awscrt
+#import awsiot
+#from awsiot import mqtt_connection_builder
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 from .model import JciHitachiAWSStatus, JciHitachiAWSStatusSupport
 
 AWS_COGNITO_REGION = "ap-northeast-1"
@@ -375,7 +377,8 @@ class ListSubUser(JciHitachiAWSIoTConnection):
 
 
 class JciHitachiAWSMqttConnection:
-    """Connecting to Jci-Hitachi AWS MQTT to get latest events.
+    """Connecting to Jci-Hitachi AWS MQTT to get latest events. 
+        # TODO: Swiching to API v2 when precompiled wheels of musl linux are available
 
     Parameters
     ----------
@@ -390,11 +393,13 @@ class JciHitachiAWSMqttConnection:
     """
 
     def __init__(self, aws_credentials, print_response=False):
-        self._cred_provider = awscrt.auth.AwsCredentialsProvider.new_static(
-            aws_credentials.access_key_id, 
-            aws_credentials.secret_key, 
-            aws_credentials.session_token
-        )
+        self._aws_credentials = aws_credentials
+        
+        #self._cred_provider = awscrt.auth.AwsCredentialsProvider.new_static(
+        #    aws_credentials.access_key_id, 
+        #    aws_credentials.secret_key, 
+        #    aws_credentials.session_token
+        #)
         self._print_response = print_response
         
         self._mqttc = None
@@ -415,7 +420,30 @@ class JciHitachiAWSMqttConnection:
 
         return self._mqtt_events
     
-    def _on_publish(self, topic, payload, dup, qos, retain, **kwargs):
+    def _on_publish(self, client, userdata, message):
+        try:
+            payload = json.loads(message.payload.decode())
+        except Exception as e :
+            _LOGGER.error(e)
+
+        if self._print_response:
+            print(f"Mqtt topic {message.topic} published with payload \n {payload}")
+
+        splitted_topic = message.topic.split('/')
+
+        thing_name = splitted_topic[0]
+
+        if len(splitted_topic) >= 3 and splitted_topic[1] == "status" and splitted_topic[2] == "response":
+            self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(payload)
+            self._mqtt_events.device_status_event.set()
+        elif len(splitted_topic) >= 3 and splitted_topic[1] == "registration" and splitted_topic[2] == "response":
+            self._mqtt_events.device_support[thing_name] = JciHitachiAWSStatusSupport(payload)
+            self._mqtt_events.device_support_event.set()
+        elif len(splitted_topic) >= 3 and splitted_topic[1] == "control" and splitted_topic[2] == "response":
+            self._mqtt_events.device_control[thing_name] = payload
+            self._mqtt_events.device_control_event.set()
+
+    def _on_publish_apiv2(self, topic, payload, dup, qos, retain, **kwargs):
         try:
             payload = json.loads(payload.decode())
         except Exception as e :
@@ -449,11 +477,58 @@ class JciHitachiAWSMqttConnection:
         splitted_topic = topic.split('/')
 
         return
-        
     
     def configure(self):
         """Configure MQTT.
         """
+        import os
+        self._mqttc = AWSIoTMQTTClient(str(uuid.uuid4()), useWebsocket=True)
+        self._mqttc.configureEndpoint(f"{AWS_MQTT_ENDPOINT}", 443)
+        # https://github.com/aws/aws-iot-device-sdk-python/issues/273#issuecomment-719897331
+        self._mqttc.configureCredentials(os.path.join(os.path.dirname(os.path.abspath(__file__)), './cert/AmazonRootCA1.pem'))
+        self._mqttc.configureIAMCredentials(
+            self._aws_credentials.access_key_id,
+            self._aws_credentials.secret_key,
+            self._aws_credentials.session_token
+        )
+        self._mqttc.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
+        self._mqttc.configureDrainingFrequency(10)  # Draining: 2 Hz
+        self._mqttc.configureConnectDisconnectTimeout(10)  # 10 sec
+        self._mqttc.configureMQTTOperationTimeout(15)  # 5 sec
+
+    def connect(self, topics):
+        """Connect to the MQTT broker and start loop.
+        """
+        try:
+            self._mqttc.connect()
+        except Exception as e:
+            _LOGGER.error('Connection failed with exception {}'.format(e))
+
+        if isinstance(topics, str):
+            topics = [topics]
+
+        for topic in topics:
+            try:
+                self._mqttc.subscribe(topic, 1, self._on_publish)
+            except Exception as e:
+                _LOGGER.error('Subscription failed with exception {}'.format(e))
+
+    def publish(self, topic, payload):
+        """Publish message.
+        """
+
+        self._mqttc.publish(topic, json.dumps(payload), 1)
+
+    def disconnect(self):
+        """Disconnect from the MQTT broker.
+        """
+
+        self._mqttc.disconnect()
+
+    def configure_apiv2(self):
+        """Configure MQTT.
+        """
+        
         event_loop_group = awscrt.io.EventLoopGroup(1)
         host_resolver = awscrt.io.DefaultHostResolver(event_loop_group)
         client_bootstrap = awscrt.io.ClientBootstrap(event_loop_group, host_resolver)
@@ -462,10 +537,11 @@ class JciHitachiAWSMqttConnection:
             self._cred_provider,
             client_bootstrap=client_bootstrap,
             endpoint=AWS_MQTT_ENDPOINT,
-            client_id=str(uuid.uuid4()))
+            client_id=str(uuid.uuid4())
+        )
         self._mqttc.on_message(self._on_message)
-    
-    def connect(self, topics):
+
+    def connect_apiv2(self, topics):
         """Connect to the MQTT broker and start loop.
         """
         try:
@@ -485,13 +561,7 @@ class JciHitachiAWSMqttConnection:
             except Exception as e:
                 _LOGGER.error('Subscription failed with exception {}'.format(e))
 
-    def disconnect(self):
-        """Disconnect from the MQTT broker.
-        """
-
-        self._mqttc.disconnect()
-
-    def publish(self, topic, payload):
+    def publish_apiv2(self, topic, payload):
         """Publish message.
         """
         publish_future, _ = self._mqttc.publish(topic, json.dumps(payload), awscrt.mqtt.QoS.AT_LEAST_ONCE)
