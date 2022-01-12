@@ -1,2 +1,4 @@
+awsiotsdk
+cmake
 httpx==0.21.0
 paho-mqtt
