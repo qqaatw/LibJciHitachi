@@ -1013,12 +1013,15 @@ class JciHitachiAWSAPI:
                 device_status = None
             else:
                 device_status = self._mqtt.mqtt_events.device_status.get(thing.thing_name)
+            self._mqtt.mqtt_events.device_status_event.clear()
+
             time.sleep(0.5)
             self._mqtt.publish(f"{self._aws_identity.identity_id}_{thing.gateway_mac_address}/registration/request", {"Timestamp": time.time()})
             if not self._mqtt.mqtt_events.device_support_event.wait(timeout=10.0):
                 device_support = None
             else:
                 device_support = self._mqtt.mqtt_events.device_support.get(thing.thing_name)
+            self._mqtt.mqtt_events.device_support_event.clear()
 
             if device_status and device_support:
                 thing.status_code = device_status
@@ -1111,6 +1114,7 @@ class JciHitachiAWSAPI:
                 device_control = self._mqtt.mqtt_events.device_control.get(thing_name)
                 if abs(time.time() - device_control["RequestTimestamp"]) < 5 and \
                     device_control.get(status_name) == status_value:
+                    self._mqtt.mqtt_events.device_control_event.clear()
                     return True
             time.sleep(0.5)
         return False
