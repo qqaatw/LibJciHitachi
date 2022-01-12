@@ -1093,6 +1093,11 @@ class JciHitachiAWSAPI:
         if status_name not in JciHitachiAWSStatus.compability_mapping:
             status_name = JciHitachiAWSStatus.convert_old_to_new(thing_type, status_name)
 
+
+        # prevent publishing status when a device status is refreshing
+        #self._mqtt.mqtt_events.device_status_event.wait(timeout=5.0)
+        #self._mqtt.mqtt_events.device_support_event.wait(timeout=5.0)
+
         self._mqtt.publish(f"{self._aws_identity.identity_id}_{gateway_mac_address}/control/request", {
             "Condition": {
                 "ThingName": thing_name,
@@ -1112,9 +1117,9 @@ class JciHitachiAWSAPI:
                 device_control = None
             else:
                 device_control = self._mqtt.mqtt_events.device_control.get(thing_name)
-                if abs(time.time() - device_control["RequestTimestamp"]) < 5 and \
-                    device_control.get(status_name) == status_value:
+                if device_control.get(status_name) == status_value:
                     self._mqtt.mqtt_events.device_control_event.clear()
+                    time.sleep(0.5)
                     return True
             time.sleep(0.5)
         return False
