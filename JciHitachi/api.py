@@ -960,7 +960,7 @@ class JciHitachiAWSAPI:
         
         self._mqtt.disconnect()
 
-    def change_password(self, new_password : str) -> None:
+    def change_password(self, new_password: str) -> None:
         """Change password. 
             Warning: 
             Use this function carefully, be sure you specify a strong enough password; 
@@ -1067,7 +1067,7 @@ class JciHitachiAWSAPI:
                 statuses[name] = thing.status_code
         return statuses
 
-    def set_status(self, status_name : str, status_value : int, device_name : str) -> bool:
+    def set_status(self, status_name: str, status_value: int, device_name: str) -> bool:
         """Set status to a thing.
 
         Parameters
