@@ -1574,19 +1574,16 @@ class JciHitachiAWSStatus:
             'AutoWindDirection': 'wind_swingable',
             'KeypadLock': None,
             'DisplayBrightness': 'display_brightness',
-            'FilterControl': None,
+            'FilterControl': 'air_cleaning_filter',
             'PM25': 'pm25_value',
             'IndoorHumidity': 'indoor_humidity',
             'SideAirOutlet': 'side_vent',
             'Defrost': None,
             'SmellIndex': 'odor_level',
             'CleanFilterNotification': 'clean_filter_notify',
-            'TankFullNotification': 'water_full_warning'
-            #'air_purify_level': 13,
-            #'error_code': 18,
-            #'air_quality_value': 35,
-            #'air_quality_level': 36,
-            #'air_cleaning_filter': 41
+            'TankFullNotification': 'water_full_warning',
+            'TaiseiaError': None,
+            'Error': 'error_code',
         }
     }
     device_type_mapping = {
@@ -1664,6 +1661,7 @@ class JciHitachiAWSStatus:
 
 class JciHitachiAWSStatusSupport:
     extended_mapping = {
+        "FirmwareId": None,
         "Model": "model",
         "Brand": "brand",
         "FindMe": None,
