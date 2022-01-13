@@ -85,8 +85,9 @@ class JciHitachiAWSCognitoConnection:
         if aws_tokens:
             self._aws_tokens = aws_tokens
         else:
-            self._aws_tokens = None
-            self.login()
+            conn_status, self._aws_tokens = self.login()
+            if conn_status != "OK":
+                raise RuntimeError(f"An error occurred when signing into AWS Cognito Service: {conn_status}")
     
     def _generate_headers(self, target):
         normal_headers = {
@@ -142,14 +143,15 @@ class JciHitachiAWSCognitoConnection:
 
         status, response = self._handle_response(login_req)
 
+        aws_tokens = None
         if login_req.status_code == httpx.codes.ok:        
             auth_result = response["AuthenticationResult"]
-            self._aws_tokens = AWSTokens(
+            aws_tokens = AWSTokens(
                 access_token = auth_result['AccessToken'],
                 id_token = auth_result['IdToken'],
                 refresh_token = auth_result['RefreshToken'],
             )
-        return status, self._aws_tokens
+        return status, aws_tokens
 
     def get_data(self):
         raise NotImplementedError
@@ -161,6 +163,44 @@ class JciHitachiAWSCognitoConnection:
         print('status_code:', response.status_code)
         print('text:', json.dumps(response.json(), indent=True))
         print('===================================================')
+
+
+class ChangePassword(JciHitachiAWSCognitoConnection):
+    """API internal endpoint. 
+    https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_ChangePassword.html
+    
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    """
+
+    def __init__(self, email, password, **kwargs):
+        super().__init__(email, password, **kwargs)
+    
+    def get_data(self, new_password):
+        json_data = {
+            "AccessToken": self._aws_tokens.access_token,
+            "PreviousPassword": self._password,
+            "ProposedPassword": new_password,
+        }
+
+        headers = self._generate_headers("AWSCognitoIdentityProviderService.ChangePassword")
+
+        req = httpx.post("{}".format(f"https://{AWS_COGNITO_IDP_ENDPOINT}"), 
+            json=json_data,
+            headers=headers,
+            proxies=self._proxies,
+        )
+
+        if self._print_response:
+            self.print_response(req)
+
+        status, response = self._handle_response(req)
+
+        return status, None
 
 
 class GetUser(JciHitachiAWSCognitoConnection):
@@ -196,6 +236,7 @@ class GetUser(JciHitachiAWSCognitoConnection):
 
         status, response = self._handle_response(req)
 
+        aws_identity = None
         if req.status_code == httpx.codes.ok:
             user_attributes = {attr["Name"]: attr["Value"] for attr in response["UserAttributes"]}
             aws_identity = AWSIdentity(
@@ -241,6 +282,7 @@ class GetCredentials(JciHitachiAWSCognitoConnection):
 
         status, response = self._handle_response(req)
 
+        aws_credentials = None
         if req.status_code == httpx.codes.ok:
             aws_credentials = AWSCredentials(
                 access_key_id = response['Credentials']['AccessKeyId'],
@@ -394,12 +436,6 @@ class JciHitachiAWSMqttConnection:
 
     def __init__(self, aws_credentials, print_response=False):
         self._aws_credentials = aws_credentials
-        
-        #self._cred_provider = awscrt.auth.AwsCredentialsProvider.new_static(
-        #    aws_credentials.access_key_id, 
-        #    aws_credentials.secret_key, 
-        #    aws_credentials.session_token
-        #)
         self._print_response = print_response
         
         self._mqttc = None
@@ -528,13 +564,17 @@ class JciHitachiAWSMqttConnection:
     def configure_apiv2(self):
         """Configure MQTT.
         """
-        
+        cred_provider = awscrt.auth.AwsCredentialsProvider.new_static(
+            self._aws_credentials.access_key_id, 
+            self._aws_credentials.secret_key, 
+            self._aws_credentials.session_token
+        )
         event_loop_group = awscrt.io.EventLoopGroup(1)
         host_resolver = awscrt.io.DefaultHostResolver(event_loop_group)
         client_bootstrap = awscrt.io.ClientBootstrap(event_loop_group, host_resolver)
         self._mqttc = mqtt_connection_builder.websockets_with_default_aws_signing(
             AWS_COGNITO_REGION,
-            self._cred_provider,
+            cred_provider,
             client_bootstrap=client_bootstrap,
             endpoint=AWS_MQTT_ENDPOINT,
             client_id=str(uuid.uuid4())

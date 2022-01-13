@@ -860,6 +860,7 @@ class JciHitachiAWSAPI:
         self._aws_tokens = None
         self._aws_identity = None
         self._aws_credentials = None
+        self._host_identity_id = None
         self._refresh_token_counter = 0
         self._user_id = None
         self._task_id = 0
@@ -936,8 +937,18 @@ class JciHitachiAWSAPI:
             aws_tokens=self._aws_tokens,
             print_response=True
         )
-
         conn_status, self._aws_credentials = conn.get_data(self._aws_identity)
+
+        conn = aws_connection.ListSubUser(self._aws_tokens, print_response=self.print_response)
+        conn_status, conn_json = conn.get_data()
+
+        if conn_status == "OK":
+            for user in conn_json["results"]["FamilyMemberList"]:
+                if user["isHost"]:
+                    self._host_identity_id = user["userId"]
+                    break
+        else:
+            raise RuntimeError(f"An error occurred when listing account users: {conn_status}")
 
         conn = aws_connection.GetAllDevice(self._aws_tokens, print_response=self.print_response)
         conn_status, conn_json = conn.get_data()
@@ -954,14 +965,15 @@ class JciHitachiAWSAPI:
             self._mqtt = aws_connection.JciHitachiAWSMqttConnection(self._aws_credentials, print_response=self.print_response)
             self._mqtt.configure()
 
-            topics = [f"{self._aws_identity.identity_id}_{thing.gateway_mac_address}/#" for thing in self._things.values()]
+            topics = [f"{self._host_identity_id}_{thing.gateway_mac_address}/#" for thing in self._things.values()]
             self._mqtt.connect(topics=topics)
 
             # status
             self.refresh_status()
-
+            
+            return
         else:
-            raise RuntimeError(f"An error occurred when signing into AWS Cognito API: {conn_status}")
+            raise RuntimeError(f"An error occurred when retrieving device info: {conn_status}")
     
     def logout(self) -> None:
         """Logout API.
@@ -1008,7 +1020,7 @@ class JciHitachiAWSAPI:
                     thing.type == "unknown":
                 continue
 
-            self._mqtt.publish(f"{self._aws_identity.identity_id}_{thing.gateway_mac_address}/status/request", {"Timestamp": time.time()})
+            self._mqtt.publish(f"{self._host_identity_id}_{thing.gateway_mac_address}/status/request", {"Timestamp": time.time()})
             if not self._mqtt.mqtt_events.device_status_event.wait(timeout=10.0):
                 device_status = None
             else:
@@ -1016,7 +1028,7 @@ class JciHitachiAWSAPI:
             self._mqtt.mqtt_events.device_status_event.clear()
 
             time.sleep(0.5)
-            self._mqtt.publish(f"{self._aws_identity.identity_id}_{thing.gateway_mac_address}/registration/request", {"Timestamp": time.time()})
+            self._mqtt.publish(f"{self._host_identity_id}_{thing.gateway_mac_address}/registration/request", {"Timestamp": time.time()})
             if not self._mqtt.mqtt_events.device_support_event.wait(timeout=10.0):
                 device_support = None
             else:
@@ -1098,7 +1110,7 @@ class JciHitachiAWSAPI:
         #self._mqtt.mqtt_events.device_status_event.wait(timeout=5.0)
         #self._mqtt.mqtt_events.device_support_event.wait(timeout=5.0)
 
-        self._mqtt.publish(f"{self._aws_identity.identity_id}_{gateway_mac_address}/control/request", {
+        self._mqtt.publish(f"{self._host_identity_id}_{gateway_mac_address}/control/request", {
             "Condition": {
                 "ThingName": thing_name,
                 "Index": 0,
