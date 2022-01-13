@@ -1680,7 +1680,7 @@ class JciHitachiAWSStatusSupport:
         return self._status[item]
     
     def __repr__(self) -> str:
-        str(self._status)
+        return str(self._status)
 
     def _preprocess(self, status):
         # device type
