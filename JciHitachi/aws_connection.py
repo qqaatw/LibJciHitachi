@@ -11,6 +11,7 @@ import httpx
 #import awsiot
 #from awsiot import mqtt_connection_builder
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+from AWSIoTPythonSDK.exception.AWSIoTExceptions import connectTimeoutException, publishTimeoutException, subscribeTimeoutException
 from .model import JciHitachiAWSStatus, JciHitachiAWSStatusSupport
 
 AWS_COGNITO_REGION = "ap-northeast-1"
@@ -18,7 +19,6 @@ AWS_COGNITO_IDP_ENDPOINT = f"cognito-idp.{AWS_COGNITO_REGION}.amazonaws.com/"
 AWS_COGNITO_ENDPOINT = f"cognito-identity.{AWS_COGNITO_REGION}.amazonaws.com/"
 AWS_COGNITO_CLIENT_ID = "7kfnjsb66ei1qt5s5gjv6j1lp6"
 AWS_COGNITO_USERPOOL_ID = "ap-northeast-1_aTZeaievK"
-
 
 AWS_IOT_ENDPOINT = "https://iot-api.jci-hitachi-smarthome.com"
 AWS_MQTT_ENDPOINT = "a8kcu267h96in-ats.iot.ap-northeast-1.amazonaws.com"
@@ -51,7 +51,6 @@ class JciHitachiMqttEvents:
     device_support: Dict[str, JciHitachiAWSStatusSupport] = field(default_factory=dict)
     device_control: Dict[str, dict] = field(default_factory=dict)
     mqtt_error: str = field(default_factory=str)
-    #device_access_time: Dict[str, int] = field(default_factory=dict)
     device_status_event: threading.Event = field(default_factory=threading.Event)
     device_support_event: threading.Event = field(default_factory=threading.Event)
     device_control_event: threading.Event = field(default_factory=threading.Event)
@@ -606,10 +605,12 @@ class JciHitachiAWSMqttConnection:
         
         try:
             self._mqttc.connect()
+        except connectTimeoutException as e:
+            _LOGGER.error('Connection timed out.')
         except Exception as e:
             self._mqtt_events.mqtt_error = e.__class__.__name__
             self._mqtt_events.mqtt_error_event.set()
-            _LOGGER.error('Connection failed with exception: {}'.format(e))
+            _LOGGER.error('Connection failed with exception: {}'.format(e.message))
 
         if isinstance(topics, str):
             topics = [topics]
@@ -617,6 +618,8 @@ class JciHitachiAWSMqttConnection:
         for topic in topics:
             try:
                 self._mqttc.subscribe(topic, 1, self._on_publish)
+            except subscribeTimeoutException as e:
+                _LOGGER.error('Subscription timed out.')
             except Exception as e:
                 self._mqtt_events.mqtt_error = e.__class__.__name__
                 self._mqtt_events.mqtt_error_event.set()
@@ -633,7 +636,14 @@ class JciHitachiAWSMqttConnection:
             Payload to publish.
         """
 
-        self._mqttc.publish(topic, json.dumps(payload), 1)
+        try:
+            self._mqttc.publish(topic, json.dumps(payload), 1)
+        except publishTimeoutException as e:
+            _LOGGER.error('Publish timed out.')
+        except Exception as e:
+            self._mqtt_events.mqtt_error = e.__class__.__name__
+            self._mqtt_events.mqtt_error_event.set()
+            _LOGGER.error('Publish failed with exception: {}'.format(e))
 
     def disconnect(self):
         """Disconnect from the MQTT broker.
@@ -702,5 +712,10 @@ class JciHitachiAWSMqttConnection:
             Payload to publish.
         """
 
-        publish_future, _ = self._mqttc.publish(topic, json.dumps(payload), awscrt.mqtt.QoS.AT_LEAST_ONCE)
-        print(publish_future.result())
+        try:
+            publish_future, _ = self._mqttc.publish(topic, json.dumps(payload), awscrt.mqtt.QoS.AT_LEAST_ONCE)
+            print(publish_future.result())
+        except Exception as e:
+            self._mqtt_events.mqtt_error = e.__class__.__name__
+            self._mqtt_events.mqtt_error_event.set()
+            _LOGGER.error('Publish failed with exception: {}'.format(e))
