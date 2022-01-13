@@ -890,8 +890,8 @@ class JciHitachiAWSAPI:
         return self._task_id
 
     def _check_before_publish(self) -> None:
-        if self._mqtt.mqtt_events.mqtt_error_event.is_set() and self._error_counter < 5:
-            self._error_counter += 1
+        if self._mqtt.mqtt_events.mqtt_error_event.is_set() and\
+            self._mqtt.mqtt_events.mqtt_error == "wssHandShakeError":
             self._mqtt.mqtt_events.mqtt_error_event.clear()
             self.login()
 
@@ -950,9 +950,7 @@ class JciHitachiAWSAPI:
             self._mqtt.connect(topics=topics)
 
             # status
-            self.refresh_status()
-            
-            return
+            self.refresh_status(refresh_support_code=True)
         else:
             raise RuntimeError(f"An error occurred when retrieving device info: {conn_status}")
     
@@ -994,7 +992,7 @@ class JciHitachiAWSAPI:
         if hitachi_conn_status != "OK" or aws_conn_status != "OK":
             raise RuntimeError(f"An error occurred when changing password: {hitachi_conn_status} {aws_conn_status}")
 
-    def refresh_status(self, device_name : Optional[str] = None) -> None:
+    def refresh_status(self, device_name : Optional[str] = None, refresh_support_code=False) -> None:
         """Refresh device status from the API.
 
         Parameters
@@ -1003,6 +1001,8 @@ class JciHitachiAWSAPI:
             Refreshing a device's status by its name.
             If None is given, all devices' status will be refreshed,
             by default None.
+        refresh_support_code : bool, optional
+            Whether or not to refresh support code.
         
         Raise
         -------
@@ -1017,28 +1017,26 @@ class JciHitachiAWSAPI:
                     thing.type == "unknown":
                 continue
 
+            if refresh_support_code:
+                self._mqtt.publish(f"{self._host_identity_id}_{thing.gateway_mac_address}/registration/request", {"Timestamp": time.time()})
+                if not self._mqtt.mqtt_events.device_support_event.wait(timeout=10.0):
+                    raise RuntimeError(
+                        f"An error occurred when refreshing support code."
+                    )
+                else:
+                    thing.support_code = self._mqtt.mqtt_events.device_support.get(thing.thing_name)
+                self._mqtt.mqtt_events.device_support_event.clear()
+                time.sleep(0.5)
+
             self._mqtt.publish(f"{self._host_identity_id}_{thing.gateway_mac_address}/status/request", {"Timestamp": time.time()})
             if not self._mqtt.mqtt_events.device_status_event.wait(timeout=10.0):
-                device_status = None
+                raise RuntimeError(
+                    f"An error occurred when refreshing status code."
+                )
             else:
-                device_status = self._mqtt.mqtt_events.device_status.get(thing.thing_name)
+                thing.status_code = self._mqtt.mqtt_events.device_status.get(thing.thing_name)
             self._mqtt.mqtt_events.device_status_event.clear()
-
-            time.sleep(0.5)
-            self._mqtt.publish(f"{self._host_identity_id}_{thing.gateway_mac_address}/registration/request", {"Timestamp": time.time()})
-            if not self._mqtt.mqtt_events.device_support_event.wait(timeout=10.0):
-                device_support = None
-            else:
-                device_support = self._mqtt.mqtt_events.device_support.get(thing.thing_name)
-            self._mqtt.mqtt_events.device_support_event.clear()
-
-            if device_status and device_support:
-                thing.status_code = device_status
-                thing.support_code = device_support
-                return
-            raise RuntimeError(
-                f"An error occurred when refreshing status: {device_status} {device_support}"
-            )
+            
     
     def get_status(self, device_name: Optional[str] = None, legacy=False) -> Dict[str, JciHitachiAWSStatus]:
         """Get device status after refreshing status.
