@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from JciHitachi.api import JciHitachiAPI
+from JciHitachi.api import JciHitachiAPI, JciHitachiAWSAPI
 from JciHitachi.mqtt_connection import JciHitachiMqttConnection
 
 TEST_EMAIL = os.environ['TEST_EMAIL']
@@ -22,6 +22,15 @@ MOCK_SUPPORT_CODE_DH = os.environ["MOCK_SUPPORT_CODE_DH"]
 @pytest.fixture(scope="session")
 def fixture_api():
     api = JciHitachiAPI(
+        TEST_EMAIL,
+        TEST_PASSWORD,
+    )
+    api.login()
+    return api
+
+@pytest.fixture(scope="session")
+def fixture_aws_api():
+    api = JciHitachiAWSAPI(
         TEST_EMAIL,
         TEST_PASSWORD,
     )

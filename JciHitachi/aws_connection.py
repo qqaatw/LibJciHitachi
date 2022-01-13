@@ -50,14 +50,16 @@ class JciHitachiMqttEvents:
     device_status: Dict[str, JciHitachiAWSStatus] = field(default_factory=dict)
     device_support: Dict[str, JciHitachiAWSStatusSupport] = field(default_factory=dict)
     device_control: Dict[str, dict] = field(default_factory=dict)
+    mqtt_error: str = field(default_factory=str)
     #device_access_time: Dict[str, int] = field(default_factory=dict)
     device_status_event: threading.Event = field(default_factory=threading.Event)
     device_support_event: threading.Event = field(default_factory=threading.Event)
     device_control_event: threading.Event = field(default_factory=threading.Event)
+    mqtt_error_event: threading.Event = field(default_factory=threading.Event)
 
 
 class JciHitachiAWSCognitoConnection:
-    """Connecting to Jci-Hitachi AWS Cognito API to get data or send commands.
+    """Connecting to Jci-Hitachi AWS Cognito API.
 
     Parameters
     ----------
@@ -104,13 +106,26 @@ class JciHitachiAWSCognitoConnection:
         if response.status_code == httpx.codes.ok:    
             return "OK", response_json
         else:
-            return f"{response['__type']} {response['message']}", response_json
+            return f"{response_json['__type']} {response_json['message']}", response_json
 
     @property
     def aws_tokens(self):
         return self._aws_tokens
 
     def login(self, use_refresh_token=False):
+        """Login API.
+
+        Parameters
+        ----------
+        use_refresh_token : bool, optional
+            Whether or not to use AWSTokens.refresh_token to login, by default False
+
+        Returns
+        -------
+        (str, AWSTokens)
+            (status, aws tokens).
+        """
+
         # https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html
         if use_refresh_token and self._aws_tokens != None:
             login_json_data = {
@@ -293,14 +308,12 @@ class GetCredentials(JciHitachiAWSCognitoConnection):
 
 
 class JciHitachiAWSIoTConnection:
-    """Connecting to Jci-Hitachi AWS Cognito API to get data or send commands.
+    """Connecting to Jci-Hitachi AWS IoT API.
 
     Parameters
     ----------
-    aws_tokens : AWSTokens, optional
-        If aws_tokens is given, it is used by request, 
-        otherwise perform a login procedure to obtain new aws_tokens,
-        by default None.
+    aws_tokens : AWSTokens
+        AWS tokens.
     proxy : str, optional
         Proxy setting. Format:"IP:port", by default None. 
     print_response : bool, optional
@@ -361,6 +374,14 @@ class JciHitachiAWSIoTConnection:
 
 
 class GetAllDevice(JciHitachiAWSIoTConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    aws_tokens : AWSTokens
+        AWS tokens.
+    """
+
     def __init__(self, aws_tokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
@@ -369,6 +390,14 @@ class GetAllDevice(JciHitachiAWSIoTConnection):
 
 
 class GetAllGroup(JciHitachiAWSIoTConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    aws_tokens : AWSTokens
+        AWS tokens.
+    """
+
     def __init__(self, aws_tokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
@@ -377,6 +406,14 @@ class GetAllGroup(JciHitachiAWSIoTConnection):
 
 
 class GetAllRegion(JciHitachiAWSIoTConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    aws_tokens : AWSTokens
+        AWS tokens.
+    """
+
     def __init__(self, aws_tokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
@@ -385,6 +422,14 @@ class GetAllRegion(JciHitachiAWSIoTConnection):
 
 
 class GetAvailableAggregationMonthlyData(JciHitachiAWSIoTConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    aws_tokens : AWSTokens
+        AWS tokens.
+    """
+
     def __init__(self, aws_tokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
@@ -398,6 +443,14 @@ class GetAvailableAggregationMonthlyData(JciHitachiAWSIoTConnection):
 
 
 class GetHistoryEventByUser(JciHitachiAWSIoTConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    aws_tokens : AWSTokens
+        AWS tokens.
+    """
+
     def __init__(self, aws_tokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
@@ -411,6 +464,14 @@ class GetHistoryEventByUser(JciHitachiAWSIoTConnection):
 
 
 class ListSubUser(JciHitachiAWSIoTConnection):
+    """API internal endpoint.
+    
+    Parameters
+    ----------
+    aws_tokens : AWSTokens
+        AWS tokens.
+    """
+
     def __init__(self, aws_tokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
@@ -420,16 +481,12 @@ class ListSubUser(JciHitachiAWSIoTConnection):
 
 class JciHitachiAWSMqttConnection:
     """Connecting to Jci-Hitachi AWS MQTT to get latest events. 
-        # TODO: Swiching to API v2 when precompiled wheels of musl linux are available
+        # TODO: Swiching to awscrt API v2 when precompiled wheels of musl linux are available
 
     Parameters
     ----------
-    email : str
-        User email.
-    password : str
-        User password.
-    user_id : int
-        User ID.
+    aws_credentials : AWSCredentials
+        AWS credentials.
     print_response : bool, optional
         If set, all responses of MQTT will be printed, by default False.
     """
@@ -459,7 +516,9 @@ class JciHitachiAWSMqttConnection:
     def _on_publish(self, client, userdata, message):
         try:
             payload = json.loads(message.payload.decode())
-        except Exception as e :
+        except Exception as e:
+            self._mqtt_events.mqtt_error = e.__class__.__name__
+            self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error(e)
 
         if self._print_response:
@@ -482,7 +541,9 @@ class JciHitachiAWSMqttConnection:
     def _on_publish_apiv2(self, topic, payload, dup, qos, retain, **kwargs):
         try:
             payload = json.loads(payload.decode())
-        except Exception as e :
+        except Exception as e:
+            self._mqtt_events.mqtt_error = e.__class__.__name__
+            self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error(e)
 
         if self._print_response:
@@ -505,7 +566,9 @@ class JciHitachiAWSMqttConnection:
     def _on_message(self, topic, payload, dup, qos, retain, **kwargs):
         try:
             payload = json.loads(payload.decode())
-        except Exception as e :
+        except Exception as e:
+            self._mqtt_events.mqtt_error = e.__class__.__name__
+            self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error(e)
         #if self._print_response:
         #    print(f"{topic} {str(payload)}")
@@ -534,11 +597,19 @@ class JciHitachiAWSMqttConnection:
 
     def connect(self, topics):
         """Connect to the MQTT broker and start loop.
+        
+        Parameters
+        ----------
+        topics : str or list of str
+            Topics to subscribe.
         """
+        
         try:
             self._mqttc.connect()
         except Exception as e:
-            _LOGGER.error('Connection failed with exception {}'.format(e))
+            self._mqtt_events.mqtt_error = e.__class__.__name__
+            self._mqtt_events.mqtt_error_event.set()
+            _LOGGER.error('Connection failed with exception: {}'.format(e))
 
         if isinstance(topics, str):
             topics = [topics]
@@ -547,10 +618,19 @@ class JciHitachiAWSMqttConnection:
             try:
                 self._mqttc.subscribe(topic, 1, self._on_publish)
             except Exception as e:
-                _LOGGER.error('Subscription failed with exception {}'.format(e))
+                self._mqtt_events.mqtt_error = e.__class__.__name__
+                self._mqtt_events.mqtt_error_event.set()
+                _LOGGER.error('Subscription failed with exception: {}'.format(e))
 
     def publish(self, topic, payload):
         """Publish message.
+        
+        Parameters
+        ----------
+        topics : str
+            Topics to publish.
+        payload : dict
+            Payload to publish.
         """
 
         self._mqttc.publish(topic, json.dumps(payload), 1)
@@ -583,12 +663,20 @@ class JciHitachiAWSMqttConnection:
 
     def connect_apiv2(self, topics):
         """Connect to the MQTT broker and start loop.
+        
+        Parameters
+        ----------
+        topics : str or list of str
+            Topics to subscribe.
         """
+        
         try:
             connect_future = self._mqttc.connect()
             print(connect_future.result())
             _LOGGER.info("Connected!")
         except Exception as e:
+            self._mqtt_events.mqtt_error = e.__class__.__name__
+            self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error('Connection failed with exception {}'.format(e))
 
         if isinstance(topics, str):
@@ -599,10 +687,20 @@ class JciHitachiAWSMqttConnection:
                 subscribe_future, _ = self._mqttc.subscribe(topic, awscrt.mqtt.QoS.AT_LEAST_ONCE, callback=self._on_publish)
                 print(subscribe_future.result())
             except Exception as e:
+                self._mqtt_events.mqtt_error = e.__class__.__name__
+                self._mqtt_events.mqtt_error_event.set()
                 _LOGGER.error('Subscription failed with exception {}'.format(e))
 
     def publish_apiv2(self, topic, payload):
         """Publish message.
+        
+        Parameters
+        ----------
+        topics : str
+            Topics to publish.
+        payload : dict
+            Payload to publish.
         """
+
         publish_future, _ = self._mqttc.publish(topic, json.dumps(payload), awscrt.mqtt.QoS.AT_LEAST_ONCE)
         print(publish_future.result())

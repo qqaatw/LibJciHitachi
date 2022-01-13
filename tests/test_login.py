@@ -1,10 +1,10 @@
 import pytest
+import warnings
 
-from JciHitachi.api import JciHitachiAPI
+from JciHitachi.api import JciHitachiAPI, JciHitachiAWSAPI
 from JciHitachi.connection import JciHitachiConnection
-from JciHitachi.mqtt_connection import JciHitachiMqttConnection
 
-from . import fixture_api, fixture_mqtt, TEST_EMAIL, TEST_PASSWORD, TEST_DEVICE_AC
+from . import fixture_api, fixture_aws_api, fixture_mqtt, TEST_EMAIL, TEST_PASSWORD, TEST_DEVICE_AC
 
 
 class TestAPILogin:
@@ -24,6 +24,17 @@ class TestAPILogin:
 
         assert len(fixture_api._session_token) == 31
         assert fixture_api._session_token != invalid_token
+    
+    def test_deprecated_warning(self):
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+            # Trigger a warning.
+            api = JciHitachiAPI(TEST_EMAIL, TEST_PASSWORD)
+            # Verify some things
+            assert len(w) == 1
+            assert issubclass(w[-1].category, DeprecationWarning)
+            assert "This API has been deprecated." in str(w[-1].message)
 
     @pytest.mark.parametrize("mock_device_name", ["NON_EXISTING_NAME"])
     def test_device_name(self, mock_device_name):
@@ -39,6 +50,39 @@ class TestAPILogin:
         api = JciHitachiAPI("abc@abc.com", "password")
         
         with pytest.raises(RuntimeError, match=r"An error occurred when API login:"):
+            api.login()
+
+
+class TestAWSAPILogin:
+    def test_api(self, fixture_aws_api):
+        assert fixture_aws_api._aws_tokens is not None
+        assert fixture_aws_api._aws_identity is not None
+        assert fixture_aws_api._aws_credentials is not None
+        assert fixture_aws_api.things[TEST_DEVICE_AC].name == TEST_DEVICE_AC
+
+    @pytest.mark.skip("Skip session expiry test as we're finding a better way to test mqtt failure.")
+    def test_session_expiry(self, fixture_aws_api):
+        invalid_token = "0" * 1316
+        fixture_aws_api._aws_credentials.session_token = invalid_token
+        fixture_aws_api.refresh_status() # raise mqtt_error_event
+        fixture_aws_api.refresh_status() # test and relogin
+        assert len(fixture_aws_api._aws_credentials.session_token) == 1316
+        assert fixture_aws_api._aws_credentials.session_token != invalid_token
+
+    @pytest.mark.parametrize("mock_device_name", ["NON_EXISTING_NAME"])
+    def test_device_name(self, mock_device_name):
+        api = JciHitachiAWSAPI(
+            TEST_EMAIL,
+            TEST_PASSWORD,
+            mock_device_name)
+        
+        with pytest.raises(AssertionError, match=r"Some of device_names are not available from the API."):
+            api.login()
+
+    def test_incorrect_credential(self):
+        api = JciHitachiAWSAPI("abc@abc.com", "password")
+        
+        with pytest.raises(RuntimeError, match=r"An error occurred when signing into AWS Cognito Service:"):
             api.login()
 
 

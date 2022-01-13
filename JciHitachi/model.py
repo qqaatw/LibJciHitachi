@@ -1599,6 +1599,9 @@ class JciHitachiAWSStatus:
     def __getattr__(self, item):
         print(item)
         return self._status[item]
+    
+    def __repr__(self) -> str:
+        return str(self._status)
 
     def _preprocess(self, status):
         # device type
@@ -1675,6 +1678,9 @@ class JciHitachiAWSStatusSupport:
 
     def __getattr__(self, item):
         return self._status[item]
+    
+    def __repr__(self) -> str:
+        str(self._status)
 
     def _preprocess(self, status):
         # device type

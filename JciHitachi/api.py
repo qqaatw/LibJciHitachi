@@ -834,7 +834,7 @@ class JciHitachiAWSAPI:
     max_retries : int, optional
         Maximum number of retries when setting status, by default 5.
     device_offline_timeout: float, optional
-        Device offline timeout, by default 45.0.
+        For furture use.
     print_response : bool, optional
         If set, all responses of httpx and MQTT will be printed, by default False.
     """
@@ -861,8 +861,7 @@ class JciHitachiAWSAPI:
         self._aws_identity = None
         self._aws_credentials = None
         self._host_identity_id = None
-        self._refresh_token_counter = 0
-        self._user_id = None
+        self._error_counter = 0
         self._task_id = 0
 
     @property
@@ -871,23 +870,11 @@ class JciHitachiAWSAPI:
 
         Returns
         -------
-        dict
-            A dict of Thing.
+        dict of AWSThing
+            A dict of AWSThing.
         """
 
         return self._things
-    
-    @property
-    def user_id(self) -> Optional[int]:
-        """User ID.
-
-        Returns
-        -------
-        int
-            User ID.
-        """
-
-        return self._user_id
 
     @property
     def task_id(self) -> int:
@@ -902,17 +889,11 @@ class JciHitachiAWSAPI:
         self._task_id += 1
         return self._task_id
 
-    def _sync_peripherals_availablity(self) -> None:
-        return
-        """
-        device_access_time = self._mqtt.mqtt_events.device_access_time
-        for peripheral in self._peripherals.values():
-            if peripheral.gateway_id in device_access_time and \
-                abs(time.time() - device_access_time[peripheral.gateway_id]) < self.device_offline_timeout:
-                peripheral.available = True
-            else:
-                peripheral.available = False
-        """
+    def _check_before_publish(self) -> None:
+        if self._mqtt.mqtt_events.mqtt_error_event.is_set() and self._error_counter < 5:
+            self._error_counter += 1
+            self._mqtt.mqtt_events.mqtt_error_event.clear()
+            self.login()
 
     def login(self) -> None:
         """Login API.
@@ -926,7 +907,7 @@ class JciHitachiAWSAPI:
         conn = aws_connection.GetUser(
             email=self.email,
             password=self.password,
-            print_response=True
+            print_response=self.print_response,
         )
         self._aws_tokens = conn.aws_tokens
         conn_status, self._aws_identity = conn.get_data()
@@ -935,7 +916,7 @@ class JciHitachiAWSAPI:
             email=self.email,
             password=self.password,
             aws_tokens=self._aws_tokens,
-            print_response=True
+            print_response=self.print_response,
         )
         conn_status, self._aws_credentials = conn.get_data(self._aws_identity)
 
@@ -982,7 +963,11 @@ class JciHitachiAWSAPI:
         self._mqtt.disconnect()
 
     def change_password(self, new_password : str) -> None:
-        """Change password. (Not implemented yet)
+        """Change password. 
+            Warning: 
+            Use this function carefully, be sure you specify a strong enough password; 
+            otherwise, your password might be accepted by the Hitachi account management but not be accepted by AWS Cognito, 
+            which will result in a login failure in the APP.
 
         Parameters
         ----------
@@ -995,7 +980,19 @@ class JciHitachiAWSAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
-        return
+        # We have to change both Hitachi owned account management & AWS Cognito simultaneously.
+        conn = connection.UpdateUserCredential(
+            self.email,
+            self.password,
+            print_response=self.print_response
+        )
+        hitachi_conn_status, _ = conn.get_data(new_password)
+
+        conn = aws_connection.ChangePassword(self.email, self.password, aws_tokens=self._aws_tokens, print_response=self.print_response)
+        aws_conn_status, _ = conn.get_data(new_password)
+
+        if hitachi_conn_status != "OK" or aws_conn_status != "OK":
+            raise RuntimeError(f"An error occurred when changing password: {hitachi_conn_status} {aws_conn_status}")
 
     def refresh_status(self, device_name : Optional[str] = None) -> None:
         """Refresh device status from the API.
@@ -1013,7 +1010,7 @@ class JciHitachiAWSAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
-        #self._sync_peripherals_availablity()
+        self._check_before_publish()
 
         for name, thing in self._things.items():
             if (device_name and name != device_name) or \
@@ -1057,8 +1054,8 @@ class JciHitachiAWSAPI:
 
         Returns
         -------
-        dict of JciHitachiAWSStatus.
-            Return a dict of JciHitachiAWSStatus instances.
+        dict of JciHitachiAWSStatus or JciHitachiStatus.
+            if legacy is True, return a dict of JciHitachiAWSStatus; otherwise, return a dict of JciHitachiAWSStatus instances.
         """
         
         statuses = {}
@@ -1078,7 +1075,7 @@ class JciHitachiAWSAPI:
         Parameters
         ----------
         status_name : str
-            Status name, which has to be in idx dict. E.g. JciHitachiAC.idx
+            Status name.
         status_value : int
             Status value.
         device_name : str
@@ -1095,7 +1092,7 @@ class JciHitachiAWSAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
-        #self._sync_peripherals_availablity()
+        self._check_before_publish()
         #if not self._peripherals[device_name].available:
         #    return False
 
