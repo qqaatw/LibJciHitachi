@@ -610,7 +610,7 @@ class JciHitachiAWSMqttConnection:
         except Exception as e:
             self._mqtt_events.mqtt_error = e.__class__.__name__
             self._mqtt_events.mqtt_error_event.set()
-            _LOGGER.error('Connection failed with exception: {}'.format(e.message))
+            _LOGGER.error('Connection failed with exception: {}'.format(e))
 
         if isinstance(topics, str):
             topics = [topics]

@@ -890,8 +890,8 @@ class JciHitachiAWSAPI:
         return self._task_id
 
     def _check_before_publish(self) -> None:
-        if self._mqtt.mqtt_events.mqtt_error_event.is_set() and self._error_counter < 5:
-            self._error_counter += 1
+        if self._mqtt.mqtt_events.mqtt_error_event.is_set() and\
+            self._mqtt.mqtt_events.mqtt_error == "wssHandShakeError":
             self._mqtt.mqtt_events.mqtt_error_event.clear()
             self.login()
 
