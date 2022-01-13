@@ -22,7 +22,7 @@
   - Horizontal wind direction 導風板水平方向 (Untested)
   - Target temperature 目標溫度
   - Indoor temperature 室內溫度
-  - Outdoor temperature 室外溫度
+  - Outdoor temperature 室外溫度 (No longer supported after v0.4)
   - Sleep timer 睡眠計時器
   - Mold prevention 機體防霉
   - Energy saving 節電
@@ -65,6 +65,7 @@ See [docs](https://libjcihitachi.readthedocs.io/en/latest/).
 ## Todo
 
 1. Heat exchanger support.
+2. PM 2.5 panel support.
 
 ## Acknowledgement
 
