@@ -1,4 +1,5 @@
-from JciHitachi.api import JciHitachiAWSAPI
+from JciHitachi.api import JciHitachiAPI
+
 
 # Fill out your Jci Hitachi email address, password, and device name.
 EMAIL = "yourname@yourdomain.com"
@@ -6,18 +7,18 @@ PASSWORD = "password"
 DEVICENAME = "living room"
 
 # Login
-api = JciHitachiAWSAPI(EMAIL, PASSWORD, DEVICENAME)
+api = JciHitachiAPI(EMAIL, PASSWORD, DEVICENAME)
 api.login()
 
 # Check device status 
-# device_status = api.get_status(legacy=True) # return legacy status class
 device_status = api.get_status()
 print(device_status[DEVICENAME].status)
 
 # Set device status 
 # For available command names and values, please refer to
-# model.py->JciHitachiAWSStatus.compability_mapping
-if api.set_status('TemperatureSetting', 27, DEVICENAME):
+# Air conditioner: status.py->JciHitachiAC
+# Dehumidifier: status.py->JciHitachiDH
+if api.set_status('target_temp', 27, DEVICENAME):
     print('Success')
 else:
     print('Failed')

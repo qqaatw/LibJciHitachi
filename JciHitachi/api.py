@@ -1099,7 +1099,7 @@ class JciHitachiAWSAPI:
         thing_name = self._things[device_name].thing_name
         thing_type = self._things[device_name].type
         gateway_mac_address = self._things[device_name].gateway_mac_address
-        if status_name not in JciHitachiAWSStatus.compability_mapping:
+        if status_name not in JciHitachiAWSStatus.compability_mapping[thing_type]:
             status_name = JciHitachiAWSStatus.convert_old_to_new(thing_type, status_name)
 
 

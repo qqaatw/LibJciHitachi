@@ -12,6 +12,7 @@
 _api/api.rst
 _api/connection.rst
 _api/mqtt_connection.rst
+_api/aws_connection.rst
 _api/model.rst
 _api/status.rst
 _api/utility.rst
