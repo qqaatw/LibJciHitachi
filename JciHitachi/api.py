@@ -853,7 +853,7 @@ class JciHitachiAWSAPI:
         self._aws_identity = None
         self._aws_credentials = None
         self._host_identity_id = None
-        self._error_counter = 0
+        self._token_refresh_counter = 0
         self._task_id = 0
 
     @property
@@ -882,10 +882,21 @@ class JciHitachiAWSAPI:
         return self._task_id
 
     def _check_before_publish(self) -> None:
-        if self._mqtt.mqtt_events.mqtt_error_event.is_set() and\
-            self._mqtt.mqtt_events.mqtt_error == "wssHandShakeError":
-            self._mqtt.mqtt_events.mqtt_error_event.clear()
-            self.login()
+        if self._token_refresh_counter >= 120: # assume we publish message every 30 seconds, we'll refresh the tokens every hour.
+            self._token_refresh_counter = 0
+            conn = aws_connection.JciHitachiAWSCognitoConnection(
+                email=self.email,
+                password=self.password,
+                print_response=self.print_response,
+            )
+            self._aws_tokens = conn.aws_tokens
+        else:
+            self._token_refresh_counter += 1
+
+        if self._mqtt.mqtt_events.mqtt_error_event.is_set():
+            if self._mqtt.mqtt_events.mqtt_error == "wssHandShakeError":
+                self._mqtt.mqtt_events.mqtt_error_event.clear()
+                self.login()
 
     def login(self) -> None:
         """Login API.

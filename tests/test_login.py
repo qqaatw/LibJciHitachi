@@ -60,14 +60,13 @@ class TestAWSAPILogin:
         assert fixture_aws_api._aws_credentials is not None
         assert fixture_aws_api.things[TEST_DEVICE_AC].name == TEST_DEVICE_AC
 
-    @pytest.mark.skip("Skip session expiry test as we're finding a better way to test mqtt failure.")
     def test_session_expiry(self, fixture_aws_api):
-        invalid_token = "0" * 1316
-        fixture_aws_api._aws_credentials.session_token = invalid_token
-        fixture_aws_api.refresh_status() # raise mqtt_error_event
-        fixture_aws_api.refresh_status() # test and relogin
-        assert len(fixture_aws_api._aws_credentials.session_token) == 1316
-        assert fixture_aws_api._aws_credentials.session_token != invalid_token
+        current_access_token = fixture_aws_api._aws_tokens.access_token
+        fixture_aws_api._token_refresh_counter = 150
+        fixture_aws_api.refresh_status()
+        assert fixture_aws_api._aws_tokens.access_token != current_access_token
+
+        # TODO: Test MQTT credentials expiration.
 
     @pytest.mark.parametrize("mock_device_name", ["NON_EXISTING_NAME"])
     def test_device_name(self, mock_device_name):
