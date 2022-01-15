@@ -967,7 +967,7 @@ class JciHitachiAWSAPI:
         """Change password. 
             Warning: 
             Use this function carefully, be sure you specify a strong enough password; 
-            otherwise, your password might be accepted by the Hitachi account management but not be accepted by AWS Cognito, 
+            otherwise, your password might be accepted by the Hitachi account management but not be accepted by AWS Cognito or vice versa, 
             which will result in a login failure in the APP.
 
         Parameters
@@ -981,19 +981,25 @@ class JciHitachiAWSAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
-        # We have to change both Hitachi owned account management & AWS Cognito simultaneously.
+        # We have to change the password in both AWS Cognito and Hitachi owned account management simultaneously.
+        conn = aws_connection.ChangePassword(
+            self.email,
+            self.password,
+            aws_tokens=self._aws_tokens,
+            print_response=self.print_response
+        )
+        aws_conn_status, _ = conn.get_data(new_password)
+        if aws_conn_status != "OK":
+            raise RuntimeError(f"An error occurred when changing AWS Cognito password: {aws_conn_status}")
+
         conn = connection.UpdateUserCredential(
             self.email,
             self.password,
             print_response=self.print_response
         )
         hitachi_conn_status, _ = conn.get_data(new_password)
-
-        conn = aws_connection.ChangePassword(self.email, self.password, aws_tokens=self._aws_tokens, print_response=self.print_response)
-        aws_conn_status, _ = conn.get_data(new_password)
-
-        if hitachi_conn_status != "OK" or aws_conn_status != "OK":
-            raise RuntimeError(f"An error occurred when changing password: {hitachi_conn_status} {aws_conn_status}")
+        if hitachi_conn_status != "OK":
+            raise RuntimeError(f"An error occurred when changing Hitachi password: {hitachi_conn_status}")
 
     def refresh_status(self, device_name : Optional[str] = None, refresh_support_code=False) -> None:
         """Refresh device status from the API.
