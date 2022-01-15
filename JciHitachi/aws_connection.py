@@ -22,8 +22,6 @@ AWS_COGNITO_USERPOOL_ID = "ap-northeast-1_aTZeaievK"
 
 AWS_IOT_ENDPOINT = "https://iot-api.jci-hitachi-smarthome.com"
 AWS_MQTT_ENDPOINT = "a8kcu267h96in-ats.iot.ap-northeast-1.amazonaws.com"
-AWS_POOL_ID = "ap-northeast-1:3bb17635-a6c0-431f-b484-b8de026544cf"
-AWS_GATEWAY_KEY = "606153a77f347c9b7becfeda37edb2ccde46ce863c7ac"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -525,15 +523,15 @@ class JciHitachiAWSMqttConnection:
 
         splitted_topic = message.topic.split('/')
 
-        thing_name = splitted_topic[0]
+        thing_name = splitted_topic[1]
 
-        if len(splitted_topic) >= 3 and splitted_topic[1] == "status" and splitted_topic[2] == "response":
+        if len(splitted_topic) >= 4 and splitted_topic[2] == "status" and splitted_topic[3] == "response":
             self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(payload)
             self._mqtt_events.device_status_event.set()
-        elif len(splitted_topic) >= 3 and splitted_topic[1] == "registration" and splitted_topic[2] == "response":
+        elif len(splitted_topic) >= 4 and splitted_topic[2] == "registration" and splitted_topic[3] == "response":
             self._mqtt_events.device_support[thing_name] = JciHitachiAWSStatusSupport(payload)
             self._mqtt_events.device_support_event.set()
-        elif len(splitted_topic) >= 3 and splitted_topic[1] == "control" and splitted_topic[2] == "response":
+        elif len(splitted_topic) >= 4 and splitted_topic[2] == "control" and splitted_topic[3] == "response":
             self._mqtt_events.device_control[thing_name] = payload
             self._mqtt_events.device_control_event.set()
 
@@ -550,19 +548,20 @@ class JciHitachiAWSMqttConnection:
 
         splitted_topic = topic.split('/')
 
-        thing_name = splitted_topic[0]
+        thing_name = splitted_topic[1]
 
-        if len(splitted_topic) >= 3 and splitted_topic[1] == "status" and splitted_topic[2] == "response":
+        if len(splitted_topic) >= 4 and splitted_topic[2] == "status" and splitted_topic[3] == "response":
             self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(payload)
             self._mqtt_events.device_status_event.set()
-        elif len(splitted_topic) >= 3 and splitted_topic[1] == "registration" and splitted_topic[2] == "response":
+        elif len(splitted_topic) >= 4 and splitted_topic[2] == "registration" and splitted_topic[3] == "response":
             self._mqtt_events.device_support[thing_name] = JciHitachiAWSStatusSupport(payload)
             self._mqtt_events.device_support_event.set()
-        elif len(splitted_topic) >= 3 and splitted_topic[1] == "control" and splitted_topic[2] == "response":
+        elif len(splitted_topic) >= 4 and splitted_topic[2] == "control" and splitted_topic[3] == "response":
             self._mqtt_events.device_control[thing_name] = payload
             self._mqtt_events.device_control_event.set()
 
     def _on_message(self, topic, payload, dup, qos, retain, **kwargs):
+        return
         try:
             payload = json.loads(payload.decode())
         except Exception as e:
@@ -573,8 +572,6 @@ class JciHitachiAWSMqttConnection:
         #    print(f"{topic} {str(payload)}")
         
         splitted_topic = topic.split('/')
-
-        return
     
     def configure(self):
         """Configure MQTT.
@@ -590,9 +587,9 @@ class JciHitachiAWSMqttConnection:
             self._aws_credentials.session_token
         )
         self._mqttc.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
-        self._mqttc.configureDrainingFrequency(10)  # Draining: 2 Hz
+        self._mqttc.configureDrainingFrequency(10)  # Draining: 10 Hz
         self._mqttc.configureConnectDisconnectTimeout(10)  # 10 sec
-        self._mqttc.configureMQTTOperationTimeout(15)  # 5 sec
+        self._mqttc.configureMQTTOperationTimeout(15)  # 15 sec
 
     def connect(self, topics):
         """Connect to the MQTT broker and start loop.

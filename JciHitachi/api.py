@@ -47,15 +47,17 @@ class Peripheral:
         warnings.warn("This API has been deprecated.", DeprecationWarning)
 
     def __repr__(self) -> str:
-        ret = f"name: {self.name}\n" + \
-              f"brand: {self.brand}\n" + \
-              f"model: {self.model}\n" + \
-              f"type: {self.type}\n" + \
-              f"available: {self.available}\n" + \
-              f"status_code: {self.status_code}\n" + \
-              f"support_code: {self.support_code}\n" + \
-              f"gateway_id: {self.gateway_id}\n" + \
-              f"gateway_mac_address: {self.gateway_mac_address}"
+        ret = (
+            f"name: {self.name}\n"
+            f"brand: {self.brand}\n"
+            f"model: {self.model}\n"
+            f"type: {self.type}\n"
+            f"available: {self.available}\n"
+            f"status_code: {self.status_code}\n"
+            f"support_code: {self.support_code}\n"
+            f"gateway_id: {self.gateway_id}\n"
+            f"gateway_mac_address: {self.gateway_mac_address}"
+        )
         return ret
 
     @classmethod
@@ -630,14 +632,16 @@ class AWSThing:
         self._support_code = None
 
     def __repr__(self) -> str:
-        ret = f"name: {self.name}\n" + \
-              f"brand: {self.brand}\n" + \
-              f"model: {self.model}\n" + \
-              f"type: {self.type}\n" + \
-              f"available: {self.available}\n" + \
-              f"status_code: {self.status_code}\n" + \
-              f"support_code: {self.support_code}\n" + \
-              f"gateway_mac_address: {self.gateway_mac_address}"
+        ret = (
+            f"name: {self.name}\n"
+            f"brand: {self.brand}\n"
+            f"model: {self.model}\n"
+            f"type: {self.type}\n"
+            f"available: {self.available}\n"
+            f"status_code: {self.status_code}\n"
+            f"support_code: {self.support_code}\n"
+            f"gateway_mac_address: {self.gateway_mac_address}"
+        )
         return ret
 
     @classmethod
@@ -646,19 +650,19 @@ class AWSThing:
         things_json : dict,
         device_names : Optional[Union[List[str], str]]
     ) -> Dict[str, object]:
-        """Use device names to pick peripheral_jsons accordingly.
+        """Use device names to pick things_json accordingly.
 
         Parameters
         ----------
-        peripherals_json : dict
-            Peripherals_json retrieved from GetPeripheralsByUser.
+        things_json : dict
+            things_json retrieved from aws_connection.GetAllDevice.
         device_names : list of str or str or None
             Device name. If None is given, all available devices will be included, by default None.
 
         Returns
         -------
         dict
-            A dict of Peripheral instances with device name key.
+            A dict of AWSThing instances with device name key.
         """
 
         things = {}
@@ -757,7 +761,7 @@ class AWSThing:
     
     @property
     def status_code(self) -> JciHitachiAWSStatus:
-        """Peripheral's status code reported by the API.
+        """Thing's status code reported by the API.
 
         Returns
         -------
@@ -773,7 +777,7 @@ class AWSThing:
     
     @property
     def support_code(self) -> JciHitachiAWSStatusSupport:
-        """Peripheral's support code reported by the API.
+        """Thing's support code reported by the API.
 
         Returns
         -------
@@ -786,18 +790,6 @@ class AWSThing:
     @support_code.setter
     def support_code(self, x : JciHitachiAWSStatusSupport) -> None:
         self._support_code = x
-
-    @property
-    def supported_status(self) -> JciHitachiStatusSupport:
-        """Peripheral's supported status converted from support_code.
-
-        Returns
-        -------
-        JciHitachiStatusSupport
-            Supported status.
-        """
-
-        return self._supported_status
 
     @property
     def thing_name(self):
@@ -871,7 +863,7 @@ class JciHitachiAWSAPI:
         Returns
         -------
         dict of AWSThing
-            A dict of AWSThing.
+            A dict of AWSThing instances.
         """
 
         return self._things
@@ -946,8 +938,8 @@ class JciHitachiAWSAPI:
             self._mqtt = aws_connection.JciHitachiAWSMqttConnection(self._aws_credentials, print_response=self.print_response)
             self._mqtt.configure()
 
-            topics = [f"{self._host_identity_id}_{thing.gateway_mac_address}/#" for thing in self._things.values()]
-            self._mqtt.connect(topics=topics)
+            topic = f"{self._host_identity_id}/#"
+            self._mqtt.connect(topics=topic)
 
             # status
             self.refresh_status(refresh_support_code=True)
@@ -1018,7 +1010,7 @@ class JciHitachiAWSAPI:
                 continue
 
             if refresh_support_code:
-                self._mqtt.publish(f"{self._host_identity_id}_{thing.gateway_mac_address}/registration/request", {"Timestamp": time.time()})
+                self._mqtt.publish(f"{self._host_identity_id}/{self._host_identity_id}_{thing.gateway_mac_address}/registration/request", {"Timestamp": time.time()})
                 if not self._mqtt.mqtt_events.device_support_event.wait(timeout=10.0):
                     raise RuntimeError(
                         f"An error occurred when refreshing support code."
@@ -1028,7 +1020,7 @@ class JciHitachiAWSAPI:
                 self._mqtt.mqtt_events.device_support_event.clear()
                 time.sleep(0.5)
 
-            self._mqtt.publish(f"{self._host_identity_id}_{thing.gateway_mac_address}/status/request", {"Timestamp": time.time()})
+            self._mqtt.publish(f"{self._host_identity_id}/{self._host_identity_id}_{thing.gateway_mac_address}/status/request", {"Timestamp": time.time()})
             if not self._mqtt.mqtt_events.device_status_event.wait(timeout=10.0):
                 raise RuntimeError(
                     f"An error occurred when refreshing status code."
@@ -1091,8 +1083,6 @@ class JciHitachiAWSAPI:
         """
 
         self._check_before_publish()
-        #if not self._peripherals[device_name].available:
-        #    return False
 
         thing_name = self._things[device_name].thing_name
         thing_type = self._things[device_name].type
@@ -1105,7 +1095,7 @@ class JciHitachiAWSAPI:
         #self._mqtt.mqtt_events.device_status_event.wait(timeout=5.0)
         #self._mqtt.mqtt_events.device_support_event.wait(timeout=5.0)
 
-        self._mqtt.publish(f"{self._host_identity_id}_{gateway_mac_address}/control/request", {
+        self._mqtt.publish(f"{self._host_identity_id}/{self._host_identity_id}_{gateway_mac_address}/control/request", {
             "Condition": {
                 "ThingName": thing_name,
                 "Index": 0,
