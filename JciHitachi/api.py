@@ -979,7 +979,7 @@ class JciHitachiAWSAPI:
             aws_tokens=self._aws_tokens,
             print_response=self.print_response,
         )
-        conn_status, self._aws_tokens = conn.login(use_refresh_token=True)
+        conn_status, self._aws_tokens = conn.login(use_refresh_token=False)
 
         conn = aws_connection.GetCredentials(
             email=self.email,
