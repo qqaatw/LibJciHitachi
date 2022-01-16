@@ -1,5 +1,7 @@
-import pytest
+import time
 import warnings
+
+import pytest
 
 from JciHitachi.api import JciHitachiAPI, JciHitachiAWSAPI
 from JciHitachi.connection import JciHitachiConnection
@@ -61,12 +63,25 @@ class TestAWSAPILogin:
         assert fixture_aws_api.things[TEST_DEVICE_AC].name == TEST_DEVICE_AC
 
     def test_session_expiry(self, fixture_aws_api):
+        # Test AWSTokens expiration
         current_access_token = fixture_aws_api._aws_tokens.access_token
-        fixture_aws_api._token_refresh_counter = 150
+        current_session_token = fixture_aws_api._aws_credentials.session_token
+        expiration = time.time() + 150.0
+        fixture_aws_api._aws_tokens.expiration = expiration
         fixture_aws_api.refresh_status()
         assert fixture_aws_api._aws_tokens.access_token != current_access_token
-
-        # TODO: Test MQTT credentials expiration.
+        assert fixture_aws_api._aws_credentials.session_token != current_session_token
+        assert fixture_aws_api._aws_tokens.expiration != expiration
+        
+        # Test AWSCredentials expirations
+        current_access_token = fixture_aws_api._aws_tokens.access_token
+        current_session_token = fixture_aws_api._aws_credentials.session_token
+        expiration = time.time() + 150.0
+        fixture_aws_api._aws_credentials.expiration = expiration
+        fixture_aws_api.refresh_status()
+        assert fixture_aws_api._aws_tokens.access_token != current_access_token
+        assert fixture_aws_api._aws_credentials.session_token != current_session_token
+        assert fixture_aws_api._aws_credentials.expiration != expiration
 
     @pytest.mark.parametrize("mock_device_name", ["NON_EXISTING_NAME"])
     def test_device_name(self, mock_device_name):

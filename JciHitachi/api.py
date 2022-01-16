@@ -628,6 +628,7 @@ class AWSThing:
     def __init__(self, thing_json : dict) -> None:
         self._json = thing_json
         self._available = True
+        self._shadow = None
         self._status_code = None
         self._support_code = None
 
@@ -760,7 +761,22 @@ class AWSThing:
         return self._json
     
     @property
-    def status_code(self) -> JciHitachiAWSStatus:
+    def shadow(self) -> Optional[dict]:
+        """Thing's shadow reported by the API.
+        
+        Returns
+        -------
+        dict
+            Shadow.
+        """
+
+        return self._shadow
+    @shadow.setter
+    def shadow(self, x : dict) -> None:
+        self._shadow = x
+    
+    @property
+    def status_code(self) -> Optional[JciHitachiAWSStatus]:
         """Thing's status code reported by the API.
 
         Returns
@@ -776,7 +792,7 @@ class AWSThing:
         self._status_code = x
     
     @property
-    def support_code(self) -> JciHitachiAWSStatusSupport:
+    def support_code(self) -> Optional[JciHitachiAWSStatusSupport]:
         """Thing's support code reported by the API.
 
         Returns
@@ -792,7 +808,7 @@ class AWSThing:
         self._support_code = x
 
     @property
-    def thing_name(self):
+    def thing_name(self) -> str:
         return self._json["ThingName"]
 
     @property
@@ -837,7 +853,7 @@ class JciHitachiAWSAPI:
         device_names : Optional[Union[List[str], str]] = None,
         max_retries : int = 5,
         device_offline_timeout : float = 45.0,
-        print_response: bool = False
+        print_response : bool = False
     ) -> None:
         self.email = email
         self.password = password
@@ -846,15 +862,15 @@ class JciHitachiAWSAPI:
         self.device_offline_timeout = device_offline_timeout
         self.print_response = print_response
 
-        self._mqtt = None
-        self._device_id = random.randint(1000, 6999)
-        self._things = {}
-        self._aws_tokens = None
-        self._aws_identity = None
-        self._aws_credentials = None
-        self._host_identity_id = None
-        self._token_refresh_counter = 0
-        self._task_id = 0
+        self._mqtt : aws_connection.JciHitachiAWSMqttConnection = None
+        self._device_id : int = random.randint(1000, 6999)
+        self._things : Dict[str, AWSThing] = {}
+        self._aws_tokens : aws_connection.AWSTokens = None
+        self._aws_identity : aws_connection.AWSIdentity = None
+        self._aws_credentials : aws_connection.AWSCredentials = None
+        self._host_identity_id : str = None
+        self._token_refresh_counter : int = 0
+        self._task_id : int = 0
 
     @property
     def things(self) -> Dict[str, AWSThing]:
@@ -882,21 +898,15 @@ class JciHitachiAWSAPI:
         return self._task_id
 
     def _check_before_publish(self) -> None:
-        if self._token_refresh_counter >= 120: # assume we publish message every 30 seconds, we'll refresh the tokens every hour.
-            self._token_refresh_counter = 0
-            conn = aws_connection.JciHitachiAWSCognitoConnection(
-                email=self.email,
-                password=self.password,
-                print_response=self.print_response,
-            )
-            self._aws_tokens = conn.aws_tokens
-        else:
-            self._token_refresh_counter += 1
+        # Reauthenticate 5 mins before AWSTokens or AWSCredentials expiration.
+        current_time = time.time()
+        if self._aws_tokens.expiration - current_time <= 300 or self._aws_credentials.expiration - current_time <= 300.0:
+            self.reauth()
 
         if self._mqtt.mqtt_events.mqtt_error_event.is_set():
             if self._mqtt.mqtt_events.mqtt_error == "wssHandShakeError":
                 self._mqtt.mqtt_events.mqtt_error_event.clear()
-                self.login()
+                self.reauth()
 
     def login(self) -> None:
         """Login API.
@@ -944,16 +954,15 @@ class JciHitachiAWSAPI:
                 self.device_names
             )
             self.device_names = list(self._things.keys())
+            thing_names = [value.thing_name for value in self._things.values()]
 
             # mqtt
             self._mqtt = aws_connection.JciHitachiAWSMqttConnection(self._aws_credentials, print_response=self.print_response)
             self._mqtt.configure()
-
-            topic = f"{self._host_identity_id}/#"
-            self._mqtt.connect(topics=topic)
+            self._mqtt.connect(self._host_identity_id, thing_names)
 
             # status
-            self.refresh_status(refresh_support_code=True)
+            self.refresh_status(refresh_support_code=True, refresh_shadow=True)
         else:
             raise RuntimeError(f"An error occurred when retrieving device info: {conn_status}")
     
@@ -963,8 +972,33 @@ class JciHitachiAWSAPI:
         
         self._mqtt.disconnect()
 
+    def reauth(self) -> None:
+        conn = aws_connection.JciHitachiAWSCognitoConnection(
+            email=self.email,
+            password=self.password,
+            aws_tokens=self._aws_tokens,
+            print_response=self.print_response,
+        )
+        conn_status, self._aws_tokens = conn.login(use_refresh_token=True)
+
+        conn = aws_connection.GetCredentials(
+            email=self.email,
+            password=self.password,
+            aws_tokens=self._aws_tokens,
+            print_response=self.print_response,
+        )
+        conn_status, self._aws_credentials = conn.get_data(self._aws_identity)
+
+        thing_names = [value.thing_name for value in self._things.values()]
+
+        self._mqtt.aws_credentials = self._aws_credentials
+        self._mqtt.disconnect()
+        self._mqtt.configure()
+        self._mqtt.connect(self._host_identity_id, thing_names)
+
     def change_password(self, new_password: str) -> None:
         """Change password. 
+            
             Warning: 
             Use this function carefully, be sure you specify a strong enough password; 
             otherwise, your password might be accepted by the Hitachi account management but not be accepted by AWS Cognito or vice versa, 
@@ -1001,7 +1035,7 @@ class JciHitachiAWSAPI:
         if hitachi_conn_status != "OK":
             raise RuntimeError(f"An error occurred when changing Hitachi password: {hitachi_conn_status}")
 
-    def refresh_status(self, device_name : Optional[str] = None, refresh_support_code=False) -> None:
+    def refresh_status(self, device_name : Optional[str] = None, refresh_support_code : bool = False, refresh_shadow : bool = False) -> None:
         """Refresh device status from the API.
 
         Parameters
@@ -1012,7 +1046,8 @@ class JciHitachiAWSAPI:
             by default None.
         refresh_support_code : bool, optional
             Whether or not to refresh support code.
-        
+        refresh_shadow : bool, optional
+            Whether or not to refresh AWS IoT Shafow.
         Raise
         -------
         RuntimeError
@@ -1027,17 +1062,21 @@ class JciHitachiAWSAPI:
                 continue
 
             if refresh_support_code:
-                self._mqtt.publish(f"{self._host_identity_id}/{self._host_identity_id}_{thing.gateway_mac_address}/registration/request", {"Timestamp": time.time()})
+                self._mqtt.publish(f"{self._host_identity_id}/{thing.thing_name}/registration/request", {"Timestamp": time.time()})
                 if not self._mqtt.mqtt_events.device_support_event.wait(timeout=10.0):
-                    raise RuntimeError(
-                        f"An error occurred when refreshing support code."
-                    )
+                    raise RuntimeError(f"An error occurred when refreshing support code.")
                 else:
                     thing.support_code = self._mqtt.mqtt_events.device_support.get(thing.thing_name)
                 self._mqtt.mqtt_events.device_support_event.clear()
                 time.sleep(0.5)
+            if refresh_shadow:
+                self._mqtt.publish_shadow(thing.thing_name, "get", shadow_name="info")
+                if not self._mqtt.mqtt_events.device_shadow_event.wait(timeout=10.0):
+                    raise RuntimeError(f"An error occurred when refreshing Shadow.")
+                else:
+                    thing.shadow = self._mqtt.mqtt_events.device_shadow.get(thing.thing_name)
 
-            self._mqtt.publish(f"{self._host_identity_id}/{self._host_identity_id}_{thing.gateway_mac_address}/status/request", {"Timestamp": time.time()})
+            self._mqtt.publish(f"{self._host_identity_id}/{thing.thing_name}/status/request", {"Timestamp": time.time()})
             if not self._mqtt.mqtt_events.device_status_event.wait(timeout=10.0):
                 raise RuntimeError(
                     f"An error occurred when refreshing status code."
@@ -1045,8 +1084,7 @@ class JciHitachiAWSAPI:
             else:
                 thing.status_code = self._mqtt.mqtt_events.device_status.get(thing.thing_name)
             self._mqtt.mqtt_events.device_status_event.clear()
-            
-    
+
     def get_status(self, device_name: Optional[str] = None, legacy=False) -> Dict[str, JciHitachiAWSStatus]:
         """Get device status after refreshing status.
 
@@ -1062,7 +1100,7 @@ class JciHitachiAWSAPI:
         Returns
         -------
         dict of JciHitachiAWSStatus or JciHitachiStatus.
-            if legacy is True, return a dict of JciHitachiAWSStatus; otherwise, return a dict of JciHitachiAWSStatus instances.
+            if legacy is True, return a dict of JciHitachiStatus; otherwise, return a dict of JciHitachiAWSStatus instances.
         """
         
         statuses = {}
@@ -1101,20 +1139,46 @@ class JciHitachiAWSAPI:
 
         self._check_before_publish()
 
-        thing_name = self._things[device_name].thing_name
-        thing_type = self._things[device_name].type
-        gateway_mac_address = self._things[device_name].gateway_mac_address
-        if status_name not in JciHitachiAWSStatus.compability_mapping[thing_type]:
-            status_name = JciHitachiAWSStatus.convert_old_to_new(thing_type, status_name)
+        thing = self._things[device_name]
+        if status_name not in JciHitachiAWSStatus.compability_mapping[thing.type]:
+            status_name = JciHitachiAWSStatus.convert_old_to_new(thing.type, status_name)
+        shadow_publish_mapping = {
+            "CleanFilterNotification": "filter",
+            "CleanNotification": "filter",
+        }
+        
 
+        #if status_name in shadow_publish_mapping:
+        if False: # block going into this # FIXME: Fix this.
+            shadow_publish_schema = {
+                "filter": {  
+                    status_name: True,
+                    "FilterElapsedHour": 0 if status_value == 0 else 500,
+                }
+            }
+            self._mqtt.publish_shadow(
+                thing.thing_name, 
+                "update", 
+                {
+                    "state": {
+                        "desired": {
+                            **shadow_publish_schema[shadow_publish_mapping[status_name]]
+                        }
+                    }
+                },
+                shadow_name="info"
+            )
+            if not self._mqtt.mqtt_events.device_control_event.wait(timeout=10.0):
+                device_control = None
+            else:
+                device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
+                #if device_control["state"]["reported"][status_name] == bool(status_value):
+                return True
+            return False
 
-        # prevent publishing status when a device status is refreshing
-        #self._mqtt.mqtt_events.device_status_event.wait(timeout=5.0)
-        #self._mqtt.mqtt_events.device_support_event.wait(timeout=5.0)
-
-        self._mqtt.publish(f"{self._host_identity_id}/{self._host_identity_id}_{gateway_mac_address}/control/request", {
+        self._mqtt.publish(f"{self._host_identity_id}/{thing.thing_name}/control/request", {
             "Condition": {
-                "ThingName": thing_name,
+                "ThingName": thing.thing_name,
                 "Index": 0,
                 "Geofencing": {
                     "Arrive": None,
@@ -1130,7 +1194,7 @@ class JciHitachiAWSAPI:
             if not self._mqtt.mqtt_events.device_control_event.wait(timeout=10.0):
                 device_control = None
             else:
-                device_control = self._mqtt.mqtt_events.device_control.get(thing_name)
+                device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
                 if device_control.get(status_name) == status_value:
                     self._mqtt.mqtt_events.device_control_event.clear()
                     time.sleep(0.5)

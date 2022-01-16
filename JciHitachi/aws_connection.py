@@ -1,6 +1,7 @@
 import uuid
 import logging
 import json
+import time
 import threading
 from dataclasses import dataclass, field
 from typing import Dict
@@ -30,6 +31,7 @@ class AWSTokens:
     access_token: str
     id_token: str
     refresh_token: str
+    expiration: float
 
 @dataclass
 class AWSIdentity:
@@ -42,16 +44,19 @@ class AWSCredentials:
     access_key_id: str
     secret_key: str
     session_token: str
+    expiration: float
 
 @dataclass
 class JciHitachiMqttEvents:
     device_status: Dict[str, JciHitachiAWSStatus] = field(default_factory=dict)
     device_support: Dict[str, JciHitachiAWSStatusSupport] = field(default_factory=dict)
     device_control: Dict[str, dict] = field(default_factory=dict)
+    device_shadow: Dict[str, dict] = field(default_factory=dict)
     mqtt_error: str = field(default_factory=str)
     device_status_event: threading.Event = field(default_factory=threading.Event)
     device_support_event: threading.Event = field(default_factory=threading.Event)
     device_control_event: threading.Event = field(default_factory=threading.Event)
+    device_shadow_event: threading.Event = field(default_factory=threading.Event)
     mqtt_error_event: threading.Event = field(default_factory=threading.Event)
 
 
@@ -115,7 +120,8 @@ class JciHitachiAWSCognitoConnection:
         Parameters
         ----------
         use_refresh_token : bool, optional
-            Whether or not to use AWSTokens.refresh_token to login, by default False
+            Whether or not to use AWSTokens.refresh_token to login. 
+            If AWSTokens is not provided, fallback to email and password, by default False
 
         Returns
         -------
@@ -133,6 +139,7 @@ class JciHitachiAWSCognitoConnection:
                 "ClientId": AWS_COGNITO_CLIENT_ID,
             }
         else:
+            use_refresh_token = False
             login_json_data = {
                 "AuthFlow": 'USER_PASSWORD_AUTH',
                 "AuthParameters": {
@@ -161,7 +168,8 @@ class JciHitachiAWSCognitoConnection:
             aws_tokens = AWSTokens(
                 access_token = auth_result['AccessToken'],
                 id_token = auth_result['IdToken'],
-                refresh_token = auth_result['RefreshToken'],
+                refresh_token = self._aws_tokens.refresh_token if use_refresh_token else auth_result['RefreshToken'],
+                expiration = time.time() + auth_result['ExpiresIn'],
             )
         return status, aws_tokens
 
@@ -297,9 +305,10 @@ class GetCredentials(JciHitachiAWSCognitoConnection):
         aws_credentials = None
         if req.status_code == httpx.codes.ok:
             aws_credentials = AWSCredentials(
-                access_key_id = response['Credentials']['AccessKeyId'],
-                secret_key = response['Credentials']['SecretKey'],
-                session_token = response['Credentials']['SessionToken'],
+                access_key_id = response["Credentials"]["AccessKeyId"],
+                secret_key = response["Credentials"]["SecretKey"],
+                session_token = response["Credentials"]["SessionToken"],
+                expiration = response["Credentials"]["Expiration"],
             )
         return status, aws_credentials
 
@@ -483,7 +492,7 @@ class JciHitachiAWSMqttConnection:
     Parameters
     ----------
     aws_credentials : AWSCredentials
-        AWS credentials.
+        See AWSCredentials.
     print_response : bool, optional
         If set, all responses of MQTT will be printed, by default False.
     """
@@ -498,6 +507,21 @@ class JciHitachiAWSMqttConnection:
     def __del__(self):
         self.disconnect()
     
+    @property
+    def aws_credentials(self):
+        """AWS credentials.
+
+        Returns
+        -------
+        AWSCredentials
+            See AWSCredentials.
+        """
+        return self._aws_credentials
+    
+    @aws_credentials.setter
+    def aws_credentials(self, x):
+        self._aws_credentials = x
+
     @property
     def mqtt_events(self):
         """MQTT events.
@@ -523,17 +547,30 @@ class JciHitachiAWSMqttConnection:
 
         splitted_topic = message.topic.split('/')
 
-        thing_name = splitted_topic[1]
-
-        if len(splitted_topic) >= 4 and splitted_topic[2] == "status" and splitted_topic[3] == "response":
-            self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(payload)
-            self._mqtt_events.device_status_event.set()
-        elif len(splitted_topic) >= 4 and splitted_topic[2] == "registration" and splitted_topic[3] == "response":
-            self._mqtt_events.device_support[thing_name] = JciHitachiAWSStatusSupport(payload)
-            self._mqtt_events.device_support_event.set()
-        elif len(splitted_topic) >= 4 and splitted_topic[2] == "control" and splitted_topic[3] == "response":
-            self._mqtt_events.device_control[thing_name] = payload
-            self._mqtt_events.device_control_event.set()
+        if len(splitted_topic) >= 4 and splitted_topic[3] != "shadow":
+            thing_name = splitted_topic[1]
+            if splitted_topic[2] == "status" and splitted_topic[3] == "response":
+                self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(payload)
+                self._mqtt_events.device_status_event.set()
+            elif splitted_topic[2] == "registration" and splitted_topic[3] == "response":
+                self._mqtt_events.device_support[thing_name] = JciHitachiAWSStatusSupport(payload)
+                self._mqtt_events.device_support_event.set()
+            elif splitted_topic[2] == "control" and splitted_topic[3] == "response":
+                self._mqtt_events.device_control[thing_name] = payload
+                self._mqtt_events.device_control_event.set()
+        elif len(splitted_topic) >= 4 and splitted_topic[3] == "shadow" and splitted_topic[-1] in ["accepted", "rejected"]:
+            thing_name = splitted_topic[2]
+            is_named_shadow = splitted_topic[4] == "name"
+            
+            if splitted_topic[-1] == "rejected":
+                _LOGGER.error(f"A shadow request was rejected by the API: {message.topic} {payload}")
+            if is_named_shadow:
+                if splitted_topic[6] == "get":
+                    self._mqtt_events.device_shadow[thing_name] = payload
+                    self._mqtt_events.device_shadow_event.set()
+                if splitted_topic[6] == "update":  # We regard this as a control event.
+                    self._mqtt_events.device_control[thing_name] = payload
+                    self._mqtt_events.device_control_event.set()
 
     def _on_publish_apiv2(self, topic, payload, dup, qos, retain, **kwargs):
         try:
@@ -591,13 +628,15 @@ class JciHitachiAWSMqttConnection:
         self._mqttc.configureConnectDisconnectTimeout(10)  # 10 sec
         self._mqttc.configureMQTTOperationTimeout(15)  # 15 sec
 
-    def connect(self, topics):
+    def connect(self, host_identity_id, thing_names = None):
         """Connect to the MQTT broker and start loop.
         
         Parameters
         ----------
-        topics : str or list of str
-            Topics to subscribe.
+        host_identity_id : str
+            Host identity ID.
+        thing_names : str or list of str, optional
+            Things to subscribe in Shadow.
         """
         
         try:
@@ -609,26 +648,27 @@ class JciHitachiAWSMqttConnection:
             self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error('Connection failed with exception: {}'.format(e))
 
-        if isinstance(topics, str):
-            topics = [topics]
-
-        for topic in topics:
-            try:
-                self._mqttc.subscribe(topic, 1, self._on_publish)
-            except subscribeTimeoutException as e:
-                _LOGGER.error('Subscription timed out.')
-            except Exception as e:
-                self._mqtt_events.mqtt_error = e.__class__.__name__
-                self._mqtt_events.mqtt_error_event.set()
-                _LOGGER.error('Subscription failed with exception: {}'.format(e))
+        try:
+            self._mqttc.subscribe(f"{host_identity_id}/#", 1, self._on_publish)
+            if thing_names is not None:
+                if isinstance(thing_names, str):
+                    thing_names = [thing_names]
+                for thing_name in thing_names:
+                    self._mqttc.subscribe(f"$aws/things/{thing_name}/shadow/#", 1, self._on_publish)
+        except subscribeTimeoutException as e:
+            _LOGGER.error('Subscription timed out.')
+        except Exception as e:
+            self._mqtt_events.mqtt_error = e.__class__.__name__
+            self._mqtt_events.mqtt_error_event.set()
+            _LOGGER.error('Subscription failed with exception: {}'.format(e))
 
     def publish(self, topic, payload):
         """Publish message.
         
         Parameters
         ----------
-        topics : str
-            Topics to publish.
+        topic : str
+            Topic to publish.
         payload : dict
             Payload to publish.
         """
@@ -641,6 +681,31 @@ class JciHitachiAWSMqttConnection:
             self._mqtt_events.mqtt_error = e.__class__.__name__
             self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error('Publish failed with exception: {}'.format(e))
+    
+    def publish_shadow(self, thing_name, command_name, payload={}, shadow_name=None):
+        """Publish message to IoT Shadow Service.
+        
+        Parameters
+        ----------
+        thing_name : str
+            Thing name.
+        command_name : str
+            Command name, which can be `get`, `update`, `delete`.
+        payload : dict, optional
+            Payload to publish.
+        shadow_name : str, optional
+            Shadow name, by default None.
+        """
+
+        if command_name not in ["get", "update", "delete"]:
+            raise ValueError("command_name must be one of `get`, `update`, or `delete`")
+
+        if shadow_name is None:
+            shadow_topic_prefix = f"$aws/things/{thing_name}/shadow"
+        else:
+            shadow_topic_prefix = f"$aws/things/{thing_name}/shadow/name/{shadow_name}"
+
+        self.publish(f"{shadow_topic_prefix}/{command_name}", payload)
 
     def disconnect(self):
         """Disconnect from the MQTT broker.
@@ -703,8 +768,8 @@ class JciHitachiAWSMqttConnection:
         
         Parameters
         ----------
-        topics : str
-            Topics to publish.
+        topic : str
+            Topic to publish.
         payload : dict
             Payload to publish.
         """
