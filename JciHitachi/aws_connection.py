@@ -1,3 +1,4 @@
+import os
 import uuid
 import logging
 import json
@@ -21,6 +22,7 @@ AWS_COGNITO_ENDPOINT = f"cognito-identity.{AWS_COGNITO_REGION}.amazonaws.com/"
 AWS_COGNITO_CLIENT_ID = "7kfnjsb66ei1qt5s5gjv6j1lp6"
 AWS_COGNITO_USERPOOL_ID = "ap-northeast-1_aTZeaievK"
 
+AMAZON_ROOT_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), './cert/AmazonRootCA1.pem')
 AWS_IOT_ENDPOINT = "https://iot-api.jci-hitachi-smarthome.com"
 AWS_MQTT_ENDPOINT = "a8kcu267h96in-ats.iot.ap-northeast-1.amazonaws.com"
 
@@ -599,25 +601,14 @@ class JciHitachiAWSMqttConnection:
 
     def _on_message(self, topic, payload, dup, qos, retain, **kwargs):
         return
-        try:
-            payload = json.loads(payload.decode())
-        except Exception as e:
-            self._mqtt_events.mqtt_error = e.__class__.__name__
-            self._mqtt_events.mqtt_error_event.set()
-            _LOGGER.error(e)
-        #if self._print_response:
-        #    print(f"{topic} {str(payload)}")
-        
-        splitted_topic = topic.split('/')
     
     def configure(self):
         """Configure MQTT.
         """
-        import os
         self._mqttc = AWSIoTMQTTClient(str(uuid.uuid4()), useWebsocket=True)
         self._mqttc.configureEndpoint(f"{AWS_MQTT_ENDPOINT}", 443)
         # https://github.com/aws/aws-iot-device-sdk-python/issues/273#issuecomment-719897331
-        self._mqttc.configureCredentials(os.path.join(os.path.dirname(os.path.abspath(__file__)), './cert/AmazonRootCA1.pem'))
+        self._mqttc.configureCredentials(AMAZON_ROOT_CERT)
         self._mqttc.configureIAMCredentials(
             self._aws_credentials.access_key_id,
             self._aws_credentials.secret_key,

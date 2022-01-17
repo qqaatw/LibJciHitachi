@@ -621,16 +621,16 @@ class AWSThing:
     supported_device_type = {
         "1": "AC",
         "2": "DH",
-        #3: "HE",
-        #4: "PM25_PANEL",
+        #"3": "HE",
+        #"4": "PM25_PANEL",
     }
 
     def __init__(self, thing_json : dict) -> None:
-        self._json = thing_json
-        self._available = True
-        self._shadow = None
-        self._status_code = None
-        self._support_code = None
+        self._json : dict = thing_json
+        self._available : bool = True
+        self._shadow : Optional[dict] = None
+        self._status_code : Optional[JciHitachiAWSStatus] = None
+        self._support_code : Optional[JciHitachiAWSStatusSupport] = None
 
     def __repr__(self) -> str:
         ret = (
@@ -771,6 +771,7 @@ class AWSThing:
         """
 
         return self._shadow
+
     @shadow.setter
     def shadow(self, x : dict) -> None:
         self._shadow = x
@@ -842,7 +843,7 @@ class JciHitachiAWSAPI:
     max_retries : int, optional
         Maximum number of retries when setting status, by default 5.
     device_offline_timeout: float, optional
-        For furture use.
+        For future use.
     print_response : bool, optional
         If set, all responses of httpx and MQTT will be printed, by default False.
     """
@@ -855,21 +856,20 @@ class JciHitachiAWSAPI:
         device_offline_timeout : float = 45.0,
         print_response : bool = False
     ) -> None:
-        self.email = email
-        self.password = password
-        self.device_names = device_names
-        self.max_retries = max_retries
-        self.device_offline_timeout = device_offline_timeout
-        self.print_response = print_response
+        self.email : str = email
+        self.password : str = password
+        self.device_names : Optional[Union[List[str], str]] = device_names
+        self.max_retries : int = max_retries
+        self.device_offline_timeout : float = device_offline_timeout
+        self.print_response : bool = print_response
 
-        self._mqtt : aws_connection.JciHitachiAWSMqttConnection = None
+        self._mqtt : Optional[aws_connection.JciHitachiAWSMqttConnection] = None
         self._device_id : int = random.randint(1000, 6999)
         self._things : Dict[str, AWSThing] = {}
-        self._aws_tokens : aws_connection.AWSTokens = None
-        self._aws_identity : aws_connection.AWSIdentity = None
-        self._aws_credentials : aws_connection.AWSCredentials = None
-        self._host_identity_id : str = None
-        self._token_refresh_counter : int = 0
+        self._aws_tokens : Optional[aws_connection.AWSTokens] = None
+        self._aws_identity : Optional[aws_connection.AWSIdentity] = None
+        self._aws_credentials : Optional[aws_connection.AWSCredentials] = None
+        self._host_identity_id : Optional[str] = None
         self._task_id : int = 0
 
     @property
@@ -900,7 +900,7 @@ class JciHitachiAWSAPI:
     def _check_before_publish(self) -> None:
         # Reauthenticate 5 mins before AWSTokens or AWSCredentials expiration.
         current_time = time.time()
-        if self._aws_tokens.expiration - current_time <= 300 or self._aws_credentials.expiration - current_time <= 300.0:
+        if self._aws_tokens.expiration - current_time <= 300 or self._aws_credentials.expiration - current_time <= 300:
             self.reauth()
 
         if self._mqtt.mqtt_events.mqtt_error_event.is_set():
@@ -1047,7 +1047,8 @@ class JciHitachiAWSAPI:
         refresh_support_code : bool, optional
             Whether or not to refresh support code.
         refresh_shadow : bool, optional
-            Whether or not to refresh AWS IoT Shafow.
+            Whether or not to refresh AWS IoT Shadow.
+
         Raise
         -------
         RuntimeError
@@ -1095,7 +1096,7 @@ class JciHitachiAWSAPI:
             If None is given, all devices' status will be returned,
             by default None.
         legacy : bool, optional
-            Whether or not to return legacy (old) status class.
+            Whether or not to return legacy (old) status class, by default False.
 
         Returns
         -------
