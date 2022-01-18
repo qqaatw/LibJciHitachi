@@ -2,12 +2,13 @@
 
 [![Python package](https://github.com/qqaatw/LibJciHitachi/workflows/Python%20package/badge.svg)](https://github.com/qqaatw/LibJciHitachi/actions)
 [![docs](https://readthedocs.org/projects/libjcihitachi/badge/?version=latest)](https://libjcihitachi.readthedocs.io/en/latest/?badge=latest)
+[![PyPI](https://img.shields.io/pypi/v/LibJciHitachi.svg?color=%23007ec6)](https://pypi.python.org/pypi/LibJciHitachi/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/LibJciHitachi.svg)](https://pypi.python.org/pypi/LibJciHitachi/)
 [![Downloads](https://pepy.tech/badge/libjcihitachi)](https://pepy.tech/project/libjcihitachi)
 
-**Help wanted: I've been developing the heat exchanger support, but I've no such device to test its functionality. If you want to help with the development, please contact me via email: `qqaatw[a-t]gmail.com`. Thank you.**
+## Feature
 
-**Help wanted: 我目前正在開發支援全熱交換機，但是沒有裝置可以測試。若您願意協助此功能的開發，請透過email: `qqaatw[a-t]gmail.com` 聯繫我。Thank you.**
+A Python library for controlling Jci-Hitachi devices.
 
 ## Supported devices
 
@@ -56,7 +57,7 @@
 
 ### Home Assistant Integration
 
-See [JciHitachiHA](https://github.com/qqaatw/JciHitachiHA)
+See [JciHitachiHA](https://github.com/qqaatw/JciHitachiHA).
 
 ## Documentation
 
