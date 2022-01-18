@@ -537,12 +537,16 @@ class JciHitachiAWSMqttConnection:
         return self._mqtt_events
     
     def _on_publish(self, client, userdata, message):
+        
+        if len(message.payload) == 0:
+            return
+
         try:
             payload = json.loads(message.payload.decode())
         except Exception as e:
             self._mqtt_events.mqtt_error = e.__class__.__name__
             self._mqtt_events.mqtt_error_event.set()
-            _LOGGER.error(e)
+            _LOGGER.error(f"Mqtt topic {message.topic} published with payload {message.payload} cannot be decoded: {e}")
 
         if self._print_response:
             print(f"Mqtt topic {message.topic} published with payload \n {payload}")
