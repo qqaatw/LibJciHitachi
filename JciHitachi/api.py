@@ -915,7 +915,7 @@ class JciHitachiAWSAPI:
         self._mqtt.mqtt_events.device_support_event.clear()
 
     def _delay(self) -> None:
-        time.sleep(0.3)
+        time.sleep(0.2)
 
     def login(self) -> None:
         """Login API.
@@ -1095,6 +1095,8 @@ class JciHitachiAWSAPI:
             thing.status_code = self._mqtt.mqtt_events.device_status.get(thing.thing_name)
             
             self._mqtt.mqtt_events.device_status_event.clear()
+
+            self._delay()
 
     def get_status(self, device_name: Optional[str] = None, legacy=False) -> Dict[str, JciHitachiAWSStatus]:
         """Get device status after refreshing status.
