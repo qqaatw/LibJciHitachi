@@ -73,7 +73,7 @@ class TestAWSAPILogin:
         assert fixture_aws_api._aws_credentials.session_token != current_session_token
         assert fixture_aws_api._aws_tokens.expiration != expiration
         
-        # Test AWSCredentials expirations
+        # Test AWSCredentials expiration
         current_access_token = fixture_aws_api._aws_tokens.access_token
         current_session_token = fixture_aws_api._aws_credentials.session_token
         expiration = time.time() + 150.0
