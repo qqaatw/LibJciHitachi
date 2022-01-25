@@ -1096,8 +1096,6 @@ class JciHitachiAWSAPI:
             
             self._mqtt.mqtt_events.device_status_event.clear()
 
-            self._delay()
-
     def get_status(self, device_name: Optional[str] = None, legacy=False) -> Dict[str, JciHitachiAWSStatus]:
         """Get device status after refreshing status.
 
@@ -1209,7 +1207,6 @@ class JciHitachiAWSAPI:
                 device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
                 if device_control.get(status_name) == status_value:
                     self._mqtt.mqtt_events.device_control_event.clear()
-                    self._delay()
                     return True
             self._delay()
         return False
