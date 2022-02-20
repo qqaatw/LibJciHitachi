@@ -31,7 +31,7 @@
     ```
     # Set device status 
     # For available command names and values, please refer to
-    # model.py->JciHitachiAWSStatus.compability_mapping
+    # model.py->JciHitachiAWSStatus.compatibility_mapping
     if api.set_status('TemperatureSetting', 27, DEVICENAME):
         print('Success')
     else:

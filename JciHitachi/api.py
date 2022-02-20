@@ -1151,7 +1151,7 @@ class JciHitachiAWSAPI:
         self._check_before_publish()
 
         thing = self._things[device_name]
-        if status_name not in JciHitachiAWSStatus.compability_mapping[thing.type]:
+        if status_name not in JciHitachiAWSStatus.compatibility_mapping[thing.type]:
             status_name = JciHitachiAWSStatus.convert_old_to_new(thing.type, status_name)
 
         shadow_publish_mapping = {

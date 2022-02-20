@@ -1535,7 +1535,7 @@ class JciHitachiHESupport(JciHitachiStatusSupport):
 
 
 class JciHitachiAWSStatus:
-    compability_mapping = {
+    compatibility_mapping = {
         "AC": {
             'DeviceType': None,
             'Switch': 'power',
@@ -1639,7 +1639,7 @@ class JciHitachiAWSStatus:
             def __getitem__(self, key):
                 return key
 
-        mapped_status = {self.compability_mapping[self._status["DeviceType"]].get(key): value for key, value in self._status.items()}
+        mapped_status = {self.compatibility_mapping[self._status["DeviceType"]].get(key): value for key, value in self._status.items()}
 
         if self._status["DeviceType"] == "AC":
             if None in mapped_status:
@@ -1657,7 +1657,7 @@ class JciHitachiAWSStatus:
 
     @staticmethod
     def convert_old_to_new(device_type, old_status_name):
-        for key, value in __class__.compability_mapping[device_type].items():
+        for key, value in __class__.compatibility_mapping[device_type].items():
             if value == old_status_name:
                 return key
         return None
@@ -1670,7 +1670,7 @@ class JciHitachiAWSStatusSupport:
         "FindMe": None,
     }
 
-    compability_mapping = copy.deepcopy(JciHitachiAWSStatus.compability_mapping).update(extended_mapping)
+    compatibility_mapping = copy.deepcopy(JciHitachiAWSStatus.compatibility_mapping).update(extended_mapping)
     device_type_mapping = JciHitachiAWSStatus.device_type_mapping
 
     def __init__(self, status: dict) -> None:

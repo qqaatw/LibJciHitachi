@@ -444,8 +444,8 @@ class GetAvailableAggregationMonthlyData(JciHitachiAWSIoTConnection):
     def get_data(self, thing_name, time_start, time_end):
         json_data = {
             "ThingName": thing_name,
-            "TimeStart":time_start,
-            "TimeEnd":time_end,
+            "TimeStart": time_start,
+            "TimeEnd": time_end,
         }
         return self._send("/GetAvailableAggregationMonthlyData", json_data)
 
@@ -468,7 +468,6 @@ class GetHistoryEventByUser(JciHitachiAWSIoTConnection):
             "TimeEnd": time_end,
         }
         return self._send("/GetHistoryEventByUser", json_data)
-
 
 
 class ListSubUser(JciHitachiAWSIoTConnection):
@@ -548,30 +547,30 @@ class JciHitachiAWSMqttConnection:
         if self._print_response:
             print(f"Mqtt topic {message.topic} published with payload \n {payload}")
 
-        splitted_topic = message.topic.split('/')
+        split_topic = message.topic.split('/')
 
-        if len(splitted_topic) >= 4 and splitted_topic[3] != "shadow":
-            thing_name = splitted_topic[1]
-            if splitted_topic[2] == "status" and splitted_topic[3] == "response":
+        if len(split_topic) >= 4 and split_topic[3] != "shadow":
+            thing_name = split_topic[1]
+            if split_topic[2] == "status" and split_topic[3] == "response":
                 self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(payload)
                 self._mqtt_events.device_status_event.set()
-            elif splitted_topic[2] == "registration" and splitted_topic[3] == "response":
+            elif split_topic[2] == "registration" and split_topic[3] == "response":
                 self._mqtt_events.device_support[thing_name] = JciHitachiAWSStatusSupport(payload)
                 self._mqtt_events.device_support_event.set()
-            elif splitted_topic[2] == "control" and splitted_topic[3] == "response":
+            elif split_topic[2] == "control" and split_topic[3] == "response":
                 self._mqtt_events.device_control[thing_name] = payload
                 self._mqtt_events.device_control_event.set()
-        elif len(splitted_topic) >= 4 and splitted_topic[3] == "shadow" and splitted_topic[-1] in ["accepted", "rejected"]:
-            thing_name = splitted_topic[2]
-            is_named_shadow = splitted_topic[4] == "name"
+        elif len(split_topic) >= 4 and split_topic[3] == "shadow" and split_topic[-1] in ["accepted", "rejected"]:
+            thing_name = split_topic[2]
+            is_named_shadow = split_topic[4] == "name"
             
-            if splitted_topic[-1] == "rejected":
+            if split_topic[-1] == "rejected":
                 _LOGGER.error(f"A shadow request was rejected by the API: {message.topic} {payload}")
             if is_named_shadow:
-                if splitted_topic[6] == "get":
+                if split_topic[6] == "get":
                     self._mqtt_events.device_shadow[thing_name] = payload
                     self._mqtt_events.device_shadow_event.set()
-                if splitted_topic[6] == "update":  # We regard this as a control event.
+                if split_topic[6] == "update":  # We regard this as a control event.
                     self._mqtt_events.device_control[thing_name] = payload
                     self._mqtt_events.device_control_event.set()
 
@@ -586,17 +585,17 @@ class JciHitachiAWSMqttConnection:
         if self._print_response:
             print(f"Mqtt topic {topic} published with payload \n {payload}")
 
-        splitted_topic = topic.split('/')
+        split_topic = topic.split('/')
 
-        thing_name = splitted_topic[1]
+        thing_name = split_topic[1]
 
-        if len(splitted_topic) >= 4 and splitted_topic[2] == "status" and splitted_topic[3] == "response":
+        if len(split_topic) >= 4 and split_topic[2] == "status" and split_topic[3] == "response":
             self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(payload)
             self._mqtt_events.device_status_event.set()
-        elif len(splitted_topic) >= 4 and splitted_topic[2] == "registration" and splitted_topic[3] == "response":
+        elif len(split_topic) >= 4 and split_topic[2] == "registration" and split_topic[3] == "response":
             self._mqtt_events.device_support[thing_name] = JciHitachiAWSStatusSupport(payload)
             self._mqtt_events.device_support_event.set()
-        elif len(splitted_topic) >= 4 and splitted_topic[2] == "control" and splitted_topic[3] == "response":
+        elif len(split_topic) >= 4 and split_topic[2] == "control" and split_topic[3] == "response":
             self._mqtt_events.device_control[thing_name] = payload
             self._mqtt_events.device_control_event.set()
 

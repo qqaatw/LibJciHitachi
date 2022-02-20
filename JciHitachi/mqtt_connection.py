@@ -87,18 +87,18 @@ class JciHitachiMqttConnection:
         if self._print_response:
             print(f"{msg.topic} {str(msg.payload)}")
         
-        splitted_topic = msg.topic.split('/')
+        split_topic = msg.topic.split('/')
         payload = json.loads(msg.payload)
-        if len(splitted_topic) == 6 and splitted_topic[-1] == "status":
+        if len(split_topic) == 6 and split_topic[-1] == "status":
             gateway_id = payload["args"]["ObjectID"]
             time = payload["time"]
             self._mqtt_events.device_access_time[gateway_id] = time
-        elif len(splitted_topic) == 4 and splitted_topic[-1] == "resp":
+        elif len(split_topic) == 4 and split_topic[-1] == "resp":
             if payload["args"]["Name"] == "JobDoneReport":
                 self._mqtt_events.job_done_report.set()
             elif payload["args"]["Name"] == "Peripheral":
                 self._mqtt_events.peripheral.set()
-        elif len(splitted_topic) == 4 and splitted_topic[-1] == "job":
+        elif len(split_topic) == 4 and split_topic[-1] == "job":
             if payload["args"]["Name"] == "Job":
                 self._mqtt_events.job.set()
 
