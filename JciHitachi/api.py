@@ -1044,6 +1044,40 @@ class JciHitachiAWSAPI:
         if hitachi_conn_status != "OK":
             raise RuntimeError(f"An error occurred when changing Hitachi password: {hitachi_conn_status}")
 
+    def get_monthly_data(self, months: int, device_name: str) -> List[Dict]:
+        """Get available monthly data (power consumptions).
+
+        Parameters
+        ----------
+        months : int
+            Number of months to get.
+        device_name : str
+            Device name.
+
+        Returns
+        -------
+        list of monthly data dict
+            Available monthly data. The monthly power consumption is calculated by PowerConsumption_Sum / 10.
+        """
+
+        thing = self._things[device_name]
+        current_timestamp_millis = time.time() * 1000
+
+        conn = aws_connection.GetAvailableAggregationMonthlyData(
+            self._aws_tokens,
+            print_response=self.print_response
+        )
+    
+        conn_status, response = conn.get_data(
+            thing.thing_name,
+            int(current_timestamp_millis - months * 2678400000), # 2678400000 ms == 31 days
+            int(current_timestamp_millis)
+        )
+        if conn_status != "OK":
+            raise RuntimeError(f"An error occurred when getting monthly data: {conn_status}")
+
+        return sorted(response["results"]["Data"], key=lambda x: x["Timestamp"])
+
     def refresh_status(self, device_name : Optional[str] = None, refresh_support_code : bool = False, refresh_shadow : bool = False) -> None:
         """Refresh device status from the API.
 
@@ -1054,9 +1088,9 @@ class JciHitachiAWSAPI:
             If None is given, all devices' status will be refreshed,
             by default None.
         refresh_support_code : bool, optional
-            Whether or not to refresh support code.
+            Whether or not to refresh support code, by default False.
         refresh_shadow : bool, optional
-            Whether or not to refresh AWS IoT Shadow.
+            Whether or not to refresh AWS IoT Shadow, by default False.
 
         Raise
         -------
