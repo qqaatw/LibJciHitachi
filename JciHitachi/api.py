@@ -1111,7 +1111,7 @@ class JciHitachiAWSAPI:
         Returns
         -------
         dict of JciHitachiAWSStatus or JciHitachiStatus.
-            if legacy is True, return a dict of JciHitachiStatus; otherwise, return a dict of JciHitachiAWSStatus instances.
+            If legacy is True, return a dict of JciHitachiStatus; otherwise, return a dict of JciHitachiAWSStatus instances.
         """
         
         statuses = {}
@@ -1206,6 +1206,7 @@ class JciHitachiAWSAPI:
             if self._mqtt.mqtt_events.device_control_event.wait(timeout=10.0):
                 device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
                 if device_control.get(status_name) == status_value:
+                    thing.status_code._status[status_name] = status_value
                     self._mqtt.mqtt_events.device_control_event.clear()
                     return True
             self._delay()

@@ -1,5 +1,6 @@
 import copy
 
+
 class JciHitachiStatus:
     idx = {}
 
@@ -1596,9 +1597,8 @@ class JciHitachiAWSStatus:
     def __init__(self, status: dict) -> None:
         self._status: dict = self._preprocess(status)
 
-    def __getattr__(self, item):
-        print(item)
-        return self._status[item]
+    def __getattr__(self, name):
+        return self._status[name]
     
     def __repr__(self) -> str:
         return str(self._status)
@@ -1676,8 +1676,8 @@ class JciHitachiAWSStatusSupport:
     def __init__(self, status: dict) -> None:
         self._status: dict = self._preprocess(status)
 
-    def __getattr__(self, item):
-        return self._status[item]
+    def __getattr__(self, name):
+        return self._status[name]
     
     def __repr__(self) -> str:
         return str(self._status)
