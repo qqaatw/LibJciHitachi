@@ -48,6 +48,7 @@ class JciHitachiAC(JciHitachiStatus):
         'sound_prompt': 30,
         'outdoor_temp': 33,
         'power_kwh': 40,
+        'freeze_clean': 57,
     }
 
     def __init__(self, status, default=-1):
@@ -360,6 +361,25 @@ class JciHitachiAC(JciHitachiStatus):
             return v
         return v / 10.0
 
+    @property
+    def freeze_clean(self):
+        """Freeze clean. Controlable.
+
+        Returns
+        -------
+        str
+            One of ("unsupported", "off", "on", "unknown").
+        """
+
+        v = self._status.get(self.idx['freeze_clean'], self._default)
+        if v == -1:
+            return "unsupported"
+        elif v == 0:
+            return "off"
+        elif v == 1:
+            return "on"
+        else:
+            return "unknown"
 
 class JciHitachiDH(JciHitachiStatus):
     """Data class representing dehumidifier status.
@@ -1534,6 +1554,172 @@ class JciHitachiHESupport(JciHitachiStatusSupport):
         super().__init__(status, default)
 
 
+STATUS_DICT = {
+    "AC": {
+        'DeviceType': {
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": None,
+            1: "AC",
+            2: "DH",
+            3: "HE",
+            4: "PM25_PANEL",
+        },
+        'Switch': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": "power",
+            0: "off",
+            1: "on",
+        },
+        'Mode': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": "mode",
+            0: "cool",
+            1: "dry",
+            2: "fan",
+            3: "auto",
+            4: "heat",
+        },
+        'FanSpeed': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": "air_speed",
+            0: "auto",
+            1: "silent",
+            2: "low",
+            3: "moderate",
+            4: "high",
+        },
+        'TemperatureSetting': {
+            "controlable": True,
+            "numeric": True,
+            "legacy_name": "target_temp",
+        },
+        'IndoorTemperature': {
+            "controlable": False,
+            "numeric": True,
+            "legacy_name": "indoor_temp",
+        },
+        'SleepModeRemainingTime': {
+            "controlable": True,
+            "is_numeric": True,
+            "legacy_name": "sleep_timer",
+        },
+        'VerticalWindDirectionSwitch': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": "vertical_wind_swingable",
+            0: "disabled",
+            1: "enabled",
+        },
+        'VerticalWindDirectionSetting': {
+            "controlable": True,
+            "is_numeric": True,
+            "legacy_name": "vertical_wind_direction",
+        },
+        'HorizontalWindDirectionSetting': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": 'horizontal_wind_direction',
+            0: "auto",
+            1: "leftmost",
+            2: "middleleft",
+            3: "central",
+            4: "middleright",
+            5: "rightmost"
+        },
+        'MildewProof': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": 'mold_prev',
+            0: "disabled",
+            1: "enabled",
+        },
+        'QuickMode': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": 'fast_op',
+            0: "disabled",
+            1: "enabled",
+        },
+        'PowerSaving': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name":'energy_save',
+            0: "disabled",
+            1: "enabled",
+        },
+        'ControlTone': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name":'sound_prompt',
+            0: "enabled",
+            1: "disabled",
+        },
+        'PowerConsumption': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name":'power_kwh',
+        },
+        'TaiseiaError': {
+            None,
+        },
+        'FilterElapsedHour': {
+            None,
+        },
+        'CleanSwitch': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name":'freeze_clean',
+            0: "off",
+            1: "on",
+        },
+        'CleanNotification': {
+            None,
+        },
+        'CleanStatus': {
+            None,
+        },
+        'Error': {
+            None,
+        },
+    },
+    "DH": {
+        'DeviceType': {
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": None,
+            1: "AC",
+            2: "DH",
+            3: "HE",
+            4: "PM25_PANEL",
+        },
+        'Switch': 'power',
+        'Mode': 'mode',
+        'FanSpeed': 'air_speed',
+        'MildewProof': 'mold_prev',
+        'ControlTone': 'sound_control',
+        'SaaControlTone': None,
+        'PowerConsumption': 'power_kwh',
+        'Ion': None,
+        'HumiditySetting': 'target_humidity',
+        'AutoWindDirection': 'wind_swingable',
+        'KeypadLock': None,
+        'DisplayBrightness': 'display_brightness',
+        'FilterControl': 'air_cleaning_filter',
+        'PM25': 'pm25_value',
+        'IndoorHumidity': 'indoor_humidity',
+        'SideAirOutlet': 'side_vent',
+        'Defrost': None,
+        'SmellIndex': 'odor_level',
+        'CleanFilterNotification': 'clean_filter_notify',
+        'TankFullNotification': 'water_full_warning',
+        'TaiseiaError': None,
+        'Error': 'error_code',
+    }
+}
 
 class JciHitachiAWSStatus:
     compatibility_mapping = {
@@ -1556,7 +1742,7 @@ class JciHitachiAWSStatus:
             'PowerConsumption': 'power_kwh',
             'TaiseiaError': None,
             'FilterElapsedHour': None,
-            'CleanSwitch': None,
+            'CleanSwitch': 'freeze_clean',
             'CleanNotification': None,
             'CleanStatus': None,
             'Error': None,

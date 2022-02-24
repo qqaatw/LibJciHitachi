@@ -2,9 +2,11 @@ import time
 import warnings
 
 import pytest
+from unittest.mock import patch, MagicMock
 
 from JciHitachi.api import JciHitachiAPI, JciHitachiAWSAPI
 from JciHitachi.connection import JciHitachiConnection
+from JciHitachi.model import JciHitachiStatus, JciHitachiAWSStatus
 
 from . import fixture_api, fixture_aws_api, fixture_mqtt, TEST_EMAIL, TEST_PASSWORD, TEST_DEVICE_AC
 
@@ -110,3 +112,59 @@ class TestMqttLogin:
         fixture_mqtt._password = "password"
         fixture_mqtt.configure()
         fixture_mqtt.connect()
+
+
+class TestAWSAPI:
+    def test_get_status(self, fixture_aws_api):
+        # Test AWS status
+        statuses = fixture_aws_api.get_status(TEST_DEVICE_AC)
+        assert isinstance(statuses[TEST_DEVICE_AC], JciHitachiAWSStatus)
+        # Test legacy status
+        statuses = fixture_aws_api.get_status(TEST_DEVICE_AC, True)
+        assert isinstance(statuses[TEST_DEVICE_AC], JciHitachiStatus)
+        # Test not existing thing
+        statuses = fixture_aws_api.get_status("NON_EXISTING_NAME")
+        assert statuses == {}
+
+    def test_refresh_status(self, fixture_aws_api):
+        return
+        api = JciHitachiAWSAPI("", "")
+        with patch.object(api, "_mqtt") as mock_mqtt:
+            mock_publish = MagicMock()
+            mock_publish.return_value = None
+            mock_publish.side_effect = lambda *args: api._mqtt.mqtt_events.device_status_event.set()
+            mock_mqtt.publish = mock_publish
+            api.refresh_status(TEST_DEVICE_AC)
+
+            mock_publish.side_effect = None
+            with pytest.raises(RuntimeError, match=f"An error occurred when refreshing {TEST_DEVICE_AC} status code."):
+                api.refresh_status(TEST_DEVICE_AC)
+
+        with patch.object(api._mqtt, "publish") as mock_publish:
+            mock_publish.return_value = None
+            mock_publish.side_effect = lambda *args: api._mqtt.mqtt_events.device_support_event.set()
+            api.refresh_status(TEST_DEVICE_AC, refresh_support_code=True)
+            
+            mock_publish.side_effect = None
+            with pytest.raises(RuntimeError, match=f"An error occurred when refreshing {TEST_DEVICE_AC} support code."):
+                api.refresh_status(TEST_DEVICE_AC, refresh_support_code=True)
+        
+        with patch.object(fixture_aws_api._mqtt, "publish") as mock_publish:
+            mock_publish.return_value = None
+            mock_publish.side_effect = fixture_aws_api._mqtt.mqtt_events.device_status_event.set
+
+            with patch.object(fixture_aws_api._mqtt, "publish_shadow") as mock_publish_shadow:
+                mock_publish_shadow.return_value = None
+                mock_publish_shadow.side_effect = lambda *args: fixture_aws_api._mqtt.mqtt_events.device_shadow_event.set
+                fixture_aws_api.refresh_status(TEST_DEVICE_AC, refresh_shadow=True)
+
+                mock_publish_shadow.side_effect = None
+                with pytest.raises(RuntimeError, match=f"An error occurred when refreshing {TEST_DEVICE_AC} shadow."):
+                    fixture_aws_api.refresh_status(TEST_DEVICE_AC, refresh_shadow=True)
+
+
+    def test_set_status(self):
+        return
+    
+    def test_get_monthly_data(self):
+        return

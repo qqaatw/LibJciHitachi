@@ -71,7 +71,8 @@ class TestACStatus:
             'energy_save': 'disabled',
             'sound_prompt': 'enabled',
             'outdoor_temp': 24,
-            'power_kwh': 0.0
+            'power_kwh': 0.0,
+            'freeze_clean': 'off',
         }
 
         for key, value in ac_status.items():
