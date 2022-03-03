@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 install_requires = [
     "AWSIoTPythonSDK",
-    "httpx==0.21.0",
+    "httpx",
     "paho-mqtt",
 ]
 tests_require = [
