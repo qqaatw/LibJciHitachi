@@ -9,11 +9,12 @@ from typing import Dict
 
 import httpx
 # For apiv2
-#import awscrt
-#import awsiot
-#from awsiot import mqtt_connection_builder
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
-from AWSIoTPythonSDK.exception.AWSIoTExceptions import connectTimeoutException, publishTimeoutException, subscribeTimeoutException
+import awscrt
+import awsiot
+from awsiot import mqtt_connection_builder, iotshadow
+# For apiv1
+#from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+#from AWSIoTPythonSDK.exception.AWSIoTExceptions import connectTimeoutException, publishTimeoutException, subscribeTimeoutException
 from .model import JciHitachiAWSStatus, JciHitachiAWSStatusSupport
 
 AWS_COGNITO_REGION = "ap-northeast-1"
@@ -488,7 +489,6 @@ class ListSubUser(JciHitachiAWSIoTConnection):
 
 class JciHitachiAWSMqttConnection:
     """Connecting to Jci-Hitachi AWS MQTT to get latest events. 
-        # TODO: Swiching to awscrt API v2 when precompiled wheels of musl linux are available
 
     Parameters
     ----------
@@ -503,6 +503,8 @@ class JciHitachiAWSMqttConnection:
         self._print_response = print_response
         
         self._mqttc = None
+        self._shadow_mqttc = None
+        self._client_tokens = {}
         self._mqtt_events = JciHitachiMqttEvents()
 
     def __del__(self):
@@ -535,7 +537,7 @@ class JciHitachiAWSMqttConnection:
 
         return self._mqtt_events
     
-    def _on_publish(self, client, userdata, message):
+    def _on_publish_v1(self, client, userdata, message):
         try:
             payload = json.loads(message.payload.decode())
         except Exception as e:
@@ -574,35 +576,64 @@ class JciHitachiAWSMqttConnection:
                     self._mqtt_events.device_control[thing_name] = payload
                     self._mqtt_events.device_control_event.set()
 
-    def _on_publish_apiv2(self, topic, payload, dup, qos, retain, **kwargs):
+    def _on_publish(self, topic, payload, dup, qos, retain, **kwargs):
         try:
             payload = json.loads(payload.decode())
         except Exception as e:
             self._mqtt_events.mqtt_error = e.__class__.__name__
             self._mqtt_events.mqtt_error_event.set()
-            _LOGGER.error(e)
+            _LOGGER.error(f"Mqtt topic {topic} published with payload {payload} cannot be decoded: {e}")
+            return
 
         if self._print_response:
             print(f"Mqtt topic {topic} published with payload \n {payload}")
 
         split_topic = topic.split('/')
 
-        thing_name = split_topic[1]
+        if len(split_topic) >= 4 and split_topic[3] != "shadow":
+            thing_name = split_topic[1]
+            if split_topic[2] == "status" and split_topic[3] == "response":
+                self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(payload)
+                self._mqtt_events.device_status_event.set()
+            elif split_topic[2] == "registration" and split_topic[3] == "response":
+                self._mqtt_events.device_support[thing_name] = JciHitachiAWSStatusSupport(payload)
+                self._mqtt_events.device_support_event.set()
+            elif split_topic[2] == "control" and split_topic[3] == "response":
+                self._mqtt_events.device_control[thing_name] = payload
+                self._mqtt_events.device_control_event.set()
 
-        if len(split_topic) >= 4 and split_topic[2] == "status" and split_topic[3] == "response":
-            self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(payload)
-            self._mqtt_events.device_status_event.set()
-        elif len(split_topic) >= 4 and split_topic[2] == "registration" and split_topic[3] == "response":
-            self._mqtt_events.device_support[thing_name] = JciHitachiAWSStatusSupport(payload)
-            self._mqtt_events.device_support_event.set()
-        elif len(split_topic) >= 4 and split_topic[2] == "control" and split_topic[3] == "response":
-            self._mqtt_events.device_control[thing_name] = payload
-            self._mqtt_events.device_control_event.set()
+    def _on_update_named_shadow_accepted(self, response):
+        try:
+            thing_name = self._client_tokens.pop(response.client_token)
+        except:
+            _LOGGER.error(f"An unknown shadow response is received. Client token: {response.client_token}")
+        
+        if response.state:
+            if response.state.reported:
+                self._mqtt_events.device_control[thing_name] = response.state.reported
+                self._mqtt_events.device_control_event.set()
+    
+    def _on_update_named_shadow_rejected(self, error):
+        _LOGGER.error(f"A shadow request {error.client_token} was rejected by the API: {error.code} {error.message}")
+
+    def _on_get_named_shadow_accepted(self, response):
+        try:
+            thing_name = self._client_tokens.pop(response.client_token)
+        except:
+            _LOGGER.error(f"An unknown shadow response is received. Client token: {response.client_token}")
+
+        if response.state:
+            if response.state.reported:
+                self._mqtt_events.device_shadow[thing_name] = response.state.reported
+                self._mqtt_events.device_shadow_event.set()
+    
+    def _on_get_named_shadow_rejected(self, error):
+        _LOGGER.error(f"A shadow request {error.client_token} was rejected by the API: {error.code} {error.message}")
 
     def _on_message(self, topic, payload, dup, qos, retain, **kwargs):
         return
     
-    def configure(self):
+    def configure_v1(self):
         """Configure MQTT.
         """
         self._mqttc = AWSIoTMQTTClient(str(uuid.uuid4()), useWebsocket=True)
@@ -619,7 +650,7 @@ class JciHitachiAWSMqttConnection:
         self._mqttc.configureConnectDisconnectTimeout(10)  # 10 sec
         self._mqttc.configureMQTTOperationTimeout(15)  # 15 sec
 
-    def connect(self, host_identity_id, thing_names = None):
+    def connect_v1(self, host_identity_id, thing_names = None):
         """Connect to the MQTT broker and start loop.
         
         Parameters
@@ -653,7 +684,7 @@ class JciHitachiAWSMqttConnection:
             self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error('Subscription failed with exception: {}'.format(e))
 
-    def publish(self, topic, payload):
+    def publish_v1(self, topic, payload):
         """Publish message.
         
         Parameters
@@ -673,7 +704,7 @@ class JciHitachiAWSMqttConnection:
             self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error('Publish failed with exception: {}'.format(e))
     
-    def publish_shadow(self, thing_name, command_name, payload={}, shadow_name=None):
+    def publish_shadow_v1(self, thing_name, command_name, payload={}, shadow_name=None):
         """Publish message to IoT Shadow Service.
         
         Parameters
@@ -704,9 +735,9 @@ class JciHitachiAWSMqttConnection:
 
         self._mqttc.disconnect()
 
-    def configure_apiv2(self):
-        """Configure MQTT.
-        """
+    def configure(self):
+        """Configure MQTT."""
+
         cred_provider = awscrt.auth.AwsCredentialsProvider.new_static(
             self._aws_credentials.access_key_id, 
             self._aws_credentials.secret_key, 
@@ -723,38 +754,74 @@ class JciHitachiAWSMqttConnection:
             client_id=str(uuid.uuid4())
         )
         self._mqttc.on_message(self._on_message)
+        self._shadow_mqttc = awsiot.iotshadow.IotShadowClient(self._mqttc)
 
-    def connect_apiv2(self, topics):
+    def connect(self,  host_identity_id, shadow_names=None, thing_names=None):
         """Connect to the MQTT broker and start loop.
         
         Parameters
         ----------
-        topics : str or list of str
-            Topics to subscribe.
+        host_identity_id : str
+            Host identity ID.
+        shadow_names : str or list of str, optional
+            Names to subscribe in Shadow, by default None.
+        thing_names : str or list of str, optional
+            Things to subscribe in Shadow, by default None.
         """
         
         try:
             connect_future = self._mqttc.connect()
-            print(connect_future.result())
-            _LOGGER.info("Connected!")
+            connect_future.result()
+            _LOGGER.info("MQTT Connected.")
         except Exception as e:
             self._mqtt_events.mqtt_error = e.__class__.__name__
             self._mqtt_events.mqtt_error_event.set()
-            _LOGGER.error('Connection failed with exception {}'.format(e))
+            _LOGGER.error('MQTT connection failed with exception {}'.format(e))
 
-        if isinstance(topics, str):
-            topics = [topics]
+        try:
+            subscribe_future, _ = self._mqttc.subscribe(f"{host_identity_id}/#", awscrt.mqtt.QoS.AT_LEAST_ONCE, callback=self._on_publish)
+            subscribe_future.result()
+            
+            if thing_names is not None and shadow_names is not None:
+                shadow_names = [shadow_names] if isinstance(shadow_names, str) else shadow_names
+                thing_names = [thing_names] if isinstance(thing_names, str) else thing_names
+                
+                for shadow_name in shadow_names:
+                    for thing_name in thing_names:
+                        update_accepted_subscribed_future, _ = self._shadow_mqttc.subscribe_to_update_named_shadow_accepted(
+                            request=iotshadow.UpdateNamedShadowSubscriptionRequest(shadow_name=shadow_name, thing_name=thing_name),
+                            qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+                            callback=self._on_update_named_shadow_accepted)
+
+                        update_rejected_subscribed_future, _ = self._shadow_mqttc.subscribe_to_update_named_shadow_rejected(
+                            request=iotshadow.UpdateNamedShadowSubscriptionRequest(shadow_name=shadow_name, thing_name=thing_name),
+                            qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+                            callback=self._on_update_named_shadow_rejected)
+
+                        # Wait for subscriptions to succeed
+                        update_accepted_subscribed_future.result()
+                        update_rejected_subscribed_future.result()
+
+                        get_accepted_subscribed_future, _ = self._shadow_mqttc.subscribe_to_get_named_shadow_accepted(
+                            request=iotshadow.GetNamedShadowSubscriptionRequest(shadow_name=shadow_name, thing_name=thing_name),
+                            qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+                            callback=self._on_get_named_shadow_accepted)
+
+                        get_rejected_subscribed_future, _ = self._shadow_mqttc.subscribe_to_get_named_shadow_rejected(
+                            request=iotshadow.GetNamedShadowSubscriptionRequest(shadow_name=shadow_name, thing_name=thing_name),
+                            qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+                            callback=self._on_get_named_shadow_rejected)
+
+                        # Wait for subscriptions to succeed
+                        get_accepted_subscribed_future.result()
+                        get_rejected_subscribed_future.result()
         
-        for topic in topics:
-            try:
-                subscribe_future, _ = self._mqttc.subscribe(topic, awscrt.mqtt.QoS.AT_LEAST_ONCE, callback=self._on_publish)
-                print(subscribe_future.result())
-            except Exception as e:
-                self._mqtt_events.mqtt_error = e.__class__.__name__
-                self._mqtt_events.mqtt_error_event.set()
-                _LOGGER.error('Subscription failed with exception {}'.format(e))
+        except Exception as e:
+            self._mqtt_events.mqtt_error = e.__class__.__name__
+            self._mqtt_events.mqtt_error_event.set()
+            _LOGGER.error('Subscription failed with exception {}'.format(e))
 
-    def publish_apiv2(self, topic, payload):
+    def publish(self, topic, payload):
         """Publish message.
         
         Parameters
@@ -767,8 +834,87 @@ class JciHitachiAWSMqttConnection:
 
         try:
             publish_future, _ = self._mqttc.publish(topic, json.dumps(payload), awscrt.mqtt.QoS.AT_LEAST_ONCE)
-            print(publish_future.result())
+            publish_future.result()
         except Exception as e:
             self._mqtt_events.mqtt_error = e.__class__.__name__
             self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error('Publish failed with exception: {}'.format(e))
+
+    def publish_shadow(self, thing_name, command_name, payload={}, shadow_name=None):
+        """Publish message to IoT Shadow Service.
+        
+        Parameters
+        ----------
+        thing_name : str
+            Thing name.
+        command_name : str
+            Command name, which can be `get`, `update`.
+        payload : dict, optional
+            Payload to publish, by default {}.
+        shadow_name : str, optional
+            Shadow name, by default None.
+        """
+
+        if command_name not in ["get", "update"]: # we don't subscribe delete
+            raise ValueError("command_name must be one of `get` or `update`")
+
+        # the client token can't exceed 64 bytes, so we only use gateway mac address as the token.
+        client_token = thing_name.split("_")[1] 
+        self._client_tokens.update({client_token: thing_name})
+
+        if shadow_name is None:
+            if command_name == "get":
+                self._shadow_mqttc.publish_get_shadow(
+                    awsiot.iotshadow.GetShadowRequest(
+                        client_token=client_token,
+                        thing_name=thing_name
+                    ),
+                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
+                )
+            elif command_name == "update":
+                self._shadow_mqttc.publish_update_shafow(
+                    awsiot.iotshadow.UpdateShadowRequest(
+                        client_token=client_token,
+                        state=awsiot.iotshadow.ShadowState(reported=payload),
+                        thing_name=thing_name
+                    ),
+                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
+                )
+            elif command_name == "delete":
+                self._shadow_mqttc.publish_delete_shafow(
+                    awsiot.iotshadow.DeleteShadowRequest(
+                        client_token=client_token,
+                        thing_name=thing_name
+                    ),
+                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
+                )
+
+        else:
+            if command_name == "get":
+                self._shadow_mqttc.publish_get_named_shadow(
+                    awsiot.iotshadow.GetNamedShadowRequest(
+                        client_token=client_token,
+                        shadow_name=shadow_name,
+                        thing_name=thing_name
+                    ),
+                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
+                )
+            elif command_name == "update":
+                self._shadow_mqttc.publish_update_named_shafow(
+                    awsiot.iotshadow.UpdateNamedShadowRequest(
+                        client_token=client_token,
+                        shadow_name=shadow_name,
+                        state=awsiot.iotshadow.ShadowState(reported=payload),
+                        thing_name=thing_name
+                    ),
+                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
+                )
+            elif command_name == "delete":
+                self._shadow_mqttc.publish_delete_named_shafow(
+                    awsiot.iotshadow.DeleteNamedShadowRequest(
+                        client_token=client_token,
+                        shadow_name=shadow_name, 
+                        thing_name=thing_name
+                    ),
+                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
+                )

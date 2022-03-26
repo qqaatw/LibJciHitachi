@@ -864,6 +864,7 @@ class JciHitachiAWSAPI:
         self.print_response : bool = print_response
 
         self._mqtt : Optional[aws_connection.JciHitachiAWSMqttConnection] = None
+        self._shadow_names : Union[str, list] = ["info"]
         self._device_id : int = random.randint(1000, 6999)
         self._things : Dict[str, AWSThing] = {}
         self._aws_tokens : Optional[aws_connection.AWSTokens] = None
@@ -968,7 +969,7 @@ class JciHitachiAWSAPI:
             # mqtt
             self._mqtt = aws_connection.JciHitachiAWSMqttConnection(self._aws_credentials, print_response=self.print_response)
             self._mqtt.configure()
-            self._mqtt.connect(self._host_identity_id, thing_names)
+            self._mqtt.connect(self._host_identity_id, self._shadow_names, thing_names)
 
             # status
             self.refresh_status(refresh_support_code=True, refresh_shadow=True)
@@ -1003,7 +1004,7 @@ class JciHitachiAWSAPI:
         self._mqtt.aws_credentials = self._aws_credentials
         self._mqtt.disconnect()
         self._mqtt.configure()
-        self._mqtt.connect(self._host_identity_id, thing_names)
+        self._mqtt.connect(self._host_identity_id, self._shadow_names, thing_names)
 
     def change_password(self, new_password: str) -> None:
         """Change password. 

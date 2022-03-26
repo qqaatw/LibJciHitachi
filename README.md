@@ -53,7 +53,7 @@ A Python library for controlling Jci-Hitachi devices.
 
 ### Python Library
 
-    pip install LibJciHitachi
+    pip install LibJciHitachi -f https://qqaatw.github.io/aws-crt-python-musllinux/
 
 ### Home Assistant Integration
 

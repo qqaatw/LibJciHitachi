@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 install_requires = [
-    "AWSIoTPythonSDK",
+    "awsiotsdk==1.10.0", # See: https://github.com/pypa/pip/issues/5898
     "httpx",
     "paho-mqtt",
 ]
