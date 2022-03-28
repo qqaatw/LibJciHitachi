@@ -895,9 +895,8 @@ class JciHitachiAWSAPI:
             self.reauth()
 
         if self._mqtt.mqtt_events.mqtt_error_event.is_set():
-            if self._mqtt.mqtt_events.mqtt_error == "wssHandShakeError":
-                self._mqtt.mqtt_events.mqtt_error_event.clear()
-                self.reauth()
+            self._mqtt.mqtt_events.mqtt_error_event.clear()
+            self.reauth()
         
         # Clear events
         self._mqtt.mqtt_events.device_control_event.clear()
@@ -963,12 +962,14 @@ class JciHitachiAWSAPI:
 
             self._mqtt = aws_connection.JciHitachiAWSMqttConnection(get_credential_callable, print_response=self.print_response)
             self._mqtt.configure()
-            self._mqtt.connect(self._host_identity_id, self._shadow_names, thing_names)
+            
+            if not self._mqtt.connect(self._host_identity_id, self._shadow_names, thing_names):
+                raise RuntimeError(f"An error occurred when connecting to MQTT endpoint.")
 
             # status
             self.refresh_status(refresh_support_code=True, refresh_shadow=True)
         else:
-            raise RuntimeError(f"An error occurred when retrieving device info: {conn_status}")
+            raise RuntimeError(f"An error occurred when retrieving devices info: {conn_status}")
     
     def logout(self) -> None:
         """Logout API.

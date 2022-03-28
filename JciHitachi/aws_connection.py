@@ -155,7 +155,7 @@ class JciHitachiAWSCognitoConnection:
         status, response = self._handle_response(login_req)
 
         aws_tokens = None
-        if login_req.status_code == httpx.codes.ok:        
+        if status == "OK":        
             auth_result = response["AuthenticationResult"]
             aws_tokens = AWSTokens(
                 access_token = auth_result['AccessToken'],
@@ -335,15 +335,18 @@ class JciHitachiAWSIoTConnection:
 
     def _handle_response(self, response):
         response_json = response.json()
-        code = response_json["status"]["code"]
-        if code == 0:
-            return code, "OK", response_json
-        elif code == 6:
-            return code, "Invalid email or password", response_json
-        elif code == 12:
-            return code, "Invalid session token", response_json
+        if response.status_code == httpx.codes.ok:
+            code = response_json["status"]["code"]
+            if code == 0:
+                return code, "OK", response_json
+            elif code == 6:
+                return code, "Invalid email or password", response_json
+            elif code == 12:
+                return code, "Invalid session token", response_json
+            else:
+                return code, "Unknown error", response_json
         else:
-            return code, "Unknown error", response_json
+            return response.status_code, f"HTTP exception {response.status_code}", response_json
 
     def _send(self, api_name, json=None):
         req = httpx.post(
@@ -542,6 +545,7 @@ class JciHitachiAWSMqttConnection:
             thing_name = self._client_tokens.pop(response.client_token)
         except:
             _LOGGER.error(f"An unknown shadow response is received. Client token: {response.client_token}")
+            return
         
         if response.state:
             if response.state.reported:
@@ -556,6 +560,7 @@ class JciHitachiAWSMqttConnection:
             thing_name = self._client_tokens.pop(response.client_token)
         except:
             _LOGGER.error(f"An unknown shadow response is received. Client token: {response.client_token}")
+            return
 
         if response.state:
             if response.state.reported:
@@ -599,9 +604,9 @@ class JciHitachiAWSMqttConnection:
         host_identity_id : str
             Host identity ID.
         shadow_names : str or list of str, optional
-            Names to subscribe in Shadow, by default None.
+            Names to be subscribed in Shadow, by default None.
         thing_names : str or list of str, optional
-            Things to subscribe in Shadow, by default None.
+            Things to be subscribed in Shadow, by default None.
         """
         
         try:
@@ -612,6 +617,7 @@ class JciHitachiAWSMqttConnection:
             self._mqtt_events.mqtt_error = e.__class__.__name__
             self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error('MQTT connection failed with exception {}'.format(e))
+            return False
 
         try:
             subscribe_future, _ = self._mqttc.subscribe(f"{host_identity_id}/#", awscrt.mqtt.QoS.AT_LEAST_ONCE, callback=self._on_publish)
@@ -654,7 +660,10 @@ class JciHitachiAWSMqttConnection:
         except Exception as e:
             self._mqtt_events.mqtt_error = e.__class__.__name__
             self._mqtt_events.mqtt_error_event.set()
-            _LOGGER.error('Subscription failed with exception {}'.format(e))
+            self.disconnect()
+            _LOGGER.error('MQTT subscription failed with exception {}'.format(e))
+            return False
+        return True
 
     def publish(self, topic, payload):
         """Publish message.
@@ -693,7 +702,7 @@ class JciHitachiAWSMqttConnection:
         if command_name not in ["get", "update"]: # we don't subscribe delete
             raise ValueError("command_name must be one of `get` or `update`")
 
-        # the client token can't exceed 64 bytes, so we only use gateway mac address as the token.
+        # The length of client token can't exceed 64 bytes, so we only use gateway mac address as the token.
         client_token = thing_name.split("_")[1] 
         self._client_tokens.update({client_token: thing_name})
 
