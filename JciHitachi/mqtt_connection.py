@@ -22,14 +22,14 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
-class JciHitachiMqttEvents:
+class JciHitachiMqttEvents:  # pragma: no cover
     device_access_time: Dict[str, int] = field(default_factory=dict)
     job: threading.Event = field(default_factory=threading.Event)
     job_done_report: threading.Event = field(default_factory=threading.Event)
     peripheral: threading.Event = field(default_factory=threading.Event)
 
 
-class JciHitachiMqttConnection:
+class JciHitachiMqttConnection:  # pragma: no cover
     """Connecting to Jci-Hitachi MQTT to get latest events.
 
     Parameters

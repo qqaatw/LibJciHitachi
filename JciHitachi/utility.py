@@ -2,7 +2,7 @@ import hashlib
 import math
 
 
-def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):
+def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):  # pragma: no cover
     """Concatenate two integer.
     Steps:
         1. Zero fill integers according to the given byte.
@@ -41,7 +41,7 @@ def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):
 
     return int(int_1_bin + int_2_bin, base=2)
 
-def cast_bytes(v, nbytes):
+def cast_bytes(v, nbytes):  # pragma: no cover
     """Cast byte(s) from v.
 
     Parameters
@@ -61,7 +61,7 @@ def cast_bytes(v, nbytes):
         "Invalid nbytes : {}".format(nbytes)
     return v & (0x100 ** nbytes - 1)
 
-def convert_hash(v):
+def convert_hash(v):  # pragma: no cover
     """Convert md5 from string.
     Steps:
         1. Use hashlib to convert md5.
@@ -84,7 +84,7 @@ def convert_hash(v):
         
     return ''.join(code)
 
-def extract_bytes(v, start, end):
+def extract_bytes(v, start, end):  # pragma: no cover
     """Extract bytes scope, from start(left) to end(right).
     Steps:
         1. Right shift `end` bytes.

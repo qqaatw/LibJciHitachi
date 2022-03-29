@@ -5,9 +5,38 @@ import pytest
 
 from JciHitachi.api import JciHitachiAPI, JciHitachiAWSAPI
 from JciHitachi.connection import JciHitachiConnection
+from JciHitachi.mqtt_connection import JciHitachiMqttConnection
 
-from . import fixture_api, fixture_aws_api, fixture_mqtt, TEST_EMAIL, TEST_PASSWORD, TEST_DEVICE_AC
+from . import (TEST_COMMAND_AC, TEST_COMMAND_DH, TEST_DEVICE_AC,
+               TEST_DEVICE_DH, TEST_EMAIL, TEST_PASSWORD)
 
+
+@pytest.fixture(scope="session")
+def fixture_api():
+    api = JciHitachiAPI(
+        TEST_EMAIL,
+        TEST_PASSWORD,
+    )
+    api.login()
+    return api
+
+@pytest.fixture(scope="session")
+def fixture_aws_api():
+    api = JciHitachiAWSAPI(
+        TEST_EMAIL,
+        TEST_PASSWORD,
+    )
+    api.login()
+    return api
+
+@pytest.fixture(scope="function")
+def fixture_mqtt(fixture_api):
+    mqtt = JciHitachiMqttConnection(
+        TEST_EMAIL,
+        TEST_PASSWORD,
+        fixture_api.user_id, 
+    )
+    return mqtt
 
 class TestAPILogin:
     def test_api(self, fixture_api):
@@ -59,29 +88,16 @@ class TestAWSAPILogin:
     def test_api(self, fixture_aws_api):
         assert fixture_aws_api._aws_tokens is not None
         assert fixture_aws_api._aws_identity is not None
-        assert fixture_aws_api._aws_credentials is not None
         assert fixture_aws_api.things[TEST_DEVICE_AC].name == TEST_DEVICE_AC
 
     def test_session_expiry(self, fixture_aws_api):
         # Test AWSTokens expiration
         current_access_token = fixture_aws_api._aws_tokens.access_token
-        current_session_token = fixture_aws_api._aws_credentials.session_token
         expiration = time.time() + 150.0
         fixture_aws_api._aws_tokens.expiration = expiration
         fixture_aws_api.refresh_status()
         assert fixture_aws_api._aws_tokens.access_token != current_access_token
-        assert fixture_aws_api._aws_credentials.session_token != current_session_token
         assert fixture_aws_api._aws_tokens.expiration != expiration
-        
-        # Test AWSCredentials expiration
-        current_access_token = fixture_aws_api._aws_tokens.access_token
-        current_session_token = fixture_aws_api._aws_credentials.session_token
-        expiration = time.time() + 150.0
-        fixture_aws_api._aws_credentials.expiration = expiration
-        fixture_aws_api.refresh_status()
-        assert fixture_aws_api._aws_tokens.access_token != current_access_token
-        assert fixture_aws_api._aws_credentials.session_token != current_session_token
-        assert fixture_aws_api._aws_credentials.expiration != expiration
 
     @pytest.mark.parametrize("mock_device_name", ["NON_EXISTING_NAME"])
     def test_device_name(self, mock_device_name):
@@ -110,3 +126,49 @@ class TestMqttLogin:
         fixture_mqtt._password = "password"
         fixture_mqtt.configure()
         fixture_mqtt.connect()
+
+class TestACStatus:
+    @pytest.mark.slow("online test is a slow test.")
+    def test_online(self, fixture_api):
+        # Change sound prompt
+        current_state = fixture_api.get_status()[TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]]
+        if current_state != 1:
+            changed_state = 1
+        else:
+            changed_state = 0
+        assert fixture_api.set_status(TEST_COMMAND_AC, changed_state, TEST_DEVICE_AC)
+
+        fixture_api.refresh_status() 
+        assert fixture_api.get_status()[
+            TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]] == changed_state
+        
+        # Change sound prompt back
+        assert fixture_api.set_status(TEST_COMMAND_AC, current_state, TEST_DEVICE_AC)
+        
+        fixture_api.refresh_status()
+        assert fixture_api.get_status()[
+            TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]] == current_state
+
+
+class TestDHStatus:
+    @pytest.mark.skip("Skip online test as no usable account to test.")
+    def test_online(self, fixture_api):
+        # Change sound control
+        current_state = fixture_api.get_status(
+        )[TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]]
+        if current_state != 1:
+            changed_state = 1
+        else:
+            changed_state = 0
+        assert fixture_api.set_status(TEST_COMMAND_DH, changed_state, TEST_DEVICE_DH)
+
+        fixture_api.refresh_status()
+        assert fixture_api.get_status()[
+            TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]] == changed_state
+
+        # Change Change sound control back
+        assert fixture_api.set_status(TEST_COMMAND_DH, current_state, TEST_DEVICE_DH)
+
+        fixture_api.refresh_status()
+        assert fixture_api.get_status()[
+            TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]] == current_state

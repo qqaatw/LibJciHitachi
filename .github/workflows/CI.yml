@@ -40,4 +40,6 @@ jobs:
         MOCK_CODE_DH: ${{ secrets.MOCK_CODE_DH }}
         MOCK_SUPPORT_CODE_DH: ${{ secrets.MOCK_SUPPORT_CODE_DH }}
       run: |
-        python -m pytest ./tests
+        python -m pytest ./tests --cov=./JciHitachi --cov-report xml
+    - name: Upload coverage reports to Codecov with GitHub Action
+      uses: codecov/codecov-action@v2

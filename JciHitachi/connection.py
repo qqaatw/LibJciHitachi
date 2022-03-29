@@ -1,6 +1,7 @@
+import json
 import os
 import ssl
-import json
+
 import httpx
 
 from .utility import convert_hash
@@ -19,7 +20,7 @@ APP_PLATFORM = 2  # 1=IOS 2=Android
 APP_VERSION = "10.20.900"
 
 
-class JciHitachiConnection:
+class JciHitachiConnection:  # pragma: no cover
     """Connecting to Jci-Hitachi API to get data or send commands.
 
     Parameters
@@ -153,7 +154,7 @@ class JciHitachiConnection:
         print('===================================================')
 
 
-class RegisterMobileDevice(JciHitachiConnection):
+class RegisterMobileDevice(JciHitachiConnection):  # pragma: no cover
     """API internal endpoint. (Unused)
     
     Parameters
@@ -176,7 +177,7 @@ class RegisterMobileDevice(JciHitachiConnection):
         return self._send("RegisterMobileDevice.php", json_data)
 
 
-class UpdateUserCredential(JciHitachiConnection):
+class UpdateUserCredential(JciHitachiConnection):  # pragma: no cover
     """API internal endpoint. (Tested)
     
     Parameters
@@ -215,7 +216,7 @@ class UpdateUserCredential(JciHitachiConnection):
         return self._send("UpdateUserCredential.php", json_data)
 
 
-class GetServerLastUpdateInfo(JciHitachiConnection):
+class GetServerLastUpdateInfo(JciHitachiConnection):  # pragma: no cover
     """API internal endpoint. (Unused)
     
     Parameters
@@ -241,7 +242,7 @@ class GetServerLastUpdateInfo(JciHitachiConnection):
         return self._send("GetServerLastUpdateInfo.php")
 
 
-class GetPeripheralsByUser(JciHitachiConnection):
+class GetPeripheralsByUser(JciHitachiConnection):  # pragma: no cover
     """API internal endpoint. (Tested)
     
     Parameters
@@ -267,7 +268,7 @@ class GetPeripheralsByUser(JciHitachiConnection):
         return self._send("GetPeripheralsByUser.php")
 
 
-class GetDataContainerByID(JciHitachiConnection):
+class GetDataContainerByID(JciHitachiConnection):  # pragma: no cover
     """API internal endpoint. (Tested)
     
     Parameters
@@ -315,7 +316,7 @@ class GetDataContainerByID(JciHitachiConnection):
         return self._send("GetDataContainerByID.php", json_data)
 
 
-class GetPeripheralByGMACAddress(JciHitachiConnection):
+class GetPeripheralByGMACAddress(JciHitachiConnection):  # pragma: no cover
     """API internal endpoint. (Unused)
     
     Parameters
@@ -353,7 +354,7 @@ class GetPeripheralByGMACAddress(JciHitachiConnection):
         return self._send("GetPeripheralByGMACAddress.php", json_data)
 
 
-class CreateJob(JciHitachiConnection):
+class CreateJob(JciHitachiConnection):  # pragma: no cover
     """API internal endpoint. (Tested)
     
     Parameters
@@ -401,7 +402,7 @@ class CreateJob(JciHitachiConnection):
         return self._send("CreateJob.php", json_data)
 
 
-class GetJobDoneReport(JciHitachiConnection):
+class GetJobDoneReport(JciHitachiConnection):  # pragma: no cover
     """API internal endpoint. (Tested)
     
     Parameters

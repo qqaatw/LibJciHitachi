@@ -4,25 +4,15 @@ import warnings
 from typing import Dict, List, Optional, Union
 
 from . import aws_connection, connection, mqtt_connection
-from .status import (
-    JciHitachiCommand,
-    JciHitachiCommandAC,
-    JciHitachiCommandDH,
-    JciHitachiStatusInterpreter,
-)
-from .model import (
-    JciHitachiStatusSupport,
-    JciHitachiACSupport,
-    JciHitachiDHSupport,
-    JciHitachiStatus,
-    JciHitachiAC,
-    JciHitachiDH,
-    JciHitachiAWSStatusSupport,
-    JciHitachiAWSStatus,
-)
+from .model import (JciHitachiAC, JciHitachiACSupport, JciHitachiAWSStatus,
+                    JciHitachiAWSStatusSupport, JciHitachiDH,
+                    JciHitachiDHSupport, JciHitachiStatus,
+                    JciHitachiStatusSupport)
+from .status import (JciHitachiCommand, JciHitachiCommandAC,
+                     JciHitachiCommandDH, JciHitachiStatusInterpreter)
 
 
-class Peripheral:
+class Peripheral: # pragma: no cover
     """Peripheral (Device) Information.
 
     Parameters
@@ -273,7 +263,7 @@ class Peripheral:
         )
 
 
-class JciHitachiAPI:
+class JciHitachiAPI: # pragma: no cover
     """Jci-Hitachi API.
 
     Parameters
@@ -641,6 +631,7 @@ class AWSThing:
             f"available: {self.available}\n"
             f"status_code: {self.status_code}\n"
             f"support_code: {self.support_code}\n"
+            f"shadow: {self.shadow}\n"
             f"gateway_mac_address: {self.gateway_mac_address}"
         )
         return ret
@@ -864,11 +855,11 @@ class JciHitachiAWSAPI:
         self.print_response : bool = print_response
 
         self._mqtt : Optional[aws_connection.JciHitachiAWSMqttConnection] = None
+        self._shadow_names : Union[str, list] = ["info"]
         self._device_id : int = random.randint(1000, 6999)
         self._things : Dict[str, AWSThing] = {}
         self._aws_tokens : Optional[aws_connection.AWSTokens] = None
         self._aws_identity : Optional[aws_connection.AWSIdentity] = None
-        self._aws_credentials : Optional[aws_connection.AWSCredentials] = None
         self._host_identity_id : Optional[str] = None
         self._task_id : int = 0
 
@@ -898,15 +889,14 @@ class JciHitachiAWSAPI:
         return self._task_id
 
     def _check_before_publish(self) -> None:
-        # Reauthenticate 5 mins before AWSTokens or AWSCredentials expiration.
+        # Reauthenticate 5 mins before AWSTokens expiration.
         current_time = time.time()
-        if self._aws_tokens.expiration - current_time <= 300 or self._aws_credentials.expiration - current_time <= 300:
+        if self._aws_tokens.expiration - current_time <= 300:
             self.reauth()
 
         if self._mqtt.mqtt_events.mqtt_error_event.is_set():
-            if self._mqtt.mqtt_events.mqtt_error == "wssHandShakeError":
-                self._mqtt.mqtt_events.mqtt_error_event.clear()
-                self.reauth()
+            self._mqtt.mqtt_events.mqtt_error_event.clear()
+            self.reauth()
         
         # Clear events
         self._mqtt.mqtt_events.device_control_event.clear()
@@ -934,14 +924,6 @@ class JciHitachiAWSAPI:
         self._aws_tokens = conn.aws_tokens
         conn_status, self._aws_identity = conn.get_data()
 
-        conn = aws_connection.GetCredentials(
-            email=self.email,
-            password=self.password,
-            aws_tokens=self._aws_tokens,
-            print_response=self.print_response,
-        )
-        conn_status, self._aws_credentials = conn.get_data(self._aws_identity)
-
         conn = aws_connection.ListSubUser(self._aws_tokens, print_response=self.print_response)
         conn_status, conn_json = conn.get_data()
 
@@ -966,14 +948,28 @@ class JciHitachiAWSAPI:
             thing_names = [value.thing_name for value in self._things.values()]
 
             # mqtt
-            self._mqtt = aws_connection.JciHitachiAWSMqttConnection(self._aws_credentials, print_response=self.print_response)
+            def get_credential_callable():
+                conn = aws_connection.GetCredentials(
+                    email=self.email,
+                    password=self.password,
+                    aws_tokens=self._aws_tokens,
+                    print_response=self.print_response,
+                )
+                conn_status, aws_credentials = conn.get_data(self._aws_identity)
+                if conn_status != "OK":
+                    aws_connection._LOGGER.error(f"An error occurred when acquiring a new AwsCredentials: {conn_status}")
+                return aws_credentials
+
+            self._mqtt = aws_connection.JciHitachiAWSMqttConnection(get_credential_callable, print_response=self.print_response)
             self._mqtt.configure()
-            self._mqtt.connect(self._host_identity_id, thing_names)
+            
+            if not self._mqtt.connect(self._host_identity_id, self._shadow_names, thing_names):
+                raise RuntimeError(f"An error occurred when connecting to MQTT endpoint.")
 
             # status
             self.refresh_status(refresh_support_code=True, refresh_shadow=True)
         else:
-            raise RuntimeError(f"An error occurred when retrieving device info: {conn_status}")
+            raise RuntimeError(f"An error occurred when retrieving devices info: {conn_status}")
     
     def logout(self) -> None:
         """Logout API.
@@ -989,21 +985,6 @@ class JciHitachiAWSAPI:
             print_response=self.print_response,
         )
         conn_status, self._aws_tokens = conn.login(use_refresh_token=False)
-
-        conn = aws_connection.GetCredentials(
-            email=self.email,
-            password=self.password,
-            aws_tokens=self._aws_tokens,
-            print_response=self.print_response,
-        )
-        conn_status, self._aws_credentials = conn.get_data(self._aws_identity)
-
-        thing_names = [value.thing_name for value in self._things.values()]
-
-        self._mqtt.aws_credentials = self._aws_credentials
-        self._mqtt.disconnect()
-        self._mqtt.configure()
-        self._mqtt.connect(self._host_identity_id, thing_names)
 
     def change_password(self, new_password: str) -> None:
         """Change password. 
