@@ -3,7 +3,6 @@ import sys
 
 from JciHitachi import __author__, __version__
 
-
 git_repo_path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 requirements_txt_path = os.path.join(git_repo_path, "requirements.txt")
 requirements_test_txt_path = os.path.join(git_repo_path, "requirements_test.txt")
@@ -12,6 +11,7 @@ sys.path.append(git_repo_path)
 sys.path.append(os.path.join(git_repo_path, "docs", "source"))
 
 import conf
+
 from setup import install_requires, tests_require
 
 

@@ -249,7 +249,7 @@ class GetUser(JciHitachiAWSCognitoConnection):
         status, response = self._handle_response(req)
 
         aws_identity = None
-        if req.status_code == httpx.codes.ok:
+        if status == "OK":
             user_attributes = {attr["Name"]: attr["Value"] for attr in response["UserAttributes"]}
             aws_identity = AWSIdentity(
                 identity_id = user_attributes["custom:cognito_identity_id"],
@@ -295,7 +295,7 @@ class GetCredentials(JciHitachiAWSCognitoConnection):
         status, response = self._handle_response(req)
 
         aws_credentials = None
-        if req.status_code == httpx.codes.ok:
+        if status == "OK":
             aws_credentials = awscrt.auth.AwsCredentials(
                 access_key_id = response["Credentials"]["AccessKeyId"],
                 secret_access_key = response["Credentials"]["SecretKey"],
@@ -577,7 +577,8 @@ class JciHitachiAWSMqttConnection:
         """Disconnect from the MQTT broker.
         """
 
-        self._mqttc.disconnect()
+        if self._mqttc is not None:
+            self._mqttc.disconnect()
 
     def configure(self):
         """Configure MQTT."""
@@ -692,7 +693,7 @@ class JciHitachiAWSMqttConnection:
         thing_name : str
             Thing name.
         command_name : str
-            Command name, which can be `get`, `update`.
+            Command name, which can be `get` or `update`.
         payload : dict, optional
             Payload to publish, by default {}.
         shadow_name : str, optional
@@ -700,7 +701,7 @@ class JciHitachiAWSMqttConnection:
         """
 
         if command_name not in ["get", "update"]: # we don't subscribe delete
-            raise ValueError("command_name must be one of `get` or `update`")
+            raise ValueError("command_name must be one of `get` or `update`.")
 
         # The length of client token can't exceed 64 bytes, so we only use gateway mac address as the token.
         client_token = thing_name.split("_")[1] 
@@ -708,7 +709,7 @@ class JciHitachiAWSMqttConnection:
 
         if shadow_name is None:
             if command_name == "get":
-                self._shadow_mqttc.publish_get_shadow(
+                publish_future = self._shadow_mqttc.publish_get_shadow(
                     iotshadow.GetShadowRequest(
                         client_token=client_token,
                         thing_name=thing_name
@@ -716,7 +717,7 @@ class JciHitachiAWSMqttConnection:
                     qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
                 )
             elif command_name == "update":
-                self._shadow_mqttc.publish_update_shafow(
+                publish_future = self._shadow_mqttc.publish_update_shafow(
                     iotshadow.UpdateShadowRequest(
                         client_token=client_token,
                         state=iotshadow.ShadowState(reported=payload),
@@ -725,7 +726,7 @@ class JciHitachiAWSMqttConnection:
                     qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
                 )
             elif command_name == "delete":
-                self._shadow_mqttc.publish_delete_shafow(
+                publish_future = self._shadow_mqttc.publish_delete_shafow(
                     iotshadow.DeleteShadowRequest(
                         client_token=client_token,
                         thing_name=thing_name
@@ -735,7 +736,7 @@ class JciHitachiAWSMqttConnection:
 
         else:
             if command_name == "get":
-                self._shadow_mqttc.publish_get_named_shadow(
+                publish_future = self._shadow_mqttc.publish_get_named_shadow(
                     iotshadow.GetNamedShadowRequest(
                         client_token=client_token,
                         shadow_name=shadow_name,
@@ -744,7 +745,7 @@ class JciHitachiAWSMqttConnection:
                     qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
                 )
             elif command_name == "update":
-                self._shadow_mqttc.publish_update_named_shafow(
+                publish_future = self._shadow_mqttc.publish_update_named_shafow(
                     iotshadow.UpdateNamedShadowRequest(
                         client_token=client_token,
                         shadow_name=shadow_name,
@@ -754,7 +755,7 @@ class JciHitachiAWSMqttConnection:
                     qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
                 )
             elif command_name == "delete":
-                self._shadow_mqttc.publish_delete_named_shafow(
+                publish_future = self._shadow_mqttc.publish_delete_named_shafow(
                     iotshadow.DeleteNamedShadowRequest(
                         client_token=client_token,
                         shadow_name=shadow_name, 
@@ -762,3 +763,9 @@ class JciHitachiAWSMqttConnection:
                     ),
                     qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
                 )
+        try:
+            publish_future.result()
+        except Exception as e:
+            self._mqtt_events.mqtt_error = e.__class__.__name__
+            self._mqtt_events.mqtt_error_event.set()
+            _LOGGER.error('Publish failed with exception: {}'.format(e))

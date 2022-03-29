@@ -1,32 +1,15 @@
 import pytest
 
-from JciHitachi.status import (
-    JciHitachiStatusInterpreter,
-    JciHitachiCommandAC,
-    JciHitachiCommandDH,
-    JciHitachiCommandHE,
-)
-from JciHitachi.model import (
-    JciHitachiAC,
-    JciHitachiDH,
-    JciHitachiHE,
-    JciHitachiACSupport,
-    JciHitachiDHSupport,
-    JciHitachiHESupport,
-)
+from JciHitachi.model import (JciHitachiAC, JciHitachiACSupport, JciHitachiDH,
+                              JciHitachiDHSupport, JciHitachiHE,
+                              JciHitachiHESupport)
+from JciHitachi.status import (JciHitachiCommandAC, JciHitachiCommandDH,
+                               JciHitachiCommandHE,
+                               JciHitachiStatusInterpreter)
 
-from . import (
-    fixture_api,
-    TEST_COMMAND_AC,
-    TEST_DEVICE_AC,
-    MOCK_CODE_AC,
-    MOCK_SUPPORT_CODE_AC,
-    TEST_COMMAND_DH,
-    TEST_DEVICE_DH,
-    MOCK_CODE_DH,
-    MOCK_SUPPORT_CODE_DH,
-    MOCK_GATEWAY_MAC,
-)
+from . import (MOCK_CODE_AC, MOCK_CODE_DH, MOCK_GATEWAY_MAC,
+               MOCK_SUPPORT_CODE_AC, MOCK_SUPPORT_CODE_DH, TEST_COMMAND_AC,
+               TEST_COMMAND_DH)
 
 
 class TestACStatus:
@@ -122,27 +105,6 @@ class TestACStatus:
                         0099")
         assert b64command == mock_command
 
-    @pytest.mark.slow("online test is a slow test.")
-    def test_online(self, fixture_api):
-        # Change sound prompt
-        current_state = fixture_api.get_status()[TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]]
-        if current_state != 1:
-            changed_state = 1
-        else:
-            changed_state = 0
-        assert fixture_api.set_status(TEST_COMMAND_AC, changed_state, TEST_DEVICE_AC)
-
-        fixture_api.refresh_status() 
-        assert fixture_api.get_status()[
-            TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]] == changed_state
-        
-        # Change sound prompt back
-        assert fixture_api.set_status(TEST_COMMAND_AC, current_state, TEST_DEVICE_AC)
-        
-        fixture_api.refresh_status()
-        assert fixture_api.get_status()[
-            TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]] == current_state
-
 
 class TestDHStatus:
     def test_model_brand(self):
@@ -209,28 +171,6 @@ class TestDHStatus:
                         469dafd3605a6ebbdb13060006049000 \
                         0092")
         assert b64command == mock_command
-
-    @pytest.mark.skip("Skip online test as no usable account to test.")
-    def test_online(self, fixture_api):
-        # Change sound control
-        current_state = fixture_api.get_status(
-        )[TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]]
-        if current_state != 1:
-            changed_state = 1
-        else:
-            changed_state = 0
-        assert fixture_api.set_status(TEST_COMMAND_DH, changed_state, TEST_DEVICE_DH)
-
-        fixture_api.refresh_status()
-        assert fixture_api.get_status()[
-            TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]] == changed_state
-
-        # Change Change sound control back
-        assert fixture_api.set_status(TEST_COMMAND_DH, current_state, TEST_DEVICE_DH)
-
-        fixture_api.refresh_status()
-        assert fixture_api.get_status()[
-            TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]] == current_state
 
 
 class TestCommonStatus:

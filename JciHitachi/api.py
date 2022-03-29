@@ -12,7 +12,7 @@ from .status import (JciHitachiCommand, JciHitachiCommandAC,
                      JciHitachiCommandDH, JciHitachiStatusInterpreter)
 
 
-class Peripheral:
+class Peripheral: # pragma: no cover
     """Peripheral (Device) Information.
 
     Parameters
@@ -263,7 +263,7 @@ class Peripheral:
         )
 
 
-class JciHitachiAPI:
+class JciHitachiAPI: # pragma: no cover
     """Jci-Hitachi API.
 
     Parameters

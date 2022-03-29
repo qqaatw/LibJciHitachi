@@ -4,7 +4,7 @@ from . import utility as util
 from .model import JciHitachiAC, JciHitachiDH, JciHitachiHE
 
 
-class JciHitachiCommand:
+class JciHitachiCommand:  # pragma: no cover
     """Abstract class for sending job command.
 
     Parameters
@@ -45,7 +45,7 @@ class JciHitachiCommand:
         return base64.b64encode(self.get_command(command, value)).decode()
 
 
-class JciHitachiCommandAC(JciHitachiCommand):
+class JciHitachiCommandAC(JciHitachiCommand):  # pragma: no cover
     """Sending job command to air conditioner.
 
     Parameters
@@ -95,7 +95,7 @@ class JciHitachiCommandAC(JciHitachiCommand):
         return job_info
 
 
-class JciHitachiCommandDH(JciHitachiCommand):
+class JciHitachiCommandDH(JciHitachiCommand):  # pragma: no cover
     """Sending job command to dehumidifier.
 
     Parameters
@@ -145,7 +145,7 @@ class JciHitachiCommandDH(JciHitachiCommand):
         return job_info
 
 
-class JciHitachiCommandHE(JciHitachiCommand):
+class JciHitachiCommandHE(JciHitachiCommand):  # pragma: no cover
     """Sending job command to heat exchanger.
 
     Parameters
@@ -195,7 +195,7 @@ class JciHitachiCommandHE(JciHitachiCommand):
         return job_info
 
 
-class JciHitachiStatusInterpreter:
+class JciHitachiStatusInterpreter:  # pragma: no cover
     """Interpreting received status code.
 
     Parameters

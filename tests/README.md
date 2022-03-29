@@ -1,10 +1,10 @@
 # Testing
 
-This repository uses `pytest` as the testing tool.
+This repository uses `pytest` with `pytest-cov` extension as the testing tool.
 
-## Run all tests
+## Run all tests with coverage report
 
-    python -m pytest
+    python -m pytest --cov=./JciHitachi --cov-report term-missing --cov-report xml
 
 ## Run all tests including the slow ones
 
