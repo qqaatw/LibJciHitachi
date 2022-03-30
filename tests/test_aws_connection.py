@@ -46,19 +46,19 @@ class TestJciHitachiAWSMqttConnection:
         
         status_topic = f"{thing_name.split('_')[0]}/{thing_name}/status/response"
         mqtt._mqtt_events.device_status_event.clear()
-        mqtt._on_publish(status_topic, b"{}", None, None, None)
+        mqtt._on_publish(status_topic, b'{"DeviceType": 1}', None, None, None)
         assert isinstance(mqtt._mqtt_events.device_status[thing_name], JciHitachiAWSStatus)
         assert mqtt._mqtt_events.device_status_event.is_set()
         
         registration_topic = f"{thing_name.split('_')[0]}/{thing_name}/registration/response"
         mqtt._mqtt_events.device_support_event.clear()
-        mqtt._on_publish(registration_topic, b"{}", None, None, None)
+        mqtt._on_publish(registration_topic, b'{"DeviceType": 1}', None, None, None)
         assert isinstance(mqtt._mqtt_events.device_support[thing_name], JciHitachiAWSStatusSupport)
         assert mqtt._mqtt_events.device_support_event.is_set()
         
         control_topic = f"{thing_name.split('_')[0]}/{thing_name}/control/response"
         mqtt._mqtt_events.device_control_event.clear()
-        mqtt._on_publish(control_topic, b"{}", None, None, None)
+        mqtt._on_publish(control_topic, b'{"DeviceType": 1}', None, None, None)
         assert isinstance(mqtt._mqtt_events.device_control[thing_name], dict)
         assert mqtt._mqtt_events.device_control_event.is_set()
 

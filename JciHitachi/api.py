@@ -978,6 +978,8 @@ class JciHitachiAWSAPI:
         self._mqtt.disconnect()
 
     def reauth(self) -> None:
+        """Reauthenticate with AWS Cognito Service."""
+
         conn = aws_connection.JciHitachiAWSCognitoConnection(
             email=self.email,
             password=self.password,
@@ -985,6 +987,8 @@ class JciHitachiAWSAPI:
             print_response=self.print_response,
         )
         conn_status, self._aws_tokens = conn.login(use_refresh_token=False)
+        if conn_status != "OK":
+            raise RuntimeError(f"An error occurred when reauthenticating with AWS Cognito Service: {conn_status}")
 
     def change_password(self, new_password: str) -> None:
         """Change password. 
@@ -1111,7 +1115,7 @@ class JciHitachiAWSAPI:
             
             self._mqtt.mqtt_events.device_status_event.clear()
 
-    def get_status(self, device_name: Optional[str] = None, legacy=False) -> Dict[str, JciHitachiAWSStatus]:
+    def get_status(self, device_name: Optional[str] = None, legacy: bool = False) -> Dict[str, JciHitachiAWSStatus]:
         """Get device status after refreshing status.
 
         Parameters
@@ -1121,36 +1125,37 @@ class JciHitachiAWSAPI:
             If None is given, all devices' status will be returned,
             by default None.
         legacy : bool, optional
-            Whether or not to return legacy (old) status class, by default False.
+            Whether or not to return status with legacy status name, by default False.
 
         Returns
         -------
-        dict of JciHitachiAWSStatus or JciHitachiStatus.
-            If legacy is True, return a dict of JciHitachiStatus; otherwise, return a dict of JciHitachiAWSStatus instances.
+        dict of JciHitachiAWSStatus.
+            A dict of JciHitachiAWSStatus instances.
         """
         
         statuses = {}
         for name, thing in self._things.items():
-            if (device_name and name != device_name) or \
-                    thing.type == "unknown":
+            if (device_name and name != device_name) or thing.type == "unknown":
                 continue
             if legacy:
-                statuses[name] = thing.status_code.legacy_status_class
+                statuses[name] = thing.status_code.legacy_status
             else:
                 statuses[name] = thing.status_code
         return statuses
 
-    def set_status(self, status_name: str, status_value: int, device_name: str) -> bool:
-        """Set status to a thing.
+    def set_status(self, status_name: str, device_name: str, status_value: int = None, status_str_value: str = None) -> bool:
+        """Set status to a thing. Either status_value or status_str_value must be specified.
 
         Parameters
         ----------
         status_name : str
             Status name.
-        status_value : int
-            Status value.
         device_name : str
             Device name.
+        status_value : int, optional
+            Status value, by default None.
+        status_str_value : str, optional
+            Status string value, by default None.
 
         Returns
         -------
@@ -1166,8 +1171,14 @@ class JciHitachiAWSAPI:
         self._check_before_publish()
 
         thing = self._things[device_name]
-        if status_name not in JciHitachiAWSStatus.compatibility_mapping[thing.type]:
-            status_name = JciHitachiAWSStatus.convert_old_to_new(thing.type, status_name)
+
+        if status_value is not None:
+            is_valid, status_name, _ = JciHitachiAWSStatus.str2id(thing.type, status_name)
+        elif status_str_value is not None:
+            is_valid, status_name, status_value = JciHitachiAWSStatus.str2id(thing.type, status_name, status_str_value)
+
+        if not is_valid:
+            return False
 
         shadow_publish_mapping = {
             "CleanFilterNotification": "filter",

@@ -31,7 +31,8 @@ def fixture_aws_mock_api(fixture_aws_mock_thing):
     api._aws_tokens = AWSTokens("", "", "", time.time() + 3600)
     api._things = {TEST_DEVICE_AC: fixture_aws_mock_thing}
     api._things[TEST_DEVICE_AC].status_code = JciHitachiAWSStatus({
-        "DeviceType": 1
+        "DeviceType": 1,
+        "FanSpeed": 3,
     })
     return api
 
@@ -62,16 +63,18 @@ class TestAWSAPI:
         api = fixture_aws_mock_api
         statuses = api.get_status(TEST_DEVICE_AC)
         assert isinstance(statuses[TEST_DEVICE_AC], JciHitachiAWSStatus)
+        assert statuses[TEST_DEVICE_AC].FanSpeed == "moderate"
         # Test legacy status
-        statuses = api.get_status(TEST_DEVICE_AC, True)
-        assert isinstance(statuses[TEST_DEVICE_AC], JciHitachiStatus)
+        statuses = api.get_status(TEST_DEVICE_AC, legacy=True)
+        assert isinstance(statuses[TEST_DEVICE_AC], JciHitachiAWSStatus)
+        assert statuses[TEST_DEVICE_AC].air_speed == "moderate"
         # Test not existing thing
         statuses = api.get_status("NON_EXISTING_NAME")
         assert statuses == {}
         # Test unknown device type
         with patch.object(api._things[TEST_DEVICE_AC], "_json") as mock_thing_json:
             mock_thing_json["DeviceType"] = "NON_EXISTING_TYPE"
-            statuses = api.get_status(TEST_DEVICE_AC, True)
+            statuses = api.get_status(TEST_DEVICE_AC)
             assert statuses == {}
 
     def test_refresh_status(self, fixture_aws_mock_api):
@@ -106,11 +109,16 @@ class TestAWSAPI:
             mock_mqtt.mqtt_events.mqtt_error_event.is_set.return_value = False
 
             mock_mqtt.mqtt_events.device_control_event.wait.return_value = True
-            mock_mqtt.mqtt_events.device_control.get.return_value = {"TemperatureSetting": 25}
-            assert api.set_status("target_temp", 25, TEST_DEVICE_AC)
+            mock_mqtt.mqtt_events.device_control.get.return_value = {"FanSpeed": 3}
+            # Test new name
+            assert api.set_status("FanSpeed", device_name=TEST_DEVICE_AC, status_value=3)
+            # Test legacy name
+            assert api.set_status("air_speed", device_name=TEST_DEVICE_AC, status_value=3)
+            # Test status_str_value
+            assert api.set_status("air_speed", device_name=TEST_DEVICE_AC, status_str_value="moderate")
 
             mock_mqtt.mqtt_events.device_control_event.wait.return_value = False
-            assert not api.set_status("target_temp", 25, TEST_DEVICE_AC)
+            assert not api.set_status("target_temp", device_name=TEST_DEVICE_AC, status_value=25)
 
     def test_get_monthly_data(self, fixture_aws_mock_api):
         api = fixture_aws_mock_api
@@ -134,7 +142,7 @@ model: RAD-90NF
 type: AC
 available: True
 status_code: None
-support_code: {{'Model': 'RAD-90NF', 'OutdoorTemperature': 0, 'Brand': 'HITACHI'}}
+support_code: {{'Model': 'RAD-90NF', 'Brand': 'HITACHI'}}
 shadow: None
 gateway_mac_address: {MOCK_GATEWAY_MAC}"""
 

@@ -1,6 +1,7 @@
 # Jci-Hitachi Library
 
 [![Python package](https://github.com/qqaatw/LibJciHitachi/workflows/Python%20package/badge.svg)](https://github.com/qqaatw/LibJciHitachi/actions)
+[![codecov](https://codecov.io/gh/qqaatw/LibJciHitachi/branch/master/graph/badge.svg?token=W147MOH1T0)](https://codecov.io/gh/qqaatw/LibJciHitachi)
 [![docs](https://readthedocs.org/projects/libjcihitachi/badge/?version=latest)](https://libjcihitachi.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/LibJciHitachi.svg?color=%23007ec6)](https://pypi.python.org/pypi/LibJciHitachi/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/LibJciHitachi.svg)](https://pypi.python.org/pypi/LibJciHitachi/)
@@ -23,7 +24,6 @@ A Python library for controlling Jci-Hitachi devices.
   - Horizontal wind direction 導風板水平方向 (Untested)
   - Target temperature 目標溫度
   - Indoor temperature 室內溫度
-  - Outdoor temperature 室外溫度 (No longer supported after v0.4)
   - Sleep timer 睡眠計時器
   - Mold prevention 機體防霉
   - Energy saving 節電
@@ -53,7 +53,8 @@ A Python library for controlling Jci-Hitachi devices.
 
 ### Python Library
 
-    pip install LibJciHitachi -f https://qqaatw.github.io/aws-crt-python-musllinux/
+    # add -f https://qqaatw.github.io/aws-crt-python-musllinux/ if you're using musl-based linux e.g. Alpine.
+    pip install LibJciHitachi
 
 ### Home Assistant Integration
 

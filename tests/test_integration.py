@@ -6,6 +6,7 @@ import pytest
 from JciHitachi.api import JciHitachiAPI, JciHitachiAWSAPI
 from JciHitachi.connection import JciHitachiConnection
 from JciHitachi.mqtt_connection import JciHitachiMqttConnection
+from JciHitachi.status import JciHitachiAC, JciHitachiDH
 
 from . import (TEST_COMMAND_AC, TEST_COMMAND_DH, TEST_DEVICE_AC,
                TEST_DEVICE_DH, TEST_EMAIL, TEST_PASSWORD)

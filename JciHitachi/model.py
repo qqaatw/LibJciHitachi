@@ -1,7 +1,4 @@
-import copy
-
-
-class JciHitachiStatus:
+class JciHitachiStatus:  # pragma: no cover
     idx = {}
 
     def __init__(self, status, default) -> None:
@@ -21,7 +18,7 @@ class JciHitachiStatus:
         return dict((key, getattr(self, key)) for key in self.idx)
 
 
-class JciHitachiAC(JciHitachiStatus):
+class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
     """Data class representing air conditioner status.
 
     Parameters
@@ -381,7 +378,8 @@ class JciHitachiAC(JciHitachiStatus):
         else:
             return "unknown"
 
-class JciHitachiDH(JciHitachiStatus):
+
+class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
     """Data class representing dehumidifier status.
 
     Parameters
@@ -810,7 +808,7 @@ class JciHitachiDH(JciHitachiStatus):
             return "unknown"
 
 
-class JciHitachiHE(JciHitachiStatus):
+class JciHitachiHE(JciHitachiStatus):  # pragma: no cover
     """Data class representing heat exchanger status. Not implemented.
 
     Parameters
@@ -827,7 +825,7 @@ class JciHitachiHE(JciHitachiStatus):
         super().__init__(status, default)
 
 
-class JciHitachiStatusSupport(JciHitachiStatus):
+class JciHitachiStatusSupport(JciHitachiStatus):  # pragma: no cover
     supported_type = {}
 
     def __init__(self, status, default=0):
@@ -902,7 +900,7 @@ class JciHitachiStatusSupport(JciHitachiStatus):
         return None
 
 
-class JciHitachiACSupport(JciHitachiStatusSupport):
+class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
     """Data model representing supported air conditioner status.
 
     Parameters
@@ -1183,7 +1181,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):
         return (v != 0, supports)
 
 
-class JciHitachiDHSupport(JciHitachiStatusSupport):
+class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
     """Data model representing supported dehumidifier status.
 
     Parameters
@@ -1537,7 +1535,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):
         return (v != 0, *supports)
 
 
-class JciHitachiHESupport(JciHitachiStatusSupport):
+class JciHitachiHESupport(JciHitachiStatusSupport):  # pragma: no cover
     """Data model representing supported heat exchanger status. Not implemented.
 
     Parameters
@@ -1559,47 +1557,55 @@ STATUS_DICT = {
         'DeviceType': {
             "controlable": False,
             "is_numeric": False,
-            "legacy_name": None,
-            1: "AC",
-            2: "DH",
-            3: "HE",
-            4: "PM25_PANEL",
+            "legacy_name": "DeviceType",
+            "id2str": {
+                1: "AC",
+                2: "DH",
+                3: "HE",
+                4: "PM25_PANEL",
+            }
         },
         'Switch': {
             "controlable": True,
             "is_numeric": False,
             "legacy_name": "power",
-            0: "off",
-            1: "on",
+            "id2str": {
+                0: "off",
+                1: "on",
+            }
         },
         'Mode': {
             "controlable": True,
             "is_numeric": False,
             "legacy_name": "mode",
-            0: "cool",
-            1: "dry",
-            2: "fan",
-            3: "auto",
-            4: "heat",
+            "id2str": {
+                0: "cool",
+                1: "dry",
+                2: "fan",
+                3: "auto",
+                4: "heat",
+            }
         },
         'FanSpeed': {
             "controlable": True,
             "is_numeric": False,
             "legacy_name": "air_speed",
-            0: "auto",
-            1: "silent",
-            2: "low",
-            3: "moderate",
-            4: "high",
+            "id2str": {
+                0: "auto",
+                1: "silent",
+                2: "low",
+                3: "moderate",
+                4: "high",
+            }
         },
         'TemperatureSetting': {
             "controlable": True,
-            "numeric": True,
+            "is_numeric": True,
             "legacy_name": "target_temp",
         },
         'IndoorTemperature': {
             "controlable": False,
-            "numeric": True,
+            "is_numeric": True,
             "legacy_name": "indoor_temp",
         },
         'SleepModeRemainingTime': {
@@ -1611,8 +1617,10 @@ STATUS_DICT = {
             "controlable": True,
             "is_numeric": False,
             "legacy_name": "vertical_wind_swingable",
-            0: "disabled",
-            1: "enabled",
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
         },
         'VerticalWindDirectionSetting': {
             "controlable": True,
@@ -1623,40 +1631,50 @@ STATUS_DICT = {
             "controlable": True,
             "is_numeric": False,
             "legacy_name": 'horizontal_wind_direction',
-            0: "auto",
-            1: "leftmost",
-            2: "middleleft",
-            3: "central",
-            4: "middleright",
-            5: "rightmost"
+            "id2str": {
+                0: "auto",
+                1: "leftmost",
+                2: "middleleft",
+                3: "central",
+                4: "middleright",
+                5: "rightmost"
+            }
         },
         'MildewProof': {
             "controlable": True,
             "is_numeric": False,
             "legacy_name": 'mold_prev',
-            0: "disabled",
-            1: "enabled",
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
         },
         'QuickMode': {
             "controlable": True,
             "is_numeric": False,
             "legacy_name": 'fast_op',
-            0: "disabled",
-            1: "enabled",
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
         },
         'PowerSaving': {
             "controlable": True,
             "is_numeric": False,
             "legacy_name":'energy_save',
-            0: "disabled",
-            1: "enabled",
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
         },
         'ControlTone': {
             "controlable": True,
             "is_numeric": False,
             "legacy_name":'sound_prompt',
-            0: "enabled",
-            1: "disabled",
+            "id2str": {
+                0: "enabled",
+                1: "disabled",
+            }
         },
         'PowerConsumption': {
             "controlable": False,
@@ -1664,115 +1682,239 @@ STATUS_DICT = {
             "legacy_name":'power_kwh',
         },
         'TaiseiaError': {
-            None,
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": None,
         },
         'FilterElapsedHour': {
-            None,
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": None,
         },
         'CleanSwitch': {
             "controlable": True,
             "is_numeric": False,
             "legacy_name":'freeze_clean',
-            0: "off",
-            1: "on",
+            "id2str": {
+                0: "off",
+                1: "on",
+            }
         },
         'CleanNotification': {
-            None,
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": None,
         },
         'CleanStatus': {
-            None,
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": None,
         },
         'Error': {
-            None,
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": None,
         },
     },
     "DH": {
         'DeviceType': {
             "controlable": False,
             "is_numeric": False,
-            "legacy_name": None,
-            1: "AC",
-            2: "DH",
-            3: "HE",
-            4: "PM25_PANEL",
+            "legacy_name": "DeviceType",
+            "id2str": {
+                1: "AC",
+                2: "DH",
+                3: "HE",
+                4: "PM25_PANEL",
+            }
         },
-        'Switch': 'power',
-        'Mode': 'mode',
-        'FanSpeed': 'air_speed',
-        'MildewProof': 'mold_prev',
-        'ControlTone': 'sound_control',
-        'SaaControlTone': None,
-        'PowerConsumption': 'power_kwh',
-        'Ion': None,
-        'HumiditySetting': 'target_humidity',
-        'AutoWindDirection': 'wind_swingable',
-        'KeypadLock': None,
-        'DisplayBrightness': 'display_brightness',
-        'FilterControl': 'air_cleaning_filter',
-        'PM25': 'pm25_value',
-        'IndoorHumidity': 'indoor_humidity',
-        'SideAirOutlet': 'side_vent',
-        'Defrost': None,
-        'SmellIndex': 'odor_level',
-        'CleanFilterNotification': 'clean_filter_notify',
-        'TankFullNotification': 'water_full_warning',
-        'TaiseiaError': None,
-        'Error': 'error_code',
+        'Switch': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": "power",
+            "id2str": {
+                0: "off",
+                1: "on",
+            }
+        },
+        'Mode': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": "mode",
+            "id2str": {
+                0: "auto",
+                1: "custom",
+                2: "continuous",
+                3: "clothes_dry",
+                4: "air_purify",
+                5: "mold_prev",
+                8: "low_humidity",
+                9: "eco_comfort",
+            }
+        },
+        'FanSpeed': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": "air_speed",
+            "id2str": {
+                0: "auto",
+                1: "silent",
+                2: "low",
+                3: "moderate",
+                4: "high",
+            }
+        },
+        'MildewProof': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": "mold_prev",
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
+        },
+        'ControlTone': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": 'sound_control',
+            "id2str": {
+                0: "silent",
+                1: "button",
+                2: "button+waterfull",
+            }
+        },
+        'SaaControlTone': {  # currently not supported
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+            }
+        },
+        'PowerConsumption': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": 'power_kwh',
+        },
+        'Ion': {  # currently not supported
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+            }
+        },
+        'HumiditySetting': {
+            "controlable": True,
+            "is_numeric": True,
+            "legacy_name": 'target_humidity',
+        },
+        'AutoWindDirection': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": 'wind_swingable',
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
+        },
+        'KeypadLock': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+            }
+        },
+        'DisplayBrightness': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": 'display_brightness',
+            "id2str": {
+                0: "bright",
+                1: "dark",
+                2: "off",
+                3: "all_off",
+            }
+        },
+        'FilterControl': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": 'air_cleaning_filter',
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
+        },
+        'PM25': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": 'pm25_value',
+        },
+        'IndoorHumidity': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": 'indoor_humidity',
+        },
+        'SideAirOutlet': {
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": 'side_vent',
+            "id2str": {
+                0: "off",
+                1: "on",
+            }
+        },
+        'Defrost': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+            }
+        },
+        'SmellIndex': {
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": 'odor_level',
+            "id2str": {
+                0: "low",
+                1: "middle",
+                2: "high",
+            }
+        },
+        'CleanFilterNotification': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": 'clean_filter_notify',
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
+        },
+        'TankFullNotification': {
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": 'water_full_warning',
+            "id2str": {
+                0: "off",  # not activated
+                1: "on",  # activated
+            }
+        },
+        'TaiseiaError': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": None,
+        },
+        'Error': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": 'error_code',
+        },
+    },
+    "HE": {
+
     }
 }
+PREPARED_STATUS_DICT = None
 
 class JciHitachiAWSStatus:
-    compatibility_mapping = {
-        "AC": {
-            'DeviceType': None,
-            'Switch': 'power',
-            'Mode': 'mode',
-            'FanSpeed': 'air_speed',
-            'TemperatureSetting': 'target_temp',
-            'IndoorTemperature': 'indoor_temp',
-            'OutdoorTemperature': 'outdoor_temp',
-            'SleepModeRemainingTime': 'sleep_timer',
-            'VerticalWindDirectionSwitch': 'vertical_wind_swingable', 
-            'VerticalWindDirectionSetting': 'vertical_wind_direction',
-            'HorizontalWindDirectionSetting': 'horizontal_wind_direction',
-            'MildewProof': 'mold_prev',
-            'QuickMode': 'fast_op',
-            'PowerSaving': 'energy_save',
-            'ControlTone': 'sound_prompt',
-            'PowerConsumption': 'power_kwh',
-            'TaiseiaError': None,
-            'FilterElapsedHour': None,
-            'CleanSwitch': 'freeze_clean',
-            'CleanNotification': None,
-            'CleanStatus': None,
-            'Error': None,
-        },
-        "DH": {
-            'DeviceType': None,
-            'Switch': 'power',
-            'Mode': 'mode',
-            'FanSpeed': 'air_speed',
-            'MildewProof': 'mold_prev',
-            'ControlTone': 'sound_control',
-            'SaaControlTone': None,
-            'PowerConsumption': 'power_kwh',
-            'Ion': None,
-            'HumiditySetting': 'target_humidity',
-            'AutoWindDirection': 'wind_swingable',
-            'KeypadLock': None,
-            'DisplayBrightness': 'display_brightness',
-            'FilterControl': 'air_cleaning_filter',
-            'PM25': 'pm25_value',
-            'IndoorHumidity': 'indoor_humidity',
-            'SideAirOutlet': 'side_vent',
-            'Defrost': None,
-            'SmellIndex': 'odor_level',
-            'CleanFilterNotification': 'clean_filter_notify',
-            'TankFullNotification': 'water_full_warning',
-            'TaiseiaError': None,
-            'Error': 'error_code',
-        }
-    }
     device_type_mapping = {
         1: "AC",
         2: "DH",
@@ -1780,23 +1922,30 @@ class JciHitachiAWSStatus:
         4: "PM25_PANEL",
     }
 
-    def __init__(self, status: dict) -> None:
-        self._status: dict = self._preprocess(status)
+    def __init__(self, raw_status: dict, legacy=False) -> None:
+        self._status: dict = raw_status if legacy else self._preprocess(raw_status)
+        self._device_type: str = self._status["DeviceType"]
 
     def __getattr__(self, name):
-        return self._status[name]
+        return self._status.get(name, "unsupported")
     
     def __repr__(self) -> str:
         return str(self._status)
 
-    def _preprocess(self, status):
+    def _preprocess(self, raw_status):
         # device type
-        if status.get("DeviceType"):
-            status["DeviceType"] = self.device_type_mapping[status["DeviceType"]]
+        if "DeviceType" not in raw_status or \
+            ("DeviceType" in raw_status and raw_status["DeviceType"] not in self.device_type_mapping):
+            raise AttributeError("`DeviceType` isn't in the raw status or has an invalid value.")
         
-        if not status.get("OutdoorTemperature"):
-            status["OutdoorTemperature"] = 0
-        
+        status = {}
+        device_type = self.device_type_mapping[raw_status["DeviceType"]]
+        for key, value in raw_status.items():
+            if key in STATUS_DICT[device_type]:
+                if STATUS_DICT[device_type][key]["is_numeric"]:
+                    status[key] = value
+                else:
+                    status[key] = STATUS_DICT[device_type][key]["id2str"].get(value, "unknown")
         return status
 
     @property
@@ -1812,41 +1961,44 @@ class JciHitachiAWSStatus:
         return self._status
     
     @property
-    def legacy_status_class(self):
-        """All legacy status used by the old API.
+    def legacy_status(self):
+        """All legacy status name used by the old API.
 
         Returns
         -------
-        JciHitachiStatus
-            status.
+        JciHitachiAWSStatus
+            Status with legacy name.
         """
 
-        class mock_idx(dict):
-            def __getitem__(self, key):
-                return key
-
-        mapped_status = {self.compatibility_mapping[self._status["DeviceType"]].get(key): value for key, value in self._status.items()}
-
-        if self._status["DeviceType"] == "AC":
-            if None in mapped_status:
-                del mapped_status[None]
-            ac = JciHitachiAC(mapped_status)
-            ac.idx = mock_idx(ac.idx)
-            return ac
-        elif self._status["DeviceType"] == "DH":
-            if None in mapped_status:
-                del mapped_status[None]
-            dh = JciHitachiDH(mapped_status)
-            dh.idx = mock_idx(dh.idx)
-            return dh
-        return None
+        status = {}
+        device_type = self._status["DeviceType"]
+        for status_name, status_value in self._status.items():
+            if status_name in STATUS_DICT[device_type] and \
+                STATUS_DICT[device_type][status_name]["legacy_name"] is not None:
+                    status.update({STATUS_DICT[device_type][status_name]["legacy_name"]: status_value})
+        return JciHitachiAWSStatus(status, legacy=True)
 
     @staticmethod
-    def convert_old_to_new(device_type, old_status_name):
-        for key, value in __class__.compatibility_mapping[device_type].items():
-            if value == old_status_name:
-                return key
-        return None
+    def str2id(device_type, status_name, status_str_value=None):
+        is_valid = True
+        status_value = None
+
+        if status_name not in STATUS_DICT[device_type]:
+            legacy2new_dict = {specs["legacy_name"]: new_status_name for new_status_name, specs in STATUS_DICT[device_type].items()}
+            if status_name in legacy2new_dict:
+                status_name = legacy2new_dict[status_name]
+            else:
+                is_valid = False
+
+
+        if status_str_value is not None:
+            str2id_dict = {value:key for key, value in STATUS_DICT[device_type][status_name]["id2str"].items()}
+            if status_str_value in str2id_dict:
+                status_value = str2id_dict[status_str_value]
+            else:
+                is_valid = False
+
+        return is_valid, status_name, status_value
 
 class JciHitachiAWSStatusSupport:
     extended_mapping = {
@@ -1856,14 +2008,13 @@ class JciHitachiAWSStatusSupport:
         "FindMe": None,
     }
 
-    compatibility_mapping = copy.deepcopy(JciHitachiAWSStatus.compatibility_mapping).update(extended_mapping)
     device_type_mapping = JciHitachiAWSStatus.device_type_mapping
 
     def __init__(self, status: dict) -> None:
         self._status: dict = self._preprocess(status)
 
     def __getattr__(self, name):
-        return self._status[name]
+        return self._status.get(name, "unsupported")
     
     def __repr__(self) -> str:
         return str(self._status)
@@ -1872,9 +2023,6 @@ class JciHitachiAWSStatusSupport:
         # device type
         if status.get("DeviceType"):
             status["DeviceType"] = self.device_type_mapping[status["DeviceType"]]
-        
-        if not status.get("OutdoorTemperature"):
-            status["OutdoorTemperature"] = 0
         
         status["Brand"] = "HITACHI"
         
