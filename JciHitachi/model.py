@@ -1715,6 +1715,16 @@ STATUS_DICT = {
             "is_numeric": True,
             "legacy_name": None,
         },
+        'max_temp': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": 'max_temp',
+        },
+        'min_temp': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": 'min_temp',
+        },
     },
     "DH": {
         'DeviceType': {
@@ -1907,6 +1917,16 @@ STATUS_DICT = {
             "is_numeric": True,
             "legacy_name": 'error_code',
         },
+        'max_humidity': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": 'max_humidity',
+        },
+        'min_humidity': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": 'min_humidity',
+        },
     },
     "HE": {
 
@@ -1946,6 +1966,13 @@ class JciHitachiAWSStatus:
                     status[key] = value
                 else:
                     status[key] = STATUS_DICT[device_type][key]["id2str"].get(value, "unknown")
+        
+        if device_type == "AC":
+            status["max_temp"] = 32
+            status["min_temp"] = 16
+        elif device_type == "DH":
+            status["max_humidity"] = 70
+            status["min_humidity"] = 40
         return status
 
     @property
