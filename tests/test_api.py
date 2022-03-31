@@ -49,7 +49,7 @@ def fixture_aws_mock_api(fixture_aws_mock_ac_thing, fixture_aws_mock_dh_thing):
     }
     api._things[TEST_DEVICE_AC].status_code = JciHitachiAWSStatus({
         "DeviceType": 1,
-        "FanSpeed": 3,  # moderate
+        "FanSpeed": 4,  # high
     })
     api._things[TEST_DEVICE_DH].status_code = JciHitachiAWSStatus({
         "DeviceType": 2,
@@ -84,8 +84,8 @@ class TestAWSAPI:
         api = fixture_aws_mock_api
         statuses = api.get_status()
         assert isinstance(statuses[TEST_DEVICE_AC], JciHitachiAWSStatus)
-        assert statuses[TEST_DEVICE_AC].FanSpeed == "moderate"
-        assert statuses[TEST_DEVICE_AC].status == {"DeviceType": "AC", "FanSpeed": "moderate", 'max_temp': 32, 'min_temp': 16}
+        assert statuses[TEST_DEVICE_AC].FanSpeed == "high"
+        assert statuses[TEST_DEVICE_AC].status == {"DeviceType": "AC", "FanSpeed": "high", 'max_temp': 32, 'min_temp': 16}
         assert isinstance(statuses[TEST_DEVICE_DH], JciHitachiAWSStatus)
         assert statuses[TEST_DEVICE_DH].Mode == "air_purify"
         assert statuses[TEST_DEVICE_DH].status == {"DeviceType": "DH", "Mode": "air_purify", 'max_humidity': 70, 'min_humidity': 40}
@@ -93,8 +93,8 @@ class TestAWSAPI:
         # Test legacy status
         statuses = api.get_status(legacy=True)
         assert isinstance(statuses[TEST_DEVICE_AC], JciHitachiAWSStatus)
-        assert statuses[TEST_DEVICE_AC].air_speed == "moderate"
-        assert statuses[TEST_DEVICE_AC].status == {"DeviceType": "AC", "air_speed": "moderate", 'max_temp': 32, 'min_temp': 16}
+        assert statuses[TEST_DEVICE_AC].air_speed == "high"
+        assert statuses[TEST_DEVICE_AC].status == {"DeviceType": "AC", "air_speed": "high", 'max_temp': 32, 'min_temp': 16}
         assert isinstance(statuses[TEST_DEVICE_DH], JciHitachiAWSStatus)
         assert statuses[TEST_DEVICE_DH].mode == "air_purify"
         assert statuses[TEST_DEVICE_DH].status == {"DeviceType": "DH", "mode": "air_purify", 'max_humidity': 70, 'min_humidity': 40}
@@ -142,8 +142,10 @@ class TestAWSAPI:
 
             mock_mqtt.mqtt_events.device_control_event.wait.return_value = True
             mock_mqtt.mqtt_events.device_control.get.return_value = {"FanSpeed": 3}
-            # Test new name
+
             assert api.set_status("FanSpeed", device_name=TEST_DEVICE_AC, status_value=3)
+            assert api.things[TEST_DEVICE_AC].status_code.FanSpeed == "moderate"
+
             # Test legacy name
             assert api.set_status("air_speed", device_name=TEST_DEVICE_AC, status_value=3)
             # Test invalid status_name

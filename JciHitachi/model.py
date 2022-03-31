@@ -2006,7 +2006,7 @@ class JciHitachiAWSStatus:
         return JciHitachiAWSStatus(status, legacy=True)
 
     @staticmethod
-    def str2id(device_type, status_name, status_value=None, status_str_value=None):
+    def str2id(device_type: str, status_name: str, status_value: int = None, status_str_value: str = None):
         is_valid = (status_value is not None) ^ (status_str_value is not None)
 
         # Name check
@@ -2030,6 +2030,12 @@ class JciHitachiAWSStatus:
                     is_valid = False
 
         return is_valid, status_name, status_value
+
+    def set_new_status(self, name: str, value: int):
+        if STATUS_DICT[self._device_type][name]["is_numeric"]:
+            self._status[name] = value
+        else:
+            self._status[name] = STATUS_DICT[self._device_type][name]["id2str"].get(value, "unknown")
 
 class JciHitachiAWSStatusSupport:
     extended_mapping = {
