@@ -25,10 +25,12 @@ A Python library for controlling Jci-Hitachi devices.
   - Target temperature 目標溫度
   - Indoor temperature 室內溫度
   - Sleep timer 睡眠計時器
+  - Freeze clean 凍結洗淨
   - Mold prevention 機體防霉
   - Energy saving 節電
   - Fast operation 快速運轉
   - Power consumption 用電統計
+  - Monthly power consumption 月用電統計
 - Hitachi Dehumidifier 日立除濕機
   - Power 電源
   - Mode 運轉模式
@@ -47,13 +49,15 @@ A Python library for controlling Jci-Hitachi devices.
   - Odor level 異味等級
   - Air cleaning filter setting 空氣清淨濾網設定
   - Power consumption 用電統計
+  - Monthly power consumption 月用電統計
 - ~~Hitachi HeatExchanger 日立全熱交換機~~ (Under development)
 
 ## Installation
 
 ### Python Library
 
-    # add -f https://qqaatw.github.io/aws-crt-python-musllinux/ if you're using musl-based linux e.g. Alpine.
+    # If you're using musl-based linux e.g. Alpine, specify
+    # -f https://qqaatw.github.io/aws-crt-python-musllinux/ 
     pip install LibJciHitachi
 
 ### Home Assistant Integration
