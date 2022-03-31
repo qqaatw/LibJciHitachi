@@ -59,15 +59,18 @@ class TestAWSAPI:
                 api.change_password("new_password")
 
     def test_get_status(self, fixture_aws_mock_api):
-        # Test AWS status
+        # Test status
         api = fixture_aws_mock_api
         statuses = api.get_status(TEST_DEVICE_AC)
         assert isinstance(statuses[TEST_DEVICE_AC], JciHitachiAWSStatus)
         assert statuses[TEST_DEVICE_AC].FanSpeed == "moderate"
+        assert statuses[TEST_DEVICE_AC].status == {"DeviceType": "AC", "FanSpeed": "moderate"}
+
         # Test legacy status
         statuses = api.get_status(TEST_DEVICE_AC, legacy=True)
         assert isinstance(statuses[TEST_DEVICE_AC], JciHitachiAWSStatus)
         assert statuses[TEST_DEVICE_AC].air_speed == "moderate"
+        assert statuses[TEST_DEVICE_AC].status == {"DeviceType": "AC", "air_speed": "moderate"}
         # Test not existing thing
         statuses = api.get_status("NON_EXISTING_NAME")
         assert statuses == {}
@@ -114,9 +117,15 @@ class TestAWSAPI:
             assert api.set_status("FanSpeed", device_name=TEST_DEVICE_AC, status_value=3)
             # Test legacy name
             assert api.set_status("air_speed", device_name=TEST_DEVICE_AC, status_value=3)
+            # Test invalid status_name
+            assert not api.set_status("invalid", device_name=TEST_DEVICE_AC, status_value=3)
+            # Test invalid status_value
+            assert not api.set_status("FanSpeed", device_name=TEST_DEVICE_AC, status_value=8)
             # Test status_str_value
-            assert api.set_status("air_speed", device_name=TEST_DEVICE_AC, status_str_value="moderate")
-
+            assert api.set_status("FanSpeed", device_name=TEST_DEVICE_AC, status_str_value="moderate")
+            # Test invalid status_str_value
+            assert not api.set_status("FanSpeed", device_name=TEST_DEVICE_AC, status_str_value="invalid")
+            
             mock_mqtt.mqtt_events.device_control_event.wait.return_value = False
             assert not api.set_status("target_temp", device_name=TEST_DEVICE_AC, status_value=25)
 

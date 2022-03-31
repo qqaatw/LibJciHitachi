@@ -1979,10 +1979,10 @@ class JciHitachiAWSStatus:
         return JciHitachiAWSStatus(status, legacy=True)
 
     @staticmethod
-    def str2id(device_type, status_name, status_str_value=None):
-        is_valid = True
-        status_value = None
+    def str2id(device_type, status_name, status_value=None, status_str_value=None):
+        is_valid = (status_value is not None) ^ (status_str_value is not None)
 
+        # Name check
         if status_name not in STATUS_DICT[device_type]:
             legacy2new_dict = {specs["legacy_name"]: new_status_name for new_status_name, specs in STATUS_DICT[device_type].items()}
             if status_name in legacy2new_dict:
@@ -1990,13 +1990,17 @@ class JciHitachiAWSStatus:
             else:
                 is_valid = False
 
-
-        if status_str_value is not None:
-            str2id_dict = {value:key for key, value in STATUS_DICT[device_type][status_name]["id2str"].items()}
-            if status_str_value in str2id_dict:
-                status_value = str2id_dict[status_str_value]
+        # Value check
+        if is_valid:
+            if status_str_value is not None:
+                str2id_dict = {value:key for key, value in STATUS_DICT[device_type][status_name]["id2str"].items()}
+                if status_str_value in str2id_dict:
+                    status_value = str2id_dict[status_str_value]
+                else:
+                    is_valid = False
             else:
-                is_valid = False
+                if not STATUS_DICT[device_type][status_name]["is_numeric"] and status_value not in STATUS_DICT[device_type][status_name]["id2str"]:
+                    is_valid = False
 
         return is_valid, status_name, status_value
 

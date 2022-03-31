@@ -1172,10 +1172,13 @@ class JciHitachiAWSAPI:
 
         thing = self._things[device_name]
 
-        if status_value is not None:
-            is_valid, status_name, _ = JciHitachiAWSStatus.str2id(thing.type, status_name)
-        elif status_str_value is not None:
-            is_valid, status_name, status_value = JciHitachiAWSStatus.str2id(thing.type, status_name, status_str_value)
+
+        is_valid, status_name, status_value = JciHitachiAWSStatus.str2id(
+            device_type = thing.type, 
+            status_name = status_name,
+            status_value = status_value,
+            status_str_value = status_str_value,
+        )
 
         if not is_valid:
             return False
