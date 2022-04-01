@@ -19,11 +19,11 @@ print(sys.path)
 # -- Project information -----------------------------------------------------
 
 project = 'LibJciHitachi'
-copyright = '2021, Allan Lin'
+copyright = '2022, Allan Lin'
 author = 'Allan Lin'
 
 # The full version, including alpha/beta/rc tags
-release = 'v0.4.7'
+release = 'v0.5.0'
 
 
 # -- General configuration ---------------------------------------------------

@@ -128,6 +128,7 @@ class TestMqttLogin:
         fixture_mqtt.configure()
         fixture_mqtt.connect()
 
+
 class TestACStatus:
     @pytest.mark.slow("online test is a slow test.")
     def test_online(self, fixture_api):
