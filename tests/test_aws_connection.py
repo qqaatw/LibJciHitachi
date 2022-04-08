@@ -181,9 +181,9 @@ class TestJciHitachiAWSMqttConnection:
             
             shadow_types_to_test = [
                 (mock_shadow_mqttc.publish_get_shadow, "get", None),
-                (mock_shadow_mqttc.publish_update_shafow, "update", None),
+                (mock_shadow_mqttc.publish_update_shadow, "update", None),
                 (mock_shadow_mqttc.publish_get_named_shadow, "get", "info"),
-                (mock_shadow_mqttc.publish_update_named_shafow, "update", "info"),
+                (mock_shadow_mqttc.publish_update_named_shadow, "update", "info"),
             ]
 
             for shadow_func, command_name, shadow_name in shadow_types_to_test:

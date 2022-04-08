@@ -717,7 +717,7 @@ class JciHitachiAWSMqttConnection:
                     qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
                 )
             elif command_name == "update":
-                publish_future = self._shadow_mqttc.publish_update_shafow(
+                publish_future = self._shadow_mqttc.publish_update_shadow(
                     iotshadow.UpdateShadowRequest(
                         client_token=client_token,
                         state=iotshadow.ShadowState(reported=payload),
@@ -726,7 +726,7 @@ class JciHitachiAWSMqttConnection:
                     qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
                 )
             elif command_name == "delete":
-                publish_future = self._shadow_mqttc.publish_delete_shafow(
+                publish_future = self._shadow_mqttc.publish_delete_shadow(
                     iotshadow.DeleteShadowRequest(
                         client_token=client_token,
                         thing_name=thing_name
@@ -745,7 +745,7 @@ class JciHitachiAWSMqttConnection:
                     qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
                 )
             elif command_name == "update":
-                publish_future = self._shadow_mqttc.publish_update_named_shafow(
+                publish_future = self._shadow_mqttc.publish_update_named_shadow(
                     iotshadow.UpdateNamedShadowRequest(
                         client_token=client_token,
                         shadow_name=shadow_name,
@@ -755,7 +755,7 @@ class JciHitachiAWSMqttConnection:
                     qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
                 )
             elif command_name == "delete":
-                publish_future = self._shadow_mqttc.publish_delete_named_shafow(
+                publish_future = self._shadow_mqttc.publish_delete_named_shadow(
                     iotshadow.DeleteNamedShadowRequest(
                         client_token=client_token,
                         shadow_name=shadow_name, 
