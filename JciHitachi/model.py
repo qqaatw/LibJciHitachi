@@ -1958,6 +1958,9 @@ class JciHitachiAWSStatus:
             ("DeviceType" in raw_status and raw_status["DeviceType"] not in self.device_type_mapping):
             raise AttributeError("`DeviceType` isn't in the raw status or has an invalid value.")
         
+        if "PowerConsumption" in raw_status:
+            raw_status["PowerConsumption"] /= 10.0
+
         status = {}
         device_type = self.device_type_mapping[raw_status["DeviceType"]]
         for key, value in raw_status.items():

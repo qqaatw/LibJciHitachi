@@ -605,7 +605,7 @@ class AWSThing:
     Parameters
     ----------
     thing_json : dict
-        Thing json of specific device.
+        Thing json of a specific device.
     """
 
     supported_device_type = {
