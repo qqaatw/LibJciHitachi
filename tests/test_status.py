@@ -8,8 +8,8 @@ from JciHitachi.status import (JciHitachiCommandAC, JciHitachiCommandDH,
                                JciHitachiStatusInterpreter)
 
 from . import (MOCK_CODE_AC, MOCK_CODE_DH, MOCK_GATEWAY_MAC,
-               MOCK_SUPPORT_CODE_AC, MOCK_SUPPORT_CODE_DH, TEST_COMMAND_AC,
-               TEST_COMMAND_DH)
+               MOCK_SUPPORT_CODE_AC, MOCK_SUPPORT_CODE_DH, MOCK_COMMAND_AC,
+               MOCK_COMMAND_DH)
 
 
 class TestACStatus:
@@ -94,7 +94,7 @@ class TestACStatus:
 
     def test_command(self):
         commander = JciHitachiCommandAC(MOCK_GATEWAY_MAC)
-        b64command = commander.get_command(TEST_COMMAND_AC, 0)
+        b64command = commander.get_command(MOCK_COMMAND_AC, 0)
         
         mock_command = bytearray.fromhex(
                         "d0d100003c6a9dffff03e0d4ffffffff \
@@ -161,7 +161,7 @@ class TestDHStatus:
 
     def test_command(self):
         commander = JciHitachiCommandDH(MOCK_GATEWAY_MAC)
-        b64command = commander.get_command(TEST_COMMAND_DH, 0)
+        b64command = commander.get_command(MOCK_COMMAND_DH, 0)
 
         mock_command = bytearray.fromhex(
             "d0d100003c6a9dffff03e0d4ffffffff \

@@ -8,9 +8,11 @@ from JciHitachi.connection import JciHitachiConnection
 from JciHitachi.mqtt_connection import JciHitachiMqttConnection
 from JciHitachi.status import JciHitachiAC, JciHitachiDH
 
-from . import (TEST_COMMAND_AC, TEST_COMMAND_DH, TEST_DEVICE_AC,
+from . import (MOCK_COMMAND_AC, MOCK_COMMAND_DH, TEST_DEVICE_AC,
                TEST_DEVICE_DH, TEST_EMAIL, TEST_PASSWORD)
 
+
+pytestmark = pytest.mark.skipif(TEST_EMAIL is None, reason="No secrets for integration tests")
 
 @pytest.fixture(scope="session")
 def fixture_api():
@@ -133,23 +135,23 @@ class TestACStatus:
     @pytest.mark.slow("online test is a slow test.")
     def test_online(self, fixture_api):
         # Change sound prompt
-        current_state = fixture_api.get_status()[TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]]
+        current_state = fixture_api.get_status()[TEST_DEVICE_AC]._status[JciHitachiAC.idx[MOCK_COMMAND_AC]]
         if current_state != 1:
             changed_state = 1
         else:
             changed_state = 0
-        assert fixture_api.set_status(TEST_COMMAND_AC, changed_state, TEST_DEVICE_AC)
+        assert fixture_api.set_status(MOCK_COMMAND_AC, changed_state, TEST_DEVICE_AC)
 
         fixture_api.refresh_status() 
         assert fixture_api.get_status()[
-            TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]] == changed_state
+            TEST_DEVICE_AC]._status[JciHitachiAC.idx[MOCK_COMMAND_AC]] == changed_state
         
         # Change sound prompt back
-        assert fixture_api.set_status(TEST_COMMAND_AC, current_state, TEST_DEVICE_AC)
+        assert fixture_api.set_status(MOCK_COMMAND_AC, current_state, TEST_DEVICE_AC)
         
         fixture_api.refresh_status()
         assert fixture_api.get_status()[
-            TEST_DEVICE_AC]._status[JciHitachiAC.idx[TEST_COMMAND_AC]] == current_state
+            TEST_DEVICE_AC]._status[JciHitachiAC.idx[MOCK_COMMAND_AC]] == current_state
 
 
 class TestDHStatus:
@@ -157,20 +159,20 @@ class TestDHStatus:
     def test_online(self, fixture_api):
         # Change sound control
         current_state = fixture_api.get_status(
-        )[TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]]
+        )[TEST_DEVICE_DH]._status[JciHitachiDH.idx[MOCK_COMMAND_DH]]
         if current_state != 1:
             changed_state = 1
         else:
             changed_state = 0
-        assert fixture_api.set_status(TEST_COMMAND_DH, changed_state, TEST_DEVICE_DH)
+        assert fixture_api.set_status(MOCK_COMMAND_DH, changed_state, TEST_DEVICE_DH)
 
         fixture_api.refresh_status()
         assert fixture_api.get_status()[
-            TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]] == changed_state
+            TEST_DEVICE_DH]._status[JciHitachiDH.idx[MOCK_COMMAND_DH]] == changed_state
 
         # Change Change sound control back
-        assert fixture_api.set_status(TEST_COMMAND_DH, current_state, TEST_DEVICE_DH)
+        assert fixture_api.set_status(MOCK_COMMAND_DH, current_state, TEST_DEVICE_DH)
 
         fixture_api.refresh_status()
         assert fixture_api.get_status()[
-            TEST_DEVICE_DH]._status[JciHitachiDH.idx[TEST_COMMAND_DH]] == current_state
+            TEST_DEVICE_DH]._status[JciHitachiDH.idx[MOCK_COMMAND_DH]] == current_state
