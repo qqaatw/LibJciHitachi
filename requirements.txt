@@ -1,4 +1,4 @@
 -f https://qqaatw.github.io/aws-crt-python-musllinux/
-awsiotsdk==1.10.0
+awsiotsdk==1.11.1
 httpx
 paho-mqtt
