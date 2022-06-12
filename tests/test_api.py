@@ -160,19 +160,20 @@ class TestAWSAPI:
             mock_mqtt.mqtt_events.device_control_event.wait.return_value = False
             assert not api.set_status("target_temp", device_name=MOCK_DEVICE_AC, status_value=25)
 
-    def test_get_monthly_data(self, fixture_aws_mock_api):
+    def test_refresh_monthly_data(self, fixture_aws_mock_api):
         api = fixture_aws_mock_api
         with patch("JciHitachi.aws_connection.GetAvailableAggregationMonthlyData.get_data") as mock_get_data:
             current_time = time.time()
             mock_get_data.return_value = ("OK", {"results": {"Data": [{"Timestamp": current_time + 300}, {"Timestamp": current_time}] }})
 
-            # test sorting
-            assert api.get_monthly_data(2, MOCK_DEVICE_AC) == [{"Timestamp": current_time}, {"Timestamp": current_time + 300}]
+            assert api.things[MOCK_DEVICE_AC].monthly_data == None
+            api.refresh_monthly_data(2, MOCK_DEVICE_AC)
+            assert api.things[MOCK_DEVICE_AC].monthly_data == [{"Timestamp": current_time}, {"Timestamp": current_time + 300}]
 
             mock_get_data.return_value = ("Not OK", {})
 
             with pytest.raises(RuntimeError, match=f"An error occurred when getting monthly data: Not OK"):
-                api.get_monthly_data(2, MOCK_DEVICE_AC)
+                api.refresh_monthly_data(2, MOCK_DEVICE_AC)
 
 class TestAWSThing:
     def test_repr(self, fixture_aws_mock_ac_thing, fixture_aws_mock_dh_thing):

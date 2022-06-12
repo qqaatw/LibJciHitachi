@@ -621,6 +621,7 @@ class AWSThing:
         self._shadow : Optional[dict] = None
         self._status_code : Optional[JciHitachiAWSStatus] = None
         self._support_code : Optional[JciHitachiAWSStatusSupport] = None
+        self._monthly_data : Optional[List[Dict]] = None
 
     def __repr__(self) -> str:
         ret = (
@@ -798,6 +799,22 @@ class AWSThing:
     @support_code.setter
     def support_code(self, x : JciHitachiAWSStatusSupport) -> None:
         self._support_code = x
+    
+    @property
+    def monthly_data(self) -> Optional[List[Dict]]:
+        """Thing's monthly data reported by the API.
+
+        Returns
+        -------
+        Optional[List[Dict]]
+            Monthly data.
+        """
+
+        return self._monthly_data
+    
+    @monthly_data.setter
+    def monthly_data(self, x : Optional[List[Dict]]) -> None:
+        self._monthly_data = x
 
     @property
     def thing_name(self) -> str:
@@ -1029,8 +1046,8 @@ class JciHitachiAWSAPI:
         if hitachi_conn_status != "OK":
             raise RuntimeError(f"An error occurred when changing Hitachi password: {hitachi_conn_status}")
 
-    def get_monthly_data(self, months: int, device_name: str) -> List[Dict]:
-        """Get available monthly data (power consumptions).
+    def refresh_monthly_data(self, months: int, device_name: str) -> None:
+        """Refresh available monthly data (power consumption) from the API.
 
         Parameters
         ----------
@@ -1039,10 +1056,10 @@ class JciHitachiAWSAPI:
         device_name : str
             Device name.
 
-        Returns
+        Raise
         -------
-        list of monthly data dict
-            Available monthly data. The monthly power consumption is calculated by PowerConsumption_Sum / 10.
+        RuntimeError
+            If an error occurs, RuntimeError will be raised.
         """
 
         thing = self._things[device_name]
@@ -1061,7 +1078,7 @@ class JciHitachiAWSAPI:
         if conn_status != "OK":
             raise RuntimeError(f"An error occurred when getting monthly data: {conn_status}")
 
-        return sorted(response["results"]["Data"], key=lambda x: x["Timestamp"])
+        thing.monthly_data = sorted(response["results"]["Data"], key=lambda x: x["Timestamp"])
 
     def refresh_status(self, device_name : Optional[str] = None, refresh_support_code : bool = False, refresh_shadow : bool = False) -> None:
         """Refresh device status from the API.
