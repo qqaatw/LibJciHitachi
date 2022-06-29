@@ -116,21 +116,45 @@ class TestAWSAPI:
             mock_mqtt.publish = mock_publish
             mock_mqtt.mqtt_events.mqtt_error_event.is_set.return_value = False
             
+            mock_mqtt.mqtt_events.device_status = {api.things[MOCK_DEVICE_AC].thing_name : ""}
+            mock_mqtt.mqtt_events.device_support = {api.things[MOCK_DEVICE_AC].thing_name : ""}
+            mock_mqtt.mqtt_events.device_shadow = {api.things[MOCK_DEVICE_AC].thing_name : ""}
             mock_mqtt.mqtt_events.device_status_event.wait.return_value = True
             mock_mqtt.mqtt_events.device_support_event.wait.return_value = True
             mock_mqtt.mqtt_events.device_shadow_event.wait.return_value = True
             api.refresh_status(MOCK_DEVICE_AC, refresh_support_code=True, refresh_shadow=True)
 
+            # status event timeout
             mock_mqtt.mqtt_events.device_status_event.wait.return_value = False
             with pytest.raises(RuntimeError, match=f"An error occurred when refreshing {MOCK_DEVICE_AC} status code."):
                 api.refresh_status(MOCK_DEVICE_AC)
             
+            # status not stored in dict
+            mock_mqtt.mqtt_events.device_status_event.wait.return_value = True
+            mock_mqtt.mqtt_events.device_status = {}
+            with pytest.raises(RuntimeError, match=f"An event occurred but wasn't accompanied with data when refreshing {MOCK_DEVICE_AC} status code."):
+                api.refresh_status(MOCK_DEVICE_AC)
+
+            # support event timeout
             mock_mqtt.mqtt_events.device_support_event.wait.return_value = False
             with pytest.raises(RuntimeError, match=f"An error occurred when refreshing {MOCK_DEVICE_AC} support code."):
                 api.refresh_status(MOCK_DEVICE_AC, refresh_support_code=True)
             
+            # support not stored in dict
+            mock_mqtt.mqtt_events.device_support_event.wait.return_value = True
+            mock_mqtt.mqtt_events.device_support = {}
+            with pytest.raises(RuntimeError, match=f"An event occurred but wasn't accompanied with data when refreshing {MOCK_DEVICE_AC} support code."):
+                api.refresh_status(MOCK_DEVICE_AC, refresh_support_code=True)
+            
+            # shadow event timeout
             mock_mqtt.mqtt_events.device_shadow_event.wait.return_value = False
             with pytest.raises(RuntimeError, match=f"An error occurred when refreshing {MOCK_DEVICE_AC} shadow."):
+                api.refresh_status(MOCK_DEVICE_AC, refresh_shadow=True)
+
+            # shadow not stored in dict
+            mock_mqtt.mqtt_events.device_shadow_event.wait.return_value = True
+            mock_mqtt.mqtt_events.device_shadow = {}
+            with pytest.raises(RuntimeError, match=f"An event occurred but wasn't accompanied with data when refreshing {MOCK_DEVICE_AC} shadow."):
                 api.refresh_status(MOCK_DEVICE_AC, refresh_shadow=True)
 
     def test_set_status(self, fixture_aws_mock_api):
