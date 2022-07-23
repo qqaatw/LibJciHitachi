@@ -27,6 +27,7 @@ def fixture_aws_mock_ac_thing():
     thing.support_code = JciHitachiAWSStatusSupport({
         "DeviceType": 1,
         "Model": "RAD-90NF",
+        "FirmwareVersion": "6.0.035",
         "FanSpeed": 31,  # 0b11111
         "TemperatureSetting": 4128, # 32 16
     })
@@ -48,6 +49,7 @@ def fixture_aws_mock_dh_thing():
     thing.support_code = JciHitachiAWSStatusSupport({
         "DeviceType": 2,
         "Mode": 31,  # 0b11111
+        "FirmwareVersion": "6.0.035",
         "Model": "RD-360HH",
     })
     return thing
@@ -211,9 +213,11 @@ class TestAWSThing:
 brand: HITACHI
 model: RAD-90NF
 type: AC
+firmware_code: unsupported
+firmawre_version: 6.0.035
 available: True
 status_code: {{'DeviceType': 'AC', 'FanSpeed': 'high', 'TemperatureSetting': 26}}
-support_code: {{'DeviceType': 'AC', 'Model': 'RAD-90NF', 'FanSpeed': 31, 'TemperatureSetting': 4128, 'Brand': 'HITACHI', 'max_temp': 32, 'min_temp': 16}}
+support_code: {{'DeviceType': 'AC', 'Model': 'RAD-90NF', 'FirmwareVersion': '6.0.035', 'FanSpeed': 31, 'TemperatureSetting': 4128, 'Brand': 'HITACHI', 'max_temp': 32, 'min_temp': 16}}
 shadow: None
 gateway_mac_address: {MOCK_GATEWAY_MAC}"""
 
@@ -222,9 +226,11 @@ gateway_mac_address: {MOCK_GATEWAY_MAC}"""
 brand: HITACHI
 model: RD-360HH
 type: DH
+firmware_code: unsupported
+firmawre_version: 6.0.035
 available: True
 status_code: {{'DeviceType': 'DH', 'Mode': 'air_purify'}}
-support_code: {{'DeviceType': 'DH', 'Mode': 31, 'Model': 'RD-360HH', 'Brand': 'HITACHI', 'max_humidity': 70, 'min_humidity': 40}}
+support_code: {{'DeviceType': 'DH', 'Mode': 31, 'FirmwareVersion': '6.0.035', 'Model': 'RD-360HH', 'Brand': 'HITACHI', 'max_humidity': 70, 'min_humidity': 40}}
 shadow: None
 gateway_mac_address: {MOCK_GATEWAY_MAC}"""
 

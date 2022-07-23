@@ -629,6 +629,8 @@ class AWSThing:
             f"brand: {self.brand}\n"
             f"model: {self.model}\n"
             f"type: {self.type}\n"
+            f"firmware_code: {self.firmware_code}\n"
+            f"firmawre_version: {self.firmware_version}\n"
             f"available: {self.available}\n"
             f"status_code: {self.status_code}\n"
             f"support_code: {self.support_code}\n"
@@ -703,6 +705,30 @@ class AWSThing:
         """
         
         return getattr(self._support_code, "Brand")
+    
+    @property
+    def firmware_version(self) -> str:
+        """Firmware version.
+        
+        Returns
+        -------
+        str
+            Device firmware version.
+        """
+
+        return getattr(self._support_code, "FirmwareVersion")
+    
+    @property
+    def firmware_code(self) -> str:
+        """Firmware code.
+
+        Returns
+        -------
+        str
+            Device firmware code.
+        """
+
+        return getattr(self._support_code, "FirmwareCode")
 
     @property
     def gateway_mac_address(self) -> str:
