@@ -1158,6 +1158,15 @@ class JciHitachiAWSAPI:
                 statuses[name] = thing.status_code.legacy_status
             else:
                 statuses[name] = thing.status_code
+
+            # here we inject temp and humidity limitations from the support code
+            if thing.type == "AC":
+                statuses[name]._status["max_temp"] = thing.support_code.max_temp
+                statuses[name]._status["min_temp"] = thing.support_code.min_temp
+            elif thing.type == "DH":
+                statuses[name]._status["max_humidity"] = thing.support_code.max_humidity
+                statuses[name]._status["min_humidity"] = thing.support_code.min_humidity
+
         return statuses
 
     def set_status(self, status_name: str, device_name: str, status_value: int = None, status_str_value: str = None) -> bool:
@@ -1195,6 +1204,7 @@ class JciHitachiAWSAPI:
             status_name = status_name,
             status_value = status_value,
             status_str_value = status_str_value,
+            support_code = thing.support_code,
         )
 
         if not is_valid:

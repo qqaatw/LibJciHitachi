@@ -1,5 +1,5 @@
 from JciHitachi.api import AWSThing
-from JciHitachi.model import STATUS_DICT, JciHitachiAWSStatus
+from JciHitachi.model import STATUS_DICT, JciHitachiAWSStatus, JciHitachiAWSStatusSupport
 
 
 class TestStatusDict:
@@ -18,7 +18,7 @@ class TestStatusDict:
                     f"is_numeric and id2str are mutually exclusive: {status_name}"
         
 class TestModel:
-    def test_correctness(self):
+    def test_ac_correctness(self):
         raw_ac_status = {
             'DeviceType': 1,
             'Switch': 0,
@@ -60,10 +60,78 @@ class TestModel:
             'Switch': 'off',
             'TaiseiaError': 0,
             'TemperatureSetting': 26,
-            'max_temp': 32,
-            'min_temp': 16
         }
         status = JciHitachiAWSStatus(raw_ac_status)
 
         assert status.status == processed_ac_status
-        assert len(processed_ac_status) == len(raw_ac_status)
+        assert len(processed_ac_status) == len(raw_ac_status) - 2  # no `RequestTimestamp` and `Timestamp`
+
+        raw_ac_support = {
+            'FirmwareId':3,
+            'DeviceType':1,
+            'Model':'RAD-90NF',
+            'FindMe':10,
+            'Switch':3,
+            'Mode':31,
+            'FanSpeed':31,
+            'TemperatureSetting':4128,
+            'IndoorTemperature':40,
+            'SleepModeRemainingTime':1440,
+            'MildewProof':3,
+            'QuickMode':3,
+            'PowerSaving':3,
+            'ControlTone':3,
+            'PowerConsumption':65535,
+            'TaiseiaError':85,
+            'FilterElapsedHour':800,
+            'CleanSwitch':3,
+            'CleanNotification':3,
+            'CleanStatus':7,
+            'Error':0,
+            'FirmwareVersion':'6.0.035',
+            'FirmwareCode':35,
+            'SystemTimestamp':35000,
+            'RequestTimestamp':1648618952,
+            'Timestamp':1648618952,
+        }
+
+        processed_ac_support = {
+            'FirmwareId': 3,
+            'DeviceType': 'AC',
+            'Model': 'RAD-90NF',
+            'FindMe': 10,
+            'Switch': 3,
+            'Mode': 31,
+            'FanSpeed': 31,
+            'TemperatureSetting': 4128,
+            'IndoorTemperature': 40,
+            'SleepModeRemainingTime': 1440,
+            'MildewProof': 3,
+            'QuickMode': 3,
+            'PowerSaving': 3,
+            'ControlTone': 3,
+            'PowerConsumption': 65535,
+            'TaiseiaError': 85,
+            'FilterElapsedHour': 800,
+            'CleanSwitch': 3,
+            'CleanNotification': 3,
+            'CleanStatus': 7,
+            'Error': 0,
+            'FirmwareVersion':'6.0.035',
+            'FirmwareCode': 35,
+            'SystemTimestamp': 35000,
+            'RequestTimestamp': 1648618952,
+            'Timestamp': 1648618952,
+            'Brand': 'HITACHI',
+            'max_temp': 32,
+            'min_temp': 16
+        }
+
+        support = JciHitachiAWSStatusSupport(raw_ac_support)
+
+        assert support.status == processed_ac_support
+        assert len(processed_ac_support) == len(raw_ac_support) + 3  # `Brand` `max_temp` `min_temp`
+    
+    def test_str2id(self):
+        pass
+        # TODO: complete this

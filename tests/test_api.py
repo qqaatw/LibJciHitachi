@@ -5,8 +5,7 @@ import pytest
 
 from JciHitachi.api import AWSThing, JciHitachiAWSAPI
 from JciHitachi.aws_connection import AWSTokens
-from JciHitachi.model import (JciHitachiAWSStatus, JciHitachiAWSStatusSupport,
-                              JciHitachiStatus)
+from JciHitachi.model import JciHitachiAWSStatus, JciHitachiAWSStatusSupport
 
 from . import MOCK_GATEWAY_MAC, MOCK_DEVICE_AC, MOCK_DEVICE_DH
 
@@ -17,11 +16,19 @@ def fixture_aws_mock_ac_thing():
         {
             "DeviceType": "1",
             "ThingName": f"ap-northeast-1:8916b515-8394-4ccd-95b8-4f553c13dafa_{MOCK_GATEWAY_MAC}",
-            "CustomDeviceName": MOCK_DEVICE_AC
+            "CustomDeviceName": MOCK_DEVICE_AC,
         }
     )
+    thing.status_code = JciHitachiAWSStatus({
+        "DeviceType": 1,
+        "FanSpeed": 4,  # high
+        "TemperatureSetting": 26,
+    })
     thing.support_code = JciHitachiAWSStatusSupport({
-        "Model": "RAD-90NF"
+        "DeviceType": 1,
+        "Model": "RAD-90NF",
+        "FanSpeed": 31,  # 0b11111
+        "TemperatureSetting": 4128, # 32 16
     })
     return thing
 
@@ -31,11 +38,17 @@ def fixture_aws_mock_dh_thing():
         {
             "DeviceType": "2",
             "ThingName": f"ap-northeast-1:9c8c1d20-b0d1-11ec-9f5a-644bf019ccc9_{MOCK_GATEWAY_MAC}",
-            "CustomDeviceName": MOCK_DEVICE_DH
+            "CustomDeviceName": MOCK_DEVICE_DH,
         }
     )
+    thing.status_code = JciHitachiAWSStatus({
+        "DeviceType": 2,
+        "Mode": 4,  # air_purify
+    })
     thing.support_code = JciHitachiAWSStatusSupport({
-        "Model": "RD-360HH"
+        "DeviceType": 2,
+        "Mode": 31,  # 0b11111
+        "Model": "RD-360HH",
     })
     return thing
 
@@ -47,14 +60,6 @@ def fixture_aws_mock_api(fixture_aws_mock_ac_thing, fixture_aws_mock_dh_thing):
         MOCK_DEVICE_AC: fixture_aws_mock_ac_thing,
         MOCK_DEVICE_DH: fixture_aws_mock_dh_thing,
     }
-    api._things[MOCK_DEVICE_AC].status_code = JciHitachiAWSStatus({
-        "DeviceType": 1,
-        "FanSpeed": 4,  # high
-    })
-    api._things[MOCK_DEVICE_DH].status_code = JciHitachiAWSStatus({
-        "DeviceType": 2,
-        "Mode": 4,  # air_purify
-    })
     return api
 
 
@@ -85,7 +90,7 @@ class TestAWSAPI:
         statuses = api.get_status()
         assert isinstance(statuses[MOCK_DEVICE_AC], JciHitachiAWSStatus)
         assert statuses[MOCK_DEVICE_AC].FanSpeed == "high"
-        assert statuses[MOCK_DEVICE_AC].status == {"DeviceType": "AC", "FanSpeed": "high", 'max_temp': 32, 'min_temp': 16}
+        assert statuses[MOCK_DEVICE_AC].status == {"DeviceType": "AC", "FanSpeed": "high", "TemperatureSetting": 26, "max_temp": 32, "min_temp": 16}
         assert isinstance(statuses[MOCK_DEVICE_DH], JciHitachiAWSStatus)
         assert statuses[MOCK_DEVICE_DH].Mode == "air_purify"
         assert statuses[MOCK_DEVICE_DH].status == {"DeviceType": "DH", "Mode": "air_purify", 'max_humidity': 70, 'min_humidity': 40}
@@ -94,7 +99,7 @@ class TestAWSAPI:
         statuses = api.get_status(legacy=True)
         assert isinstance(statuses[MOCK_DEVICE_AC], JciHitachiAWSStatus)
         assert statuses[MOCK_DEVICE_AC].air_speed == "high"
-        assert statuses[MOCK_DEVICE_AC].status == {"DeviceType": "AC", "air_speed": "high", 'max_temp': 32, 'min_temp': 16}
+        assert statuses[MOCK_DEVICE_AC].status == {"DeviceType": "AC", "air_speed": "high", "target_temp": 26, 'max_temp': 32, 'min_temp': 16}
         assert isinstance(statuses[MOCK_DEVICE_DH], JciHitachiAWSStatus)
         assert statuses[MOCK_DEVICE_DH].mode == "air_purify"
         assert statuses[MOCK_DEVICE_DH].status == {"DeviceType": "DH", "mode": "air_purify", 'max_humidity': 70, 'min_humidity': 40}
@@ -207,8 +212,8 @@ brand: HITACHI
 model: RAD-90NF
 type: AC
 available: True
-status_code: None
-support_code: {{'Model': 'RAD-90NF', 'Brand': 'HITACHI'}}
+status_code: {{'DeviceType': 'AC', 'FanSpeed': 'high', 'TemperatureSetting': 26}}
+support_code: {{'DeviceType': 'AC', 'Model': 'RAD-90NF', 'FanSpeed': 31, 'TemperatureSetting': 4128, 'Brand': 'HITACHI', 'max_temp': 32, 'min_temp': 16}}
 shadow: None
 gateway_mac_address: {MOCK_GATEWAY_MAC}"""
 
@@ -218,8 +223,8 @@ brand: HITACHI
 model: RD-360HH
 type: DH
 available: True
-status_code: None
-support_code: {{'Model': 'RD-360HH', 'Brand': 'HITACHI'}}
+status_code: {{'DeviceType': 'DH', 'Mode': 'air_purify'}}
+support_code: {{'DeviceType': 'DH', 'Mode': 31, 'Model': 'RD-360HH', 'Brand': 'HITACHI', 'max_humidity': 70, 'min_humidity': 40}}
 shadow: None
 gateway_mac_address: {MOCK_GATEWAY_MAC}"""
 

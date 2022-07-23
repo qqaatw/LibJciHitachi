@@ -1596,6 +1596,8 @@ STATUS_DICT = {
                 2: "low",
                 3: "moderate",
                 4: "high",
+                5: "rapid",
+                6: "express",
             }
         },
         'TemperatureSetting': {
@@ -1943,6 +1945,7 @@ class JciHitachiAWSStatus:
     }
 
     def __init__(self, raw_status: dict, legacy=False) -> None:
+        self._raw_status: dict = raw_status
         self._status: dict = raw_status if legacy else self._preprocess(raw_status)
         self._device_type: str = self._status["DeviceType"]
 
@@ -1969,13 +1972,7 @@ class JciHitachiAWSStatus:
                     status[key] = value
                 else:
                     status[key] = STATUS_DICT[device_type][key]["id2str"].get(value, "unknown")
-        
-        if device_type == "AC":
-            status["max_temp"] = 32
-            status["min_temp"] = 16
-        elif device_type == "DH":
-            status["max_humidity"] = 70
-            status["min_humidity"] = 40
+
         return status
 
     @property
@@ -2009,16 +2006,17 @@ class JciHitachiAWSStatus:
         return JciHitachiAWSStatus(status, legacy=True)
 
     @staticmethod
-    def str2id(device_type: str, status_name: str, status_value: int = None, status_str_value: str = None):
+    def str2id(device_type: str, status_name: str, status_value: int = None, status_str_value: str = None, support_code: int = None):
         is_valid = (status_value is not None) ^ (status_str_value is not None)
 
         # Name check
-        if status_name not in STATUS_DICT[device_type]:
-            legacy2new_dict = {specs["legacy_name"]: new_status_name for new_status_name, specs in STATUS_DICT[device_type].items()}
-            if status_name in legacy2new_dict:
-                status_name = legacy2new_dict[status_name]
-            else:
-                is_valid = False
+        if is_valid:
+            if status_name not in STATUS_DICT[device_type]:
+                legacy2new = {specs["legacy_name"]: new_status_name for new_status_name, specs in STATUS_DICT[device_type].items()}
+                if status_name in legacy2new:
+                    status_name = legacy2new[status_name]
+                else:
+                    is_valid = False
 
         # Value check
         if is_valid:
@@ -2030,6 +2028,15 @@ class JciHitachiAWSStatus:
                     is_valid = False
             else:
                 if not STATUS_DICT[device_type][status_name]["is_numeric"] and status_value not in STATUS_DICT[device_type][status_name]["id2str"]:
+                    is_valid = False
+        
+        # if support_code is specified, we check whether the given status value is valid for the device
+        if is_valid and support_code is not None: 
+            if STATUS_DICT[device_type][status_name]["is_numeric"]:
+                if status_value > support_code.status[status_name]:
+                    is_valid = False
+            else:
+                if 2 ** status_value & support_code.status[status_name] == 0:
                     is_valid = False
 
         return is_valid, status_name, status_value
@@ -2051,6 +2058,7 @@ class JciHitachiAWSStatusSupport:
     device_type_mapping = JciHitachiAWSStatus.device_type_mapping
 
     def __init__(self, status: dict) -> None:
+        self._raw_status: dict = status
         self._status: dict = self._preprocess(status)
 
     def __getattr__(self, name):
@@ -2060,12 +2068,19 @@ class JciHitachiAWSStatusSupport:
         return str(self._status)
 
     def _preprocess(self, status):
+        status = status.copy()
         # device type
-        if status.get("DeviceType"):
-            status["DeviceType"] = self.device_type_mapping[status["DeviceType"]]
+        status["DeviceType"] = self.device_type_mapping[status["DeviceType"]]
         
         status["Brand"] = "HITACHI"
         
+        if status["DeviceType"] == "AC":
+            status["max_temp"] = status["TemperatureSetting"] & 255 if "TemperatureSetting" in status else 32
+            status["min_temp"] = status["TemperatureSetting"] >> 8 & 255 if "TemperatureSetting" in status else 16
+        elif status["DeviceType"] == "DH":
+            status["max_humidity"] = status["HumiditySetting"] & 255 if "HumiditySetting" in status else 70
+            status["min_humidity"] = status["HumiditySetting"] >> 8 & 255 if "HumiditySetting" in status else 40
+
         return status
 
     @property
