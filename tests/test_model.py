@@ -61,8 +61,8 @@ class TestModel:
             'TaiseiaError': 0,
             'TemperatureSetting': 26,
         }
-        status = JciHitachiAWSStatus(raw_ac_status)
 
+        status = JciHitachiAWSStatus(raw_ac_status)
         assert status.status == processed_ac_status
         assert len(processed_ac_status) == len(raw_ac_status) - 2  # no `RequestTimestamp` and `Timestamp`
 
@@ -94,7 +94,6 @@ class TestModel:
             'RequestTimestamp':1648618952,
             'Timestamp':1648618952,
         }
-
         processed_ac_support = {
             'FirmwareId': 3,
             'DeviceType': 'AC',
@@ -128,10 +127,89 @@ class TestModel:
         }
 
         support = JciHitachiAWSStatusSupport(raw_ac_support)
-
         assert support.status == processed_ac_support
         assert len(processed_ac_support) == len(raw_ac_support) + 3  # `Brand` `max_temp` `min_temp`
     
+
+    def test_he_correctness(self):
+        raw_he_status = {
+            'DeviceType': 3,
+            'Switch': 0,
+            'FanSpeed': 4,
+            'IndoorTemperature': 31,
+            'TaiseiaError': 0,
+            'CleanFilterNotification': 0,
+            'BreathMode': 0,
+            'FrontFilterNotification': 0,
+            'Pm25FilterNotification': 0,
+            'Error': 0,
+            'RequestTimestamp': 1661593958,
+            'ReceiveTimestamp': 1661593958,
+            'Timestamp': 1661593958
+        }
+        processed_he_status = {
+            'DeviceType': 'HE',
+            'Switch': 'off',
+            'FanSpeed': 'high',
+            'IndoorTemperature': 31,
+            'TaiseiaError': 0,
+            'CleanFilterNotification': 'disabled',
+            'BreathMode': 'auto',
+            'FrontFilterNotification':'disabled',
+            'Pm25FilterNotification': 'disabled',
+            'Error': 0
+        }
+
+        status = JciHitachiAWSStatus(raw_he_status)
+        assert status.status == processed_he_status
+        assert len(processed_he_status) == len(raw_he_status) - 3  # no `RequestTimestamp`, `ReceiveTimestamp``, and `Timestamp`
+
+        raw_he_support = {
+            'FirmwareId': 1,
+            'DeviceType': 3,
+            'Model': 'KPI-H',
+            'FindMe': 10,
+            'Switch': 3,
+            'FanSpeed': 20,
+            'IndoorTemperature': 33151,
+            'TaiseiaError': 244,
+            'CleanFilterNotification': 1,
+            'BreathMode': 7,
+            'FrontFilterNotification': 1,
+            'Pm25FilterNotification': 1,
+            'Error': 0,
+            'FirmwareVersion': '6.0.036',
+            'FirmwareCode': 52,
+            'SystemTimestamp': 81274,
+            'RequestTimestamp': 1661596297,
+            'Timestamp': 1661596297
+        }
+        processed_he_support = {
+            'FirmwareId': 1,
+            'DeviceType': 'HE',
+            'Model': 'KPI-H',
+            'FindMe': 10,
+            'Switch': 3,
+            'FanSpeed': 20,
+            'IndoorTemperature': 33151,
+            'TaiseiaError': 244,
+            'CleanFilterNotification': 1,
+            'BreathMode': 7,
+            'FrontFilterNotification': 1,
+            'Pm25FilterNotification': 1,
+            'Error': 0,
+            'FirmwareVersion': '6.0.036',
+            'FirmwareCode': 52,
+            'SystemTimestamp': 81274,
+            'RequestTimestamp': 1661596297,
+            'Timestamp': 1661596297,
+            'Brand': 'HITACHI'
+        }
+
+        support = JciHitachiAWSStatusSupport(raw_he_support)
+        assert support.status == processed_he_support
+        assert len(processed_he_support) == len(raw_he_support) + 1  # `Brand`
+
     def test_str2id(self):
         pass
         # TODO: complete this

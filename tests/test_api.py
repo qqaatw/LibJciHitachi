@@ -7,7 +7,7 @@ from JciHitachi.api import AWSThing, JciHitachiAWSAPI
 from JciHitachi.aws_connection import AWSTokens
 from JciHitachi.model import JciHitachiAWSStatus, JciHitachiAWSStatusSupport
 
-from . import MOCK_GATEWAY_MAC, MOCK_DEVICE_AC, MOCK_DEVICE_DH
+from . import MOCK_GATEWAY_MAC, MOCK_DEVICE_AC, MOCK_DEVICE_DH, MOCK_DEVICE_HE
 
 
 @pytest.fixture()
@@ -55,12 +55,34 @@ def fixture_aws_mock_dh_thing():
     return thing
 
 @pytest.fixture()
-def fixture_aws_mock_api(fixture_aws_mock_ac_thing, fixture_aws_mock_dh_thing):
+def fixture_aws_mock_he_thing():
+    thing = AWSThing(
+        {
+            "DeviceType": "3",
+            "ThingName": f"ap-northeast-1:667bf9f1-9671-469b-adf3-935e4c982dc6_{MOCK_GATEWAY_MAC}",
+            "CustomDeviceName": MOCK_DEVICE_HE,
+        }
+    )
+    thing.status_code = JciHitachiAWSStatus({
+        "DeviceType": 3,
+        "BreathMode": 2,  # normal
+    })
+    thing.support_code = JciHitachiAWSStatusSupport({
+        "DeviceType": 3,
+        "BreathMode": 7,  # 0b111
+        "FirmwareVersion": "6.0.036",
+        "Model": "KPI-H",
+    })
+    return thing
+
+@pytest.fixture()
+def fixture_aws_mock_api(fixture_aws_mock_ac_thing, fixture_aws_mock_dh_thing, fixture_aws_mock_he_thing):
     api = JciHitachiAWSAPI("", "")
     api._aws_tokens = AWSTokens("", "", "", time.time() + 3600)
     api._things = {
         MOCK_DEVICE_AC: fixture_aws_mock_ac_thing,
         MOCK_DEVICE_DH: fixture_aws_mock_dh_thing,
+        MOCK_DEVICE_HE: fixture_aws_mock_he_thing,
     }
     return api
 
@@ -96,6 +118,9 @@ class TestAWSAPI:
         assert isinstance(statuses[MOCK_DEVICE_DH], JciHitachiAWSStatus)
         assert statuses[MOCK_DEVICE_DH].Mode == "air_purify"
         assert statuses[MOCK_DEVICE_DH].status == {"DeviceType": "DH", "Mode": "air_purify", 'max_humidity': 70, 'min_humidity': 40}
+        assert isinstance(statuses[MOCK_DEVICE_HE], JciHitachiAWSStatus)
+        assert statuses[MOCK_DEVICE_HE].BreathMode == "normal"
+        assert statuses[MOCK_DEVICE_HE].status == {"DeviceType": "HE", "BreathMode": "normal"}
 
         # Test legacy status
         statuses = api.get_status(legacy=True)
@@ -105,6 +130,9 @@ class TestAWSAPI:
         assert isinstance(statuses[MOCK_DEVICE_DH], JciHitachiAWSStatus)
         assert statuses[MOCK_DEVICE_DH].mode == "air_purify"
         assert statuses[MOCK_DEVICE_DH].status == {"DeviceType": "DH", "mode": "air_purify", 'max_humidity': 70, 'min_humidity': 40}
+        assert isinstance(statuses[MOCK_DEVICE_HE], JciHitachiAWSStatus)
+        assert statuses[MOCK_DEVICE_HE].BreathMode == "normal"
+        assert statuses[MOCK_DEVICE_HE].status == {"DeviceType": "HE", "BreathMode": "normal"}
 
         # Test not existing thing
         statuses = api.get_status("NON_EXISTING_NAME")
@@ -207,7 +235,7 @@ class TestAWSAPI:
                 api.refresh_monthly_data(2, MOCK_DEVICE_AC)
 
 class TestAWSThing:
-    def test_repr(self, fixture_aws_mock_ac_thing, fixture_aws_mock_dh_thing):
+    def test_repr(self, fixture_aws_mock_ac_thing, fixture_aws_mock_dh_thing, fixture_aws_mock_he_thing):
         ac_thing = fixture_aws_mock_ac_thing
         assert ac_thing.__repr__() == f"""name: {MOCK_DEVICE_AC}
 brand: HITACHI
@@ -231,6 +259,19 @@ firmawre_version: 6.0.035
 available: True
 status_code: {{'DeviceType': 'DH', 'Mode': 'air_purify'}}
 support_code: {{'DeviceType': 'DH', 'Mode': 31, 'FirmwareVersion': '6.0.035', 'Model': 'RD-360HH', 'Brand': 'HITACHI', 'max_humidity': 70, 'min_humidity': 40}}
+shadow: None
+gateway_mac_address: {MOCK_GATEWAY_MAC}"""
+
+        he_thing = fixture_aws_mock_he_thing
+        assert he_thing.__repr__() == f"""name: {MOCK_DEVICE_HE}
+brand: HITACHI
+model: KPI-H
+type: HE
+firmware_code: unsupported
+firmawre_version: 6.0.036
+available: True
+status_code: {{'DeviceType': 'HE', 'BreathMode': 'normal'}}
+support_code: {{'DeviceType': 'HE', 'BreathMode': 7, 'FirmwareVersion': '6.0.036', 'Model': 'KPI-H', 'Brand': 'HITACHI'}}
 shadow: None
 gateway_mac_address: {MOCK_GATEWAY_MAC}"""
 

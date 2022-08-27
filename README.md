@@ -19,9 +19,9 @@ A Python library for controlling Jci-Hitachi devices.
   - Power 電源
   - Mode 運轉模式
   - Air speed 風速
-  - Vertical wind swingable 導風板垂直擺動 (Untested)
-  - Vertical wind direction 導風板垂直方向 (Untested)
-  - Horizontal wind direction 導風板水平方向 (Untested)
+  - Vertical wind swingable 導風板垂直擺動
+  - Vertical wind direction 導風板垂直方向
+  - Horizontal wind direction 導風板水平方向
   - Target temperature 目標溫度
   - Indoor temperature 室內溫度
   - Sleep timer 睡眠計時器
@@ -50,7 +50,16 @@ A Python library for controlling Jci-Hitachi devices.
   - Air cleaning filter setting 空氣清淨濾網設定
   - Power consumption 用電統計
   - Monthly power consumption 月用電統計
-- ~~Hitachi HeatExchanger 日立全熱交換機~~ (Under development)
+- Hitachi Heat Exchanger 日立全熱交換機
+  - Power 電源
+  - Mode 運轉模式
+  - Breath mode 換氣模式
+  - Air speed 風速
+  - Indoor temperature 室內溫度
+  - Error code 錯誤代碼
+  - Air cleaning filter notification 空氣清淨濾網清潔通知
+  - Front filter notification 前置濾網清潔通知
+  - PM25 filter notification PM25濾網清潔通知
 
 ## Installation
 
@@ -70,8 +79,7 @@ See [docs](https://libjcihitachi.readthedocs.io/en/latest/).
 
 ## Todo
 
-1. Heat exchanger support.
-2. PM 2.5 panel support.
+1. PM 2.5 panel support.
 
 ## Acknowledgement
 
