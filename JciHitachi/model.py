@@ -2097,8 +2097,11 @@ class JciHitachiAWSStatus:
         status = {}
         device_type = self._status["DeviceType"]
         for status_name, status_value in self._status.items():
-            if status_name in STATUS_DICT[device_type] and \
-                STATUS_DICT[device_type][status_name]["legacy_name"] is not None:
+            if status_name in STATUS_DICT[device_type]:
+                if STATUS_DICT[device_type][status_name]["legacy_name"] is None:
+                    # no legacy name
+                    status.update({status_name: status_value})
+                else:
                     status.update({STATUS_DICT[device_type][status_name]["legacy_name"]: status_value})
         return JciHitachiAWSStatus(status, legacy=True)
 
