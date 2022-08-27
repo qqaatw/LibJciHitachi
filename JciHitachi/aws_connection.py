@@ -13,15 +13,15 @@ from awsiot import iotshadow, mqtt_connection_builder
 
 from .model import JciHitachiAWSStatus, JciHitachiAWSStatusSupport
 
-AWS_COGNITO_REGION = "ap-northeast-1"
-AWS_COGNITO_IDP_ENDPOINT = f"cognito-idp.{AWS_COGNITO_REGION}.amazonaws.com/"
-AWS_COGNITO_ENDPOINT = f"cognito-identity.{AWS_COGNITO_REGION}.amazonaws.com/"
+AWS_REGION = "ap-northeast-1"
+AWS_COGNITO_IDP_ENDPOINT = f"cognito-idp.{AWS_REGION}.amazonaws.com/"
+AWS_COGNITO_ENDPOINT = f"cognito-identity.{AWS_REGION}.amazonaws.com/"
 AWS_COGNITO_CLIENT_ID = "7kfnjsb66ei1qt5s5gjv6j1lp6"
-AWS_COGNITO_USERPOOL_ID = "ap-northeast-1_aTZeaievK"
+AWS_COGNITO_USERPOOL_ID = f"{AWS_REGION}_aTZeaievK"
 
 #AMAZON_ROOT_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), './cert/AmazonRootCA1.pem')
 AWS_IOT_ENDPOINT = "https://iot-api.jci-hitachi-smarthome.com"
-AWS_MQTT_ENDPOINT = "a8kcu267h96in-ats.iot.ap-northeast-1.amazonaws.com"
+AWS_MQTT_ENDPOINT = f"a8kcu267h96in-ats.iot.{AWS_REGION}.amazonaws.com"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -547,6 +547,9 @@ class JciHitachiAWSMqttConnection:
             _LOGGER.error(f"An unknown shadow response is received. Client token: {response.client_token}")
             return
         
+        if self._print_response:
+            print(f"An `update` shadow response is received: {response.state.reported}")
+
         if response.state:
             if response.state.reported:
                 self._mqtt_events.device_control[thing_name] = response.state.reported
@@ -561,6 +564,9 @@ class JciHitachiAWSMqttConnection:
         except:
             _LOGGER.error(f"An unknown shadow response is received. Client token: {response.client_token}")
             return
+        
+        if self._print_response:
+            print(f"A `get` shadow response is received: {response.state.reported}")
 
         if response.state:
             if response.state.reported:
@@ -588,7 +594,7 @@ class JciHitachiAWSMqttConnection:
         host_resolver = awscrt.io.DefaultHostResolver(event_loop_group)
         client_bootstrap = awscrt.io.ClientBootstrap(event_loop_group, host_resolver)
         self._mqttc = mqtt_connection_builder.websockets_with_default_aws_signing(
-            AWS_COGNITO_REGION,
+            AWS_REGION,
             cred_provider,
             client_bootstrap=client_bootstrap,
             endpoint=AWS_MQTT_ENDPOINT,

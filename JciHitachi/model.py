@@ -1932,9 +1932,11 @@ STATUS_DICT = {
     },
     "HE": {
 
+    },
+    "PM25_PANEL": {
+
     }
 }
-PREPARED_STATUS_DICT = None
 
 class JciHitachiAWSStatus:
     device_type_mapping = {
