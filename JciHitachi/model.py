@@ -1931,7 +1931,102 @@ STATUS_DICT = {
         },
     },
     "HE": {
-
+        'DeviceType': {
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": "DeviceType",
+            "id2str": {
+                1: "AC",
+                2: "DH",
+                3: "HE",
+                4: "PM25_PANEL",
+            }
+        },
+        'Switch': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+                0: "off",
+                1: "on",
+            }
+        },
+        'Mode': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+                0: "air_condition",
+                1: "dehumidification",
+                2: "air_supply",
+                3: "auto",
+                4: "heater",
+            }
+        },
+        'FanSpeed': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+                0: "auto",
+                1: "silent",
+                2: "low",
+                3: "moderate",
+                4: "high",
+            }
+        },
+        'IndoorTemperature': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": None,
+        },
+        'TaiseiaError': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": None,
+        },
+        'CleanFilterNotification': {
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
+        },
+        'BreathMode': {
+            "controlable": True,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+                0: "auto",
+                1: "energy_recovery",
+                2: "normal"
+            }
+        },
+        'FrontFilterNotification': {
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
+        },
+        'Pm25FilterNotification': {
+            "controlable": False,
+            "is_numeric": False,
+            "legacy_name": None,
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            }
+        },
+        'Error': {
+            "controlable": False,
+            "is_numeric": True,
+            "legacy_name": None,
+        },
     },
     "PM25_PANEL": {
 

@@ -611,7 +611,7 @@ class AWSThing:
     supported_device_type = {
         "1": "AC",
         "2": "DH",
-        #"3": "HE",
+        "3": "HE",
         #"4": "PM25_PANEL",
     }
 
@@ -1185,7 +1185,7 @@ class JciHitachiAWSAPI:
             else:
                 statuses[name] = thing.status_code
 
-            # here we inject temp and humidity limitations from the support code
+            # inject temp and humidity limitations from the support code
             if thing.type == "AC":
                 statuses[name]._status["max_temp"] = thing.support_code.max_temp
                 statuses[name]._status["min_temp"] = thing.support_code.min_temp
@@ -1241,15 +1241,16 @@ class JciHitachiAWSAPI:
             "CleanNotification": "filter",
             "CleanSecondaryFilterNotification": "filter",
             "FrontFilterNotification": "filter",
-            "Pm25FilterNotification": "filter"
+            "Pm25FilterNotification": "filter",
+            "enableQAMode": "qa",
         }
 
         if False: #status_name in shadow_publish_mapping: # TODO: replace False cond after shadow function is completed.
             shadow_publish_schema = {}
-            if shadow_publish_mapping[status_name] == "filter":
-                shadow_publish_schema.update(status_name, bool(status_value))
-                if thing.type == "AC": # there is an additional parameter for AC
-                    shadow_publish_schema.update("FilterElapsedHour", 0 if status_value == 0 else status_value)
+            if shadow_publish_mapping[status_name] == "filter" or shadow_publish_mapping[status_name] == "qa":
+                shadow_publish_schema.update({status_name: bool(status_value)})
+                #if thing.type == "AC": # there is an additional parameter for AC
+                #    shadow_publish_schema.update("FilterElapsedHour", 0 if status_value == 0 else status_value)
             self._mqtt.publish_shadow(
                 thing.thing_name, 
                 "update", 
