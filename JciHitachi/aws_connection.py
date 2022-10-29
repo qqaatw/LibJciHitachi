@@ -14,13 +14,13 @@ from awsiot import iotshadow, mqtt_connection_builder
 from .model import JciHitachiAWSStatus, JciHitachiAWSStatusSupport
 
 AWS_REGION = "ap-northeast-1"
-AWS_COGNITO_IDP_ENDPOINT = f"cognito-idp.{AWS_REGION}.amazonaws.com/"
-AWS_COGNITO_ENDPOINT = f"cognito-identity.{AWS_REGION}.amazonaws.com/"
+AWS_COGNITO_IDP_ENDPOINT = f"cognito-idp.{AWS_REGION}.amazonaws.com"
+AWS_COGNITO_ENDPOINT = f"cognito-identity.{AWS_REGION}.amazonaws.com"
 AWS_COGNITO_CLIENT_ID = "7kfnjsb66ei1qt5s5gjv6j1lp6"
 AWS_COGNITO_USERPOOL_ID = f"{AWS_REGION}_aTZeaievK"
 
 #AMAZON_ROOT_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), './cert/AmazonRootCA1.pem')
-AWS_IOT_ENDPOINT = "https://iot-api.jci-hitachi-smarthome.com"
+AWS_IOT_ENDPOINT = "iot-api.jci-hitachi-smarthome.com"
 AWS_MQTT_ENDPOINT = f"a8kcu267h96in-ats.iot.{AWS_REGION}.amazonaws.com"
 
 _LOGGER = logging.getLogger(__name__)
@@ -102,6 +102,21 @@ class JciHitachiAWSCognitoConnection:
         else:
             return f"{response_json['__type']} {response_json['message']}", response_json
 
+    def _send(self, target, json_data=None):
+        headers = self._generate_headers(target)
+
+        req = httpx.post(
+            f"https://{AWS_COGNITO_ENDPOINT if self.__class__.__name__ == 'GetCredentials' else AWS_COGNITO_IDP_ENDPOINT}/", 
+            json=json_data,
+            headers=headers,
+            proxies=self._proxies,
+        )
+
+        if self._print_response:
+            self.print_response(req)
+
+        return self._handle_response(req)
+
     @property
     def aws_tokens(self):
         return self._aws_tokens
@@ -143,7 +158,8 @@ class JciHitachiAWSCognitoConnection:
 
         login_headers = self._generate_headers("AWSCognitoIdentityProviderService.InitiateAuth")
 
-        login_req = httpx.post("{}".format(f"https://{AWS_COGNITO_IDP_ENDPOINT}"), 
+        login_req = httpx.post(
+            f"https://{AWS_COGNITO_IDP_ENDPOINT}", 
             json=login_json_data,
             headers=login_headers,
             proxies=self._proxies,
@@ -199,18 +215,7 @@ class ChangePassword(JciHitachiAWSCognitoConnection):
             "ProposedPassword": new_password,
         }
 
-        headers = self._generate_headers("AWSCognitoIdentityProviderService.ChangePassword")
-
-        req = httpx.post("{}".format(f"https://{AWS_COGNITO_IDP_ENDPOINT}"), 
-            json=json_data,
-            headers=headers,
-            proxies=self._proxies,
-        )
-
-        if self._print_response:
-            self.print_response(req)
-
-        status, response = self._handle_response(req)
+        status, response = self._send("AWSCognitoIdentityProviderService.ChangePassword", json_data)
 
         return status, None
 
@@ -235,18 +240,7 @@ class GetUser(JciHitachiAWSCognitoConnection):
             "AccessToken": self._aws_tokens.access_token,
         }
 
-        headers = self._generate_headers("AWSCognitoIdentityProviderService.GetUser")
-
-        req = httpx.post("{}".format(f"https://{AWS_COGNITO_IDP_ENDPOINT}"), 
-            json=json_data,
-            headers=headers,
-            proxies=self._proxies,
-        )
-
-        if self._print_response:
-            self.print_response(req)
-
-        status, response = self._handle_response(req)
+        status, response = self._send("AWSCognitoIdentityProviderService.GetUser", json_data)
 
         aws_identity = None
         if status == "OK":
@@ -277,22 +271,11 @@ class GetCredentials(JciHitachiAWSCognitoConnection):
         json_data = {
             "IdentityId": aws_identity.identity_id,
             "Logins": {
-                f"{AWS_COGNITO_IDP_ENDPOINT}{AWS_COGNITO_USERPOOL_ID}": self._aws_tokens.id_token,
+                f"{AWS_COGNITO_IDP_ENDPOINT}/{AWS_COGNITO_USERPOOL_ID}": self._aws_tokens.id_token,
             }
         }
 
-        headers = self._generate_headers("AWSCognitoIdentityService.GetCredentialsForIdentity")
-
-        req = httpx.post("{}".format(f"https://{AWS_COGNITO_ENDPOINT}"), 
-            json=json_data,
-            headers=headers,
-            proxies=self._proxies,
-        )
-
-        if self._print_response:
-            self.print_response(req)
-
-        status, response = self._handle_response(req)
+        status, response = self._send("AWSCognitoIdentityService.GetCredentialsForIdentity", json_data)
 
         aws_credentials = None
         if status == "OK":
@@ -350,7 +333,7 @@ class JciHitachiAWSIoTConnection:
 
     def _send(self, api_name, json=None):
         req = httpx.post(
-            "{}{}".format(AWS_IOT_ENDPOINT, api_name),
+            f"https://{AWS_IOT_ENDPOINT}{api_name}",
             headers=self._generate_normal_headers(),
             json=json,
             proxies=self._proxies,

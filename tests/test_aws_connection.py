@@ -275,9 +275,9 @@ class TestJciHitachiAWSCognitoConnection:
             for http_status_code, msg in response_code:
                 def mock_post_func(endpoint, headers=None, json=None, proxies=None, **kwargs):
                     if isinstance(c, GetCredentials):
-                        assert endpoint == f"https://{AWS_COGNITO_ENDPOINT}"
+                        assert endpoint == f"https://{AWS_COGNITO_ENDPOINT}/"
                     else:
-                        assert endpoint == f"https://{AWS_COGNITO_IDP_ENDPOINT}"
+                        assert endpoint == f"https://{AWS_COGNITO_IDP_ENDPOINT}/"
                     assert headers == {
                         "X-Amz-Target": header_target,
                         "User-Agent": "Dalvik/2.1.0",
@@ -349,7 +349,7 @@ class TestJciHitachiIoTConnection:
 
                 for http_status_code in [200, 400]:
                     def mock_post_func(endpoint, headers=None, json=None, proxies=None, **kwargs):
-                        assert endpoint == f"{AWS_IOT_ENDPOINT}/{c.__class__.__name__}"
+                        assert endpoint == f"https://{AWS_IOT_ENDPOINT}/{c.__class__.__name__}"
                         assert headers == {"authorization": f"Bearer {fixture_aws_tokens.id_token}",
                             "accesstoken": f"Bearer {fixture_aws_tokens.access_token}",
                             "User-Agent": "Dalvik/2.1.0",
