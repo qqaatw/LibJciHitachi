@@ -1,6 +1,7 @@
 # Jci-Hitachi Library
 
-[![Python package](https://github.com/qqaatw/LibJciHitachi/workflows/Python%20package/badge.svg)](https://github.com/qqaatw/LibJciHitachi/actions)
+[![System Status](https://github.com/qqaatw/LibJciHitachi/actions/workflows/Status.yml/badge.svg)](https://github.com/qqaatw/LibJciHitachi/actions/workflows/Status.yml)
+[![CI](https://github.com/qqaatw/LibJciHitachi/actions/workflows/CI.yml/badge.svg)](https://github.com/qqaatw/LibJciHitachi/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/qqaatw/LibJciHitachi/branch/master/graph/badge.svg?token=W147MOH1T0)](https://codecov.io/gh/qqaatw/LibJciHitachi)
 [![docs](https://readthedocs.org/projects/libjcihitachi/badge/?version=latest)](https://libjcihitachi.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/LibJciHitachi.svg?color=%23007ec6)](https://pypi.python.org/pypi/LibJciHitachi/)
