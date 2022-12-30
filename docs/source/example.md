@@ -2,7 +2,7 @@
 
 ## API
 
-1. Import API and define credential informaiton. 
+1. Import API and define credential information. 
 
     ```
     from JciHitachi.api import JciHitachiAWSAPI
@@ -13,7 +13,7 @@
     DEVICENAME = "living room"
     ```
 
-2. Login to API and get current status.
+2. Login API and get current status.
 
     ```
     # Login
@@ -51,7 +51,7 @@ The python script can be found [here](https://github.com/qqaatw/LibJciHitachi/bl
 
 ## Legacy API
 
-1. Import API and define credential informaiton. 
+1. Import API and define credential information. 
 
     ```
     from JciHitachi.api import JciHitachiAPI
@@ -62,7 +62,7 @@ The python script can be found [here](https://github.com/qqaatw/LibJciHitachi/bl
     DEVICENAME = "living room"
     ```
 
-2. Login to API and get current status.
+2. Login API and get current status.
 
     ```
     # Login

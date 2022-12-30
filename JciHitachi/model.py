@@ -2034,6 +2034,16 @@ STATUS_DICT = {
 }
 
 class JciHitachiAWSStatus:
+    """Data class representing `AWSThing` status.
+
+    Parameters
+    ----------
+    raw_status : dict
+        Status retrieved from `JciHitachiAWSMqttConnection` _on_publish() callback.
+    legacy : bool, optional
+        Whether the raw_status is a legacy status, i.e. derived from subclasses of `JciHitachiStatus`, by default False.
+    """
+
     device_type_mapping = {
         1: "AC",
         2: "DH",
@@ -2147,7 +2157,16 @@ class JciHitachiAWSStatus:
         else:
             self._status[name] = STATUS_DICT[self._device_type][name]["id2str"].get(value, "unknown")
 
+
 class JciHitachiAWSStatusSupport:
+    """Data class representing `AWSThing` status support.
+
+    Parameters
+    ----------
+    raw_status : dict
+        Status retrieved from `JciHitachiAWSMqttConnection` _on_publish() callback.
+    """
+
     extended_mapping = {
         "FirmwareId": None,
         "Model": "model",
@@ -2157,9 +2176,9 @@ class JciHitachiAWSStatusSupport:
 
     device_type_mapping = JciHitachiAWSStatus.device_type_mapping
 
-    def __init__(self, status: dict) -> None:
-        self._raw_status: dict = status
-        self._status: dict = self._preprocess(status)
+    def __init__(self, raw_status: dict) -> None:
+        self._raw_status: dict = raw_status
+        self._status: dict = self._preprocess(raw_status)
 
     def __getattr__(self, name):
         return self._status.get(name, "unsupported")

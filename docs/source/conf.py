@@ -16,14 +16,16 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 print(sys.path)
 
+from JciHitachi import __author__, __version__
+
 # -- Project information -----------------------------------------------------
 
 project = 'LibJciHitachi'
-copyright = '2022, Allan Lin'
-author = 'Allan Lin'
+copyright = f'2023, {__author__}'
+author = __author__
 
 # The full version, including alpha/beta/rc tags
-release = 'v1.0.0'
+release = f'v{__version__}'
 
 
 # -- General configuration ---------------------------------------------------
