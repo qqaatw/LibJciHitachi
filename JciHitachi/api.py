@@ -1,7 +1,8 @@
+from __future__ import annotations
 import random
 import time
 import warnings
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 from . import aws_connection, connection, mqtt_connection
 from .model import (JciHitachiAC, JciHitachiACSupport, JciHitachiAWSStatus,
@@ -54,8 +55,8 @@ class Peripheral: # pragma: no cover
     def from_device_names(
         cls,
         peripherals_json : dict,
-        device_names : Optional[Union[List[str], str]]
-    ) -> Dict[str, object]:
+        device_names : Optional[Union[list[str], str]]
+    ) -> dict[str, object]:
         """Use device names to pick peripheral_jsons accordingly.
 
         Parameters
@@ -285,7 +286,7 @@ class JciHitachiAPI: # pragma: no cover
     def __init__(self, 
         email : str,
         password : str,
-        device_names : Optional[Union[List[str], str]] = None,
+        device_names : Optional[Union[list[str], str]] = None,
         max_retries : int = 5,
         device_offline_timeout : float = 45.0,
         print_response: bool = False
@@ -307,7 +308,7 @@ class JciHitachiAPI: # pragma: no cover
         warnings.warn("This API has been deprecated.", DeprecationWarning)
 
     @property
-    def peripherals(self) -> Dict[str, Peripheral]:
+    def peripherals(self) -> dict[str, Peripheral]:
         """Picked peripherals.
 
         Returns
@@ -425,7 +426,7 @@ class JciHitachiAPI: # pragma: no cover
         conn_status, conn_json = conn.get_data(new_password)
         self._session_token = conn.session_token
 
-    def get_status(self, device_name: Optional[str] = None) -> Dict[str, JciHitachiStatus]:
+    def get_status(self, device_name: Optional[str] = None) -> dict[str, JciHitachiStatus]:
         """Get device status after refreshing status.
 
         Parameters
@@ -455,7 +456,7 @@ class JciHitachiAPI: # pragma: no cover
                 statuses[name] = JciHitachiDH(dev_status)
         return statuses
     
-    def get_supported_status(self, device_name: Optional[str] = None) -> Dict[str, JciHitachiStatusSupport]:
+    def get_supported_status(self, device_name: Optional[str] = None) -> dict[str, JciHitachiStatusSupport]:
         """Get supported device status after refreshing status.
 
         Parameters
@@ -491,8 +492,8 @@ class JciHitachiAPI: # pragma: no cover
             If None is given, all devices' status will be refreshed,
             by default None.
         
-        Raise
-        -------
+        Raises
+        ------
         RuntimeError
             If an error occurs, RuntimeError will be raised.
         """
@@ -539,8 +540,8 @@ class JciHitachiAPI: # pragma: no cover
         bool
             Return True if the command has been successfully executed. Otherwise, return False.
 
-        Raise
-        -------
+        Raises
+        ------
         RuntimeError
             If an error occurs, RuntimeError will be raised.
         """
@@ -621,7 +622,7 @@ class AWSThing:
         self._shadow : Optional[dict] = None
         self._status_code : Optional[JciHitachiAWSStatus] = None
         self._support_code : Optional[JciHitachiAWSStatusSupport] = None
-        self._monthly_data : Optional[List[Dict]] = None
+        self._monthly_data : Optional[list[dict]] = None
 
     def __repr__(self) -> str:
         ret = (
@@ -643,8 +644,8 @@ class AWSThing:
     def from_device_names(
         cls,
         things_json : dict,
-        device_names : Optional[Union[List[str], str]]
-    ) -> Dict[str, object]:
+        device_names : Optional[Union[list[str], str]]
+    ) -> dict[str, object]:
         """Use device names to pick things_json accordingly.
 
         Parameters
@@ -691,7 +692,7 @@ class AWSThing:
         return self._available
 
     @available.setter
-    def available(self, x) -> None:
+    def available(self, x: bool) -> None:
         self._available = x
 
     @property
@@ -827,19 +828,19 @@ class AWSThing:
         self._support_code = x
     
     @property
-    def monthly_data(self) -> Optional[List[Dict]]:
+    def monthly_data(self) -> Optional[list[dict]]:
         """Thing's monthly data reported by the API.
 
         Returns
         -------
-        Optional[List[Dict]]
+        Optional[list[dict]]
             Monthly data.
         """
 
         return self._monthly_data
     
     @monthly_data.setter
-    def monthly_data(self, x : Optional[List[Dict]]) -> None:
+    def monthly_data(self, x : Optional[list[dict]]) -> None:
         self._monthly_data = x
 
     @property
@@ -885,14 +886,14 @@ class JciHitachiAWSAPI:
     def __init__(self, 
         email : str,
         password : str,
-        device_names : Optional[Union[List[str], str]] = None,
+        device_names : Optional[Union[list[str], str]] = None,
         max_retries : int = 5,
         device_offline_timeout : float = 45.0,
         print_response : bool = False
     ) -> None:
         self.email : str = email
         self.password : str = password
-        self.device_names : Optional[Union[List[str], str]] = device_names
+        self.device_names : Optional[Union[list[str], str]] = device_names
         self.max_retries : int = max_retries
         self.device_offline_timeout : float = device_offline_timeout
         self.print_response : bool = print_response
@@ -900,14 +901,14 @@ class JciHitachiAWSAPI:
         self._mqtt : Optional[aws_connection.JciHitachiAWSMqttConnection] = None
         self._shadow_names : Union[str, list] = ["info"]
         self._device_id : int = random.randint(1000, 6999)
-        self._things : Dict[str, AWSThing] = {}
+        self._things : dict[str, AWSThing] = {}
         self._aws_tokens : Optional[aws_connection.AWSTokens] = None
         self._aws_identity : Optional[aws_connection.AWSIdentity] = None
         self._host_identity_id : Optional[str] = None
         self._task_id : int = 0
 
     @property
-    def things(self) -> Dict[str, AWSThing]:
+    def things(self) -> dict[str, AWSThing]:
         """Picked things.
 
         Returns
@@ -1082,8 +1083,8 @@ class JciHitachiAWSAPI:
         device_name : str
             Device name.
 
-        Raise
-        -------
+        Raises
+        ------
         RuntimeError
             If an error occurs, RuntimeError will be raised.
         """
@@ -1120,8 +1121,8 @@ class JciHitachiAWSAPI:
         refresh_shadow : bool, optional
             Whether or not to refresh AWS IoT Shadow, by default False.
 
-        Raise
-        -------
+        Raises
+        ------
         RuntimeError
             If an error occurs, RuntimeError will be raised.
         """
@@ -1158,7 +1159,7 @@ class JciHitachiAWSAPI:
             
             thing.status_code = self._mqtt.mqtt_events.device_status[thing.thing_name]
 
-    def get_status(self, device_name: Optional[str] = None, legacy: bool = False) -> Dict[str, JciHitachiAWSStatus]:
+    def get_status(self, device_name: Optional[str] = None, legacy: bool = False) -> dict[str, JciHitachiAWSStatus]:
         """Get device status after refreshing status.
 
         Parameters
@@ -1214,8 +1215,8 @@ class JciHitachiAWSAPI:
         bool
             Return True if the command has been successfully executed. Otherwise, return False.
 
-        Raise
-        -------
+        Raises
+        ------
         RuntimeError
             If an error occurs, RuntimeError will be raised.
         """

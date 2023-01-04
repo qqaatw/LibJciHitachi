@@ -275,5 +275,48 @@ support_code: {{'DeviceType': 'HE', 'BreathMode': 7, 'FirmwareVersion': '6.0.036
 shadow: None
 gateway_mac_address: {MOCK_GATEWAY_MAC}"""
 
+    def test_properties_and_setters(self, fixture_aws_mock_ac_thing, fixture_aws_mock_dh_thing, fixture_aws_mock_he_thing):
+        for thing, device_type in (
+            (fixture_aws_mock_ac_thing, "AC"),
+            (fixture_aws_mock_dh_thing, "DH"),
+            (fixture_aws_mock_he_thing, "HE")
+        ):
+            # by default (with a setter)
+            assert thing.available == True 
+            assert thing.shadow == None
+            assert thing.status_code.DeviceType == device_type
+            assert thing.support_code.DeviceType == device_type
+            assert thing.monthly_data == None
+
+            # by default (with no setter)
+            assert thing.picked_thing == thing._json
+            
+
+            mock_device_types = {
+                "AC": ("DH", 2),
+                "DH": ("AC", 1),
+                "HE": ("AC", 1),
+            }
+
+            # assign new values
+            thing.available = False
+            thing.shadow = {}
+            new_status_code = JciHitachiAWSStatus({
+                "DeviceType": mock_device_types[device_type][1], # mock unknown
+            })
+            thing.status_code = new_status_code
+            new_support_code = thing.support_code = JciHitachiAWSStatusSupport({
+                "DeviceType": mock_device_types[device_type][1], # mock unknown
+            })
+            thing.support_code = new_support_code
+            thing.monthly_data = [{}]
+
+            # test new values
+            assert thing.available == False
+            assert thing.shadow == {}
+            assert thing.status_code.DeviceType == mock_device_types[device_type][0]
+            assert thing.support_code.DeviceType == mock_device_types[device_type][0]
+            assert thing.monthly_data == [{}]
+
     def test_from_device_names(self, fixture_aws_mock_ac_thing):
         return

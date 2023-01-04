@@ -1,11 +1,13 @@
+from __future__ import annotations
 import datetime
 import json
 import logging
 import threading
 import time
 import uuid
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Callable, Optional, Union
 
 import awscrt
 import httpx
@@ -40,10 +42,10 @@ class AWSIdentity:
 
 @dataclass
 class JciHitachiMqttEvents:
-    device_status: Dict[str, JciHitachiAWSStatus] = field(default_factory=dict)
-    device_support: Dict[str, JciHitachiAWSStatusSupport] = field(default_factory=dict)
-    device_control: Dict[str, dict] = field(default_factory=dict)
-    device_shadow: Dict[str, dict] = field(default_factory=dict)
+    device_status: dict[str, JciHitachiAWSStatus] = field(default_factory=dict)
+    device_support: dict[str, JciHitachiAWSStatusSupport] = field(default_factory=dict)
+    device_control: dict[str, dict] = field(default_factory=dict)
+    device_shadow: dict[str, dict] = field(default_factory=dict)
     mqtt_error: str = field(default_factory=str)
     device_status_event: threading.Event = field(default_factory=threading.Event)
     device_support_event: threading.Event = field(default_factory=threading.Event)
@@ -52,7 +54,37 @@ class JciHitachiMqttEvents:
     mqtt_error_event: threading.Event = field(default_factory=threading.Event)
 
 
-class JciHitachiAWSCognitoConnection:
+class JciHitachiAWSHttpConnection(ABC):
+    """Abstract class for AWS http connections."""
+
+    @abstractmethod
+    def __init__(self, print_response: bool):
+        self._print_response = print_response
+
+    @abstractmethod
+    def _handle_response(self, response: httpx.Response):
+        ...
+
+    @abstractmethod
+    def _send(self):
+        ...
+    
+    def get_data(self):
+        raise NotImplementedError
+
+    def maybe_print_http_response(self, response: httpx.Response) -> None:
+        if not self._print_response:
+            return
+        
+        print('===================================================')
+        print(self.__class__.__name__, 'Response:')
+        print('headers:', response.headers)
+        print('status_code:', response.status_code)
+        print('text:', json.dumps(response.json(), indent=True))
+        print('===================================================')
+
+
+class JciHitachiAWSCognitoConnection(JciHitachiAWSHttpConnection):
     """Connecting to Jci-Hitachi AWS Cognito API.
 
     Parameters
@@ -71,11 +103,17 @@ class JciHitachiAWSCognitoConnection:
         If set, all responses of httpx will be printed, by default False.
     """
     
-    def __init__(self, email, password, aws_tokens=None, proxy=None, print_response=False):
+    def __init__(self, 
+        email: str,
+        password: str,
+        aws_tokens: Optional[AWSTokens] = None,
+        proxy: Optional[str] = None,
+        print_response: bool = False
+    ):
+        super().__init__(print_response)
         self._login_response = None
         self._email = email
         self._password = password
-        self._print_response = print_response
         self._proxies = {'http': proxy, 'https': proxy} if proxy else None
 
         if aws_tokens:
@@ -85,7 +123,7 @@ class JciHitachiAWSCognitoConnection:
             if conn_status != "OK":
                 raise RuntimeError(f"An error occurred when signing into AWS Cognito Service: {conn_status}")
     
-    def _generate_headers(self, target):
+    def _generate_headers(self, target: str) -> dict[str, str]:
         normal_headers = {
             "X-Amz-Target": target,
             "User-Agent": "Dalvik/2.1.0",
@@ -94,7 +132,7 @@ class JciHitachiAWSCognitoConnection:
         }
         return normal_headers
 
-    def _handle_response(self, response):
+    def _handle_response(self, response: httpx.Response) -> tuple(str, dict):
         response_json = response.json()
         
         if response.status_code == httpx.codes.ok:    
@@ -102,7 +140,7 @@ class JciHitachiAWSCognitoConnection:
         else:
             return f"{response_json['__type']} {response_json['message']}", response_json
 
-    def _send(self, target, json_data=None):
+    def _send(self, target: str, json_data : Optional[dict] = None):
         headers = self._generate_headers(target)
 
         req = httpx.post(
@@ -112,16 +150,15 @@ class JciHitachiAWSCognitoConnection:
             proxies=self._proxies,
         )
 
-        if self._print_response:
-            self.print_response(req)
+        self.maybe_print_http_response(req)
 
         return self._handle_response(req)
 
     @property
-    def aws_tokens(self):
+    def aws_tokens(self) -> AWSTokens:
         return self._aws_tokens
 
-    def login(self, use_refresh_token=False):
+    def login(self, use_refresh_token : bool = False) -> tuple(str, AWSTokens):
         """Login API.
 
         Parameters
@@ -165,8 +202,7 @@ class JciHitachiAWSCognitoConnection:
             proxies=self._proxies,
         )
 
-        if self._print_response:
-            self.print_response(login_req)
+        self.maybe_print_http_response(login_req)
 
         status, response = self._handle_response(login_req)
 
@@ -180,17 +216,6 @@ class JciHitachiAWSCognitoConnection:
                 expiration = time.time() + auth_result['ExpiresIn'],
             )
         return status, aws_tokens
-
-    def get_data(self):
-        raise NotImplementedError
-
-    def print_response(self, response):
-        print('===================================================')
-        print(self.__class__.__name__, 'Response:')
-        print('headers:', response.headers)
-        print('status_code:', response.status_code)
-        print('text:', json.dumps(response.json(), indent=True))
-        print('===================================================')
 
 
 class ChangePassword(JciHitachiAWSCognitoConnection):
@@ -288,7 +313,7 @@ class GetCredentials(JciHitachiAWSCognitoConnection):
         return status, aws_credentials
 
 
-class JciHitachiAWSIoTConnection:
+class JciHitachiAWSIoTConnection(JciHitachiAWSHttpConnection):
     """Connecting to Jci-Hitachi AWS IoT API.
 
     Parameters
@@ -302,11 +327,11 @@ class JciHitachiAWSIoTConnection:
     """
 
     def __init__(self, aws_tokens, proxy=None, print_response=False):
+        super().__init__(print_response)
         self._aws_tokens = aws_tokens
-        self._print_response = print_response
         self._proxies = {'http': proxy, 'https': proxy} if proxy else None
     
-    def _generate_normal_headers(self):
+    def _generate_normal_headers(self) -> dict[str, str]:
         normal_headers = {
             "authorization": f"Bearer {self._aws_tokens.id_token}",
             "accesstoken": f"Bearer {self._aws_tokens.access_token}",
@@ -316,7 +341,7 @@ class JciHitachiAWSIoTConnection:
         }
         return normal_headers
 
-    def _handle_response(self, response):
+    def _handle_response(self, response) -> tuple[int, str, dict]:
         response_json = response.json()
         if response.status_code == httpx.codes.ok:
             code = response_json["status"]["code"]
@@ -331,30 +356,19 @@ class JciHitachiAWSIoTConnection:
         else:
             return response.status_code, f"HTTP exception {response.status_code}", response_json
 
-    def _send(self, api_name, json=None):
+    def _send(self, api_name: str, json: Optional[dict] = None) -> tuple[str, dict]:
         req = httpx.post(
             f"https://{AWS_IOT_ENDPOINT}{api_name}",
             headers=self._generate_normal_headers(),
             json=json,
             proxies=self._proxies,
         )
-        if self._print_response:
-            self.print_response(req)
+        
+        self.maybe_print_http_response(req)
 
         code, message, response_json = self._handle_response(req)
 
         return message, response_json
-
-    def get_data(self):
-        raise NotImplementedError
-
-    def print_response(self, response):
-        print('===================================================')
-        print(self.__class__.__name__, 'Response:')
-        print('headers:', response.headers)
-        print('status_code:', response.status_code)
-        print('text:', json.dumps(response.json(), indent=True))
-        print('===================================================')
 
 
 class GetAllDevice(JciHitachiAWSIoTConnection):
@@ -366,10 +380,10 @@ class GetAllDevice(JciHitachiAWSIoTConnection):
         AWS tokens.
     """
 
-    def __init__(self, aws_tokens, **kwargs):
+    def __init__(self, aws_tokens: AWSTokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
-    def get_data(self):
+    def get_data(self) -> tuple[str, dict]:
         return self._send("/GetAllDevice")
 
 
@@ -382,10 +396,10 @@ class GetAllGroup(JciHitachiAWSIoTConnection):
         AWS tokens.
     """
 
-    def __init__(self, aws_tokens, **kwargs):
+    def __init__(self, aws_tokens: AWSTokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
-    def get_data(self):
+    def get_data(self) -> tuple[str, dict]:
         return self._send("/GetAllGroup")
 
 
@@ -398,10 +412,10 @@ class GetAllRegion(JciHitachiAWSIoTConnection):
         AWS tokens.
     """
 
-    def __init__(self, aws_tokens, **kwargs):
+    def __init__(self, aws_tokens: AWSTokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
-    def get_data(self):
+    def get_data(self) -> tuple[str, dict]:
         return self._send("/GetAllRegion")
 
 
@@ -414,10 +428,10 @@ class GetAvailableAggregationMonthlyData(JciHitachiAWSIoTConnection):
         AWS tokens.
     """
 
-    def __init__(self, aws_tokens, **kwargs):
+    def __init__(self, aws_tokens: AWSTokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
-    def get_data(self, thing_name, time_start, time_end):
+    def get_data(self, thing_name: str, time_start: int, time_end: int) -> tuple[str, dict]:
         json_data = {
             "ThingName": thing_name,
             "TimeStart": time_start,
@@ -435,10 +449,10 @@ class GetHistoryEventByUser(JciHitachiAWSIoTConnection):
         AWS tokens.
     """
 
-    def __init__(self, aws_tokens, **kwargs):
+    def __init__(self, aws_tokens: AWSTokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
-    def get_data(self, time_start, time_end):
+    def get_data(self, time_start: int, time_end: int) -> tuple[str, dict]:
         json_data = {
             "TimeStart": time_start,
             "TimeEnd": time_end,
@@ -455,10 +469,10 @@ class ListSubUser(JciHitachiAWSIoTConnection):
         AWS tokens.
     """
 
-    def __init__(self, aws_tokens, **kwargs):
+    def __init__(self, aws_tokens: AWSTokens, **kwargs):
         super().__init__(aws_tokens, **kwargs)
 
-    def get_data(self):
+    def get_data(self) -> tuple[str, dict]:
         return self._send("/ListSubUser")
 
 
@@ -473,7 +487,7 @@ class JciHitachiAWSMqttConnection:
         If set, all responses of MQTT will be printed, by default False.
     """
 
-    def __init__(self, get_credentials_callable, print_response=False):
+    def __init__(self, get_credentials_callable: Callable, print_response: bool = False):
         self._get_credentials_callable = get_credentials_callable
         self._print_response = print_response
         
@@ -486,7 +500,7 @@ class JciHitachiAWSMqttConnection:
         self.disconnect()
 
     @property
-    def mqtt_events(self):
+    def mqtt_events(self) -> JciHitachiMqttEvents:
         """MQTT events.
 
         Returns
@@ -497,7 +511,7 @@ class JciHitachiAWSMqttConnection:
 
         return self._mqtt_events
 
-    def _on_publish(self, topic, payload, dup, qos, retain, **kwargs):
+    def _on_publish(self, topic: str, payload: bytes, dup, qos, retain, **kwargs):
         try:
             payload = json.loads(payload.decode())
         except Exception as e:
@@ -562,14 +576,14 @@ class JciHitachiAWSMqttConnection:
     def _on_message(self, topic, payload, dup, qos, retain, **kwargs):
         return
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         """Disconnect from the MQTT broker.
         """
 
         if self._mqttc is not None:
             self._mqttc.disconnect()
 
-    def configure(self):
+    def configure(self) -> None:
         """Configure MQTT."""
 
         cred_provider = awscrt.auth.AwsCredentialsProvider.new_delegate(self._get_credentials_callable)
@@ -586,7 +600,12 @@ class JciHitachiAWSMqttConnection:
         self._mqttc.on_message(self._on_message)
         self._shadow_mqttc = iotshadow.IotShadowClient(self._mqttc)
 
-    def connect(self,  host_identity_id, shadow_names=None, thing_names=None):
+    def connect(
+        self, 
+        host_identity_id: str,
+        shadow_names: Optional[Union[str, list[str]]] = None,
+        thing_names: Optional[Union[str, list[str]]] = None
+    ) -> bool:
         """Connect to the MQTT broker and start loop.
         
         Parameters
@@ -597,6 +616,11 @@ class JciHitachiAWSMqttConnection:
             Names to be subscribed in Shadow, by default None.
         thing_names : str or list of str, optional
             Things to be subscribed in Shadow, by default None.
+        
+        Returns
+        -------
+        bool
+            A bool indicating whether the mqtt is successfully connected and subscribed.
         """
         
         try:
@@ -655,7 +679,7 @@ class JciHitachiAWSMqttConnection:
             return False
         return True
 
-    def publish(self, topic, payload):
+    def publish(self, topic: str, payload: dict) -> None:
         """Publish message.
         
         Parameters
@@ -674,7 +698,13 @@ class JciHitachiAWSMqttConnection:
             self._mqtt_events.mqtt_error_event.set()
             _LOGGER.error('Publish failed with exception: {}'.format(e))
 
-    def publish_shadow(self, thing_name, command_name, payload={}, shadow_name=None):
+    def publish_shadow(
+        self,
+        thing_name: str,
+        command_name: str,
+        payload: dict = {},
+        shadow_name: Optional[str] = None
+    ) -> None:
         """Publish message to IoT Shadow Service.
         
         Parameters
