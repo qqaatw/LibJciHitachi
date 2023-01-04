@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 install_requires = [
-    "awsiotsdk==1.11.1", # See: https://github.com/pypa/pip/issues/5898
+    "awsiotsdk==1.12.0", # See: https://github.com/pypa/pip/issues/5898
     "httpx",
     "paho-mqtt",
 ]
@@ -35,6 +35,7 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
