@@ -315,17 +315,25 @@ class TestJciHitachiIoTConnection:
         (GetHistoryEventByUser, {"time_start": "", "time_end": ""}),
         (ListSubUser, {}),
     ]
+    no_need_access_token = ["GetAllDevice", "GetAllRegion"]
 
     @pytest.mark.parametrize("test_class", classes_to_test)
-    def test_generate_normal_headers(self, test_class, fixture_aws_tokens):
+    def test_generate_headers(self, test_class, fixture_aws_tokens):
         test_class, get_data_args = test_class
         c = test_class(fixture_aws_tokens, print_response=True)
-        assert c._generate_normal_headers() == {"authorization": f"Bearer {fixture_aws_tokens.id_token}",
-                    "accesstoken": f"Bearer {fixture_aws_tokens.access_token}",
-                    "User-Agent": "Dalvik/2.1.0",
-                    "content-type" : "application/json",
-                    "Accept" : "application/json",
-                }
+
+        headers = {
+            "authorization": f"Bearer {fixture_aws_tokens.id_token}",
+            "User-Agent": "Dalvik/2.1.0",
+            "content-type" : "application/json",
+            "Accept" : "application/json",
+        }
+
+        if test_class.__name__ not in self.no_need_access_token:
+            headers["accesstoken"] = f"Bearer {fixture_aws_tokens.access_token}"
+            assert c._generate_headers(True) == headers
+        else:
+            assert c._generate_headers(False) == headers
     
     @pytest.mark.parametrize("test_class", classes_to_test)
     def test_get_data(self, test_class, fixture_aws_tokens):
@@ -349,13 +357,16 @@ class TestJciHitachiIoTConnection:
 
                 for http_status_code in [200, 400]:
                     def mock_post_func(endpoint, headers=None, json=None, proxies=None, **kwargs):
-                        assert endpoint == f"https://{AWS_IOT_ENDPOINT}/{c.__class__.__name__}"
-                        assert headers == {"authorization": f"Bearer {fixture_aws_tokens.id_token}",
-                            "accesstoken": f"Bearer {fixture_aws_tokens.access_token}",
+                        h = {
+                            "authorization": f"Bearer {fixture_aws_tokens.id_token}",
                             "User-Agent": "Dalvik/2.1.0",
                             "content-type" : "application/json",
                             "Accept" : "application/json",
                         }
+                        if test_class.__name__ not in self.no_need_access_token:
+                            h["accesstoken"] = f"Bearer {fixture_aws_tokens.access_token}"
+                        assert endpoint == f"https://{AWS_IOT_ENDPOINT}/{c.__class__.__name__}"
+                        assert headers == h
 
                         response = MagicMock()
                         response.headers = ""

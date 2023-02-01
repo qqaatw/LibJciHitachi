@@ -993,6 +993,7 @@ class JciHitachiAWSAPI:
 
             # mqtt
             def get_credential_callable():
+                self._check_before_publish()
                 conn = aws_connection.GetCredentials(
                     email=self.email,
                     password=self.password,
