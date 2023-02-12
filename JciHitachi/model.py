@@ -53,7 +53,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
         
     @property
     def power(self):
-        """Power. Controlable.
+        """Power. Controllable.
 
         Returns
         -------
@@ -73,7 +73,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
 
     @property
     def mode(self):
-        """Mode. Controlable.
+        """Mode. Controllable.
 
         Returns
         -------
@@ -99,7 +99,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
 
     @property
     def air_speed(self):
-        """Air speed. Controlable.
+        """Air speed. Controllable.
 
         Returns
         -------
@@ -125,7 +125,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
 
     @property
     def target_temp(self):
-        """Target temperature. Controlable.
+        """Target temperature. Controllable.
 
         Returns
         -------
@@ -175,7 +175,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
 
     @property
     def sleep_timer(self):
-        """Sleep timer. Controlable.
+        """Sleep timer. Controllable.
         
         Returns
         -------
@@ -188,7 +188,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
     
     @property
     def vertical_wind_swingable(self):
-        """Vertical wind swingable. Controlable.
+        """Vertical wind swingable. Controllable.
 
         Returns
         -------
@@ -208,7 +208,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
 
     @property
     def vertical_wind_direction(self):
-        """Vertical wind direction. Controlable.
+        """Vertical wind direction. Controllable.
 
         Returns
         -------
@@ -221,7 +221,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
 
     @property
     def horizontal_wind_direction(self):
-        """Horizontal wind direction. Controlable.
+        """Horizontal wind direction. Controllable.
 
         Returns
         -------
@@ -252,7 +252,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
 
     @property
     def mold_prev(self):
-        """Mold prevention. Controlable.
+        """Mold prevention. Controllable.
 
         Returns
         -------
@@ -272,7 +272,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
     
     @property
     def fast_op(self):
-        """Fast operation. Controlable.
+        """Fast operation. Controllable.
 
         Returns
         -------
@@ -292,7 +292,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
     
     @property
     def energy_save(self):
-        """Energy saving. Controlable.
+        """Energy saving. Controllable.
 
         Returns
         -------
@@ -312,7 +312,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
 
     @property
     def sound_prompt(self):
-        """Sound prompt. Controlable.
+        """Sound prompt. Controllable.
 
         Returns
         -------
@@ -360,7 +360,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
 
     @property
     def freeze_clean(self):
-        """Freeze clean. Controlable.
+        """Freeze clean. Controllable.
 
         Returns
         -------
@@ -418,7 +418,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
     
     @property
     def power(self):
-        """Power. Controlable.
+        """Power. Controllable.
 
         Returns
         -------
@@ -438,7 +438,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
     
     @property
     def mode(self):
-        """Mode. Controlable.
+        """Mode. Controllable.
 
         Returns
         -------
@@ -473,7 +473,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
 
     @property
     def target_humidity(self):
-        """Target humidity. Controlable.
+        """Target humidity. Controllable.
 
         Returns
         -------
@@ -523,7 +523,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
 
     @property
     def wind_swingable(self):
-        """Wind swingable. Controlable.
+        """Wind swingable. Controllable.
 
         Returns
         -------
@@ -563,7 +563,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
     
     @property
     def clean_filter_notify(self):
-        """Clean filter notify control. Controlable.
+        """Clean filter notify control. Controllable.
 
         Returns
         -------
@@ -594,7 +594,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
 
     @property
     def air_speed(self):
-        """Air speed. Controlable.
+        """Air speed. Controllable.
 
         Returns
         -------
@@ -640,7 +640,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
 
     @property
     def sound_control(self):
-        """Sound control. Controlable.
+        """Sound control. Controllable.
 
         Returns
         -------
@@ -675,7 +675,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
 
     @property
     def mold_prev(self):
-        """Mold prevention. Controlable.
+        """Mold prevention. Controllable.
 
         Returns
         -------
@@ -745,7 +745,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
     
     @property
     def display_brightness(self):
-        """Display brightness. Controlable.
+        """Display brightness. Controllable.
 
         Returns
         -------
@@ -956,7 +956,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def power(self):
-        """Power. Controlable.
+        """Power. Controllable.
 
         Returns
         -------
@@ -971,7 +971,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def mode(self):
-        """Mode. Controlable.
+        """Mode. Controllable.
 
         Returns
         -------
@@ -986,7 +986,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def air_speed(self):
-        """Air speed. Controlable.
+        """Air speed. Controllable.
 
         Returns
         -------
@@ -1001,7 +1001,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def target_temp(self):
-        """Target temperature. Controlable.
+        """Target temperature. Controllable.
 
         Returns
         -------
@@ -1031,7 +1031,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def sleep_timer(self):
-        """Sleep timer. Controlable.
+        """Sleep timer. Controllable.
         
         Returns
         -------
@@ -1046,7 +1046,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
     
     @property
     def vertical_wind_swingable(self):
-        """Vertical wind swingable. Controlable.
+        """Vertical wind swingable. Controllable.
 
         Returns
         -------
@@ -1061,7 +1061,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def vertical_wind_direction(self):
-        """Vertical wind direction. Controlable.
+        """Vertical wind direction. Controllable.
 
         Returns
         -------
@@ -1076,7 +1076,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def horizontal_wind_direction(self):
-        """Horizontal wind direction. Controlable.
+        """Horizontal wind direction. Controllable.
 
         Returns
         -------
@@ -1092,7 +1092,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def mold_prev(self):
-        """Mold prevention. Controlable.
+        """Mold prevention. Controllable.
 
         Returns
         -------
@@ -1107,7 +1107,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
     
     @property
     def fast_op(self):
-        """Fast operation. Controlable.
+        """Fast operation. Controllable.
 
         Returns
         -------
@@ -1122,7 +1122,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
     
     @property
     def energy_save(self):
-        """Energy saving. Controlable.
+        """Energy saving. Controllable.
 
         Returns
         -------
@@ -1137,7 +1137,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def sound_prompt(self):
-        """Sound prompt. Controlable.
+        """Sound prompt. Controllable.
 
         Returns
         -------
@@ -1247,7 +1247,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
     
     @property
     def power(self):
-        """Power. Controlable.
+        """Power. Controllable.
 
         Returns
         -------
@@ -1262,7 +1262,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
     
     @property
     def mode(self):
-        """Mode. Controlable.
+        """Mode. Controllable.
 
         Returns
         -------
@@ -1277,7 +1277,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def target_humidity(self):
-        """Target humidity. Controlable.
+        """Target humidity. Controllable.
 
         Returns
         -------
@@ -1307,7 +1307,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def wind_swingable(self):
-        """Wind swingable. Controlable.
+        """Wind swingable. Controllable.
 
         Returns
         -------
@@ -1338,7 +1338,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
     
     @property
     def clean_filter_notify(self):
-        """Clean filter notify control. Controlable.
+        """Clean filter notify control. Controllable.
 
         Returns
         -------
@@ -1365,7 +1365,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def air_speed(self):
-        """Air speed. Controlable.
+        """Air speed. Controllable.
 
         Returns
         -------
@@ -1395,7 +1395,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def sound_control(self):
-        """Sound control. Controlable.
+        """Sound control. Controllable.
 
         Returns
         -------
@@ -1424,7 +1424,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
 
     @property
     def mold_prev(self):
-        """Mold prevention. Controlable.
+        """Mold prevention. Controllable.
 
         Returns
         -------
@@ -1491,7 +1491,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
     
     @property
     def display_brightness(self):
-        """Display brightness. Controlable.
+        """Display brightness. Controllable.
 
         Returns
         -------
@@ -1555,7 +1555,7 @@ class JciHitachiHESupport(JciHitachiStatusSupport):  # pragma: no cover
 STATUS_DICT = {
     "AC": {
         'DeviceType': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": "DeviceType",
             "id2str": {
@@ -1566,7 +1566,7 @@ STATUS_DICT = {
             }
         },
         'Switch': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": "power",
             "id2str": {
@@ -1575,7 +1575,7 @@ STATUS_DICT = {
             }
         },
         'Mode': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": "mode",
             "id2str": {
@@ -1587,7 +1587,7 @@ STATUS_DICT = {
             }
         },
         'FanSpeed': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": "air_speed",
             "id2str": {
@@ -1601,22 +1601,22 @@ STATUS_DICT = {
             }
         },
         'TemperatureSetting': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": True,
             "legacy_name": "target_temp",
         },
         'IndoorTemperature': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": "indoor_temp",
         },
         'SleepModeRemainingTime': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": True,
             "legacy_name": "sleep_timer",
         },
         'VerticalWindDirectionSwitch': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": "vertical_wind_swingable",
             "id2str": {
@@ -1625,12 +1625,12 @@ STATUS_DICT = {
             }
         },
         'VerticalWindDirectionSetting': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": True,
             "legacy_name": "vertical_wind_direction",
         },
         'HorizontalWindDirectionSetting': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": 'horizontal_wind_direction',
             "id2str": {
@@ -1643,7 +1643,7 @@ STATUS_DICT = {
             }
         },
         'MildewProof': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": 'mold_prev',
             "id2str": {
@@ -1652,7 +1652,7 @@ STATUS_DICT = {
             }
         },
         'QuickMode': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": 'fast_op',
             "id2str": {
@@ -1661,7 +1661,7 @@ STATUS_DICT = {
             }
         },
         'PowerSaving': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name":'energy_save',
             "id2str": {
@@ -1670,7 +1670,7 @@ STATUS_DICT = {
             }
         },
         'ControlTone': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name":'sound_prompt',
             "id2str": {
@@ -1679,22 +1679,22 @@ STATUS_DICT = {
             }
         },
         'PowerConsumption': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name":'power_kwh',
         },
         'TaiseiaError': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
         'FilterElapsedHour': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
         'CleanSwitch': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name":'freeze_clean',
             "id2str": {
@@ -1703,34 +1703,34 @@ STATUS_DICT = {
             }
         },
         'CleanNotification': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
         'CleanStatus': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
         'Error': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
         'max_temp': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": 'max_temp',
         },
         'min_temp': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": 'min_temp',
         },
     },
     "DH": {
         'DeviceType': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": "DeviceType",
             "id2str": {
@@ -1741,7 +1741,7 @@ STATUS_DICT = {
             }
         },
         'Switch': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": "power",
             "id2str": {
@@ -1750,7 +1750,7 @@ STATUS_DICT = {
             }
         },
         'Mode': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": "mode",
             "id2str": {
@@ -1765,7 +1765,7 @@ STATUS_DICT = {
             }
         },
         'FanSpeed': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": "air_speed",
             "id2str": {
@@ -1777,7 +1777,7 @@ STATUS_DICT = {
             }
         },
         'MildewProof': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": "mold_prev",
             "id2str": {
@@ -1786,7 +1786,7 @@ STATUS_DICT = {
             }
         },
         'ControlTone': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": 'sound_control',
             "id2str": {
@@ -1796,31 +1796,31 @@ STATUS_DICT = {
             }
         },
         'SaaControlTone': {  # currently not supported
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
             }
         },
         'PowerConsumption': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": 'power_kwh',
         },
         'Ion': {  # currently not supported
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
             }
         },
         'HumiditySetting': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": True,
             "legacy_name": 'target_humidity',
         },
         'AutoWindDirection': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": 'wind_swingable',
             "id2str": {
@@ -1829,14 +1829,14 @@ STATUS_DICT = {
             }
         },
         'KeypadLock': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
             }
         },
         'DisplayBrightness': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": 'display_brightness',
             "id2str": {
@@ -1847,7 +1847,7 @@ STATUS_DICT = {
             }
         },
         'FilterControl': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": 'air_cleaning_filter',
             "id2str": {
@@ -1856,17 +1856,17 @@ STATUS_DICT = {
             }
         },
         'PM25': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": 'pm25_value',
         },
         'IndoorHumidity': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": 'indoor_humidity',
         },
         'SideAirOutlet': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": 'side_vent',
             "id2str": {
@@ -1875,14 +1875,14 @@ STATUS_DICT = {
             }
         },
         'Defrost': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
             }
         },
         'SmellIndex': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": 'odor_level',
             "id2str": {
@@ -1892,7 +1892,7 @@ STATUS_DICT = {
             }
         },
         'CleanFilterNotification': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": 'clean_filter_notify',
             "id2str": {
@@ -1901,7 +1901,7 @@ STATUS_DICT = {
             }
         },
         'TankFullNotification': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": 'water_full_warning',
             "id2str": {
@@ -1910,29 +1910,29 @@ STATUS_DICT = {
             }
         },
         'TaiseiaError': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
         'Error': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": 'error_code',
         },
         'max_humidity': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": 'max_humidity',
         },
         'min_humidity': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": 'min_humidity',
         },
     },
     "HE": {
         'DeviceType': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": "DeviceType",
             "id2str": {
@@ -1943,7 +1943,7 @@ STATUS_DICT = {
             }
         },
         'Switch': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
@@ -1952,7 +1952,7 @@ STATUS_DICT = {
             }
         },
         'Mode': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
@@ -1964,7 +1964,7 @@ STATUS_DICT = {
             }
         },
         'FanSpeed': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
@@ -1976,17 +1976,17 @@ STATUS_DICT = {
             }
         },
         'IndoorTemperature': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
         'TaiseiaError': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
         'CleanFilterNotification': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
@@ -1995,7 +1995,7 @@ STATUS_DICT = {
             }
         },
         'BreathMode': {
-            "controlable": True,
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
@@ -2005,7 +2005,7 @@ STATUS_DICT = {
             }
         },
         'FrontFilterNotification': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
@@ -2014,7 +2014,7 @@ STATUS_DICT = {
             }
         },
         'Pm25FilterNotification': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
@@ -2023,7 +2023,7 @@ STATUS_DICT = {
             }
         },
         'Error': {
-            "controlable": False,
+            "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },

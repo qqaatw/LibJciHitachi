@@ -6,7 +6,7 @@ class TestStatusDict:
     device_types = AWSThing.supported_device_type.values()
     
     def test_sanity(self):    
-        attribute_keys = {"controlable", "is_numeric", "legacy_name"}
+        attribute_keys = {"controllable", "is_numeric", "legacy_name"}
 
         for device_type in self.device_types:
             for status_name, status_attributes in STATUS_DICT[device_type].items():
