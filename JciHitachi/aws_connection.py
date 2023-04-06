@@ -205,7 +205,7 @@ class JciHitachiAWSCognitoConnection(JciHitachiAWSHttpConnection):
         login_headers = self._generate_headers("AWSCognitoIdentityProviderService.InitiateAuth")
 
         login_req = httpx.post(
-            f"https://{AWS_COGNITO_IDP_ENDPOINT}", 
+            f"https://{AWS_COGNITO_IDP_ENDPOINT}",
             json=login_json_data,
             headers=login_headers,
             proxies=self._proxies,
@@ -561,7 +561,7 @@ class JciHitachiAWSMqttConnection:
             if response.state.reported:
                 self._mqtt_events.device_control[thing_name] = response.state.reported
                 self._mqtt_events.device_control_event.set()
-    
+
     def _on_update_named_shadow_rejected(self, error):
         _LOGGER.error(f"A shadow request {error.client_token} was rejected by the API: {error.code} {error.message}")
 
@@ -579,21 +579,37 @@ class JciHitachiAWSMqttConnection:
             if response.state.reported:
                 self._mqtt_events.device_shadow[thing_name] = response.state.reported
                 self._mqtt_events.device_shadow_event.set()
-    
+
     def _on_get_named_shadow_rejected(self, error):
         _LOGGER.error(f"A shadow request {error.client_token} was rejected by the API: {error.code} {error.message}")
 
     def _on_message(self, topic, payload, dup, qos, retain, **kwargs):
         return
-    
+
     def _on_connection_interrupted(self, connection, error, **kwargs):
         _LOGGER.error("MQTT connection was interrupted with exception {error}.")
         self._mqtt_events.mqtt_error = error.__class__.__name__
         self._mqtt_events.mqtt_error_event.set()
         return
-    
+
     def _on_connection_resumed(self, connection, return_code, session_present, **kwargs):
-        _LOGGER.info("MQTT connection was resumed.")
+        if session_present:
+            _LOGGER.info("MQTT connection was resumed.")
+        else:
+            _LOGGER.info("MQTT connection was resumed, but the previous session was lost. Resubscribing...")
+            resubscribe_future, packet_id = connection.resubscribe_existing_topics()
+
+            def on_resubscribe_complete(resubscribe_future):
+                try:
+                    resubscribe_results = resubscribe_future.result()
+                    assert(resubscribe_results['packet_id'] == packet_id)
+                    for (topic, qos) in resubscribe_results['topics']:
+                        assert(qos is not None)
+                except Exception as e:
+                    _LOGGER.error("Resubscribe failure:", e)
+
+            resubscribe_future.add_done_callback(on_resubscribe_complete)
+            _LOGGER.info("Resubscribe successfully.")
         return
 
     def disconnect(self) -> None:
