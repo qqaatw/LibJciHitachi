@@ -211,5 +211,52 @@ class TestModel:
         assert len(processed_he_support) == len(raw_he_support) + 1  # `Brand`
 
     def test_str2id(self):
-        pass
-        # TODO: complete this
+        raw_ac_support = {
+            'FirmwareId':3,
+            'DeviceType':1,
+            'Model':'RAD-90NF',
+            'FindMe':10,
+            'Switch':3,
+            'Mode':31,
+            'FanSpeed':31,
+            'TemperatureSetting':4128,
+            'IndoorTemperature':40,
+            'SleepModeRemainingTime':1440,
+            'MildewProof':3,
+            'QuickMode':3,
+            'PowerSaving':3,
+            'ControlTone':3,
+            'PowerConsumption':65535,
+            'TaiseiaError':85,
+            'FilterElapsedHour':800,
+            'CleanSwitch':3,
+            'CleanNotification':3,
+            'CleanStatus':7,
+            'Error':0,
+            'FirmwareVersion':'6.0.035',
+            'FirmwareCode':35,
+            'SystemTimestamp':35000,
+            'RequestTimestamp':1648618952,
+            'Timestamp':1648618952,
+        }
+        support = JciHitachiAWSStatusSupport(raw_ac_support)
+
+        # test legacy name and string status
+        is_valid, status_name, status_value = JciHitachiAWSStatus.str2id("AC", "air_speed", status_str_value="high", support_code=support)
+        assert is_valid == True
+        assert status_name == "FanSpeed"
+        assert status_value == 4
+
+        # test regular name and integer status
+        is_valid, status_name, status_value = JciHitachiAWSStatus.str2id("AC", "FanSpeed", 4, support_code=support)
+        assert is_valid == True
+        assert status_name == "FanSpeed"
+        assert status_value == 4
+
+        # test incorrect status name
+        is_valid, status_name, status_value = JciHitachiAWSStatus.str2id("AC", "FanpSpeed", 4, support_code=support)
+        assert is_valid == False
+    
+        # test incorrect status value
+        is_valid, status_name, status_value = JciHitachiAWSStatus.str2id("AC", "FanSpeed", 6, support_code=support)
+        assert is_valid == False

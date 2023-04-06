@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 class JciHitachiStatus:  # pragma: no cover
     idx = {}
 
@@ -2116,6 +2118,7 @@ class JciHitachiAWSStatus:
         return JciHitachiAWSStatus(status, legacy=True)
 
     @staticmethod
+    @lru_cache
     def str2id(device_type: str, status_name: str, status_value: int = None, status_str_value: str = None, support_code: int = None):
         is_valid = (status_value is not None) ^ (status_str_value is not None)
 
