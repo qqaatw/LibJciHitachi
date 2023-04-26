@@ -335,7 +335,7 @@ class JciHitachiAWSIoTConnection(JciHitachiAWSHttpConnection):
         If set, all responses of httpx will be printed, by default False.
     """
 
-    def __init__(self, aws_tokens: AWSTokens, proxy: str = None, print_response: bool = False):
+    def __init__(self, aws_tokens: AWSTokens, proxy: Optional[str] = None, print_response: bool = False):
         super().__init__(print_response)
         self._aws_tokens = aws_tokens
         self._proxies = {'http': proxy, 'https': proxy} if proxy else None

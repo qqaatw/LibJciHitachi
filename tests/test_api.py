@@ -161,7 +161,7 @@ class TestAWSAPI:
 
             # status event timeout
             mock_mqtt.mqtt_events.device_status_event.wait.return_value = False
-            with pytest.raises(RuntimeError, match=f"An error occurred when refreshing {MOCK_DEVICE_AC} status code."):
+            with pytest.raises(RuntimeError, match=f"Timed out refreshing {MOCK_DEVICE_AC} status code. Please ensure the device is online and avoid opening the official app."):
                 api.refresh_status(MOCK_DEVICE_AC)
             
             # status not stored in dict
@@ -172,7 +172,7 @@ class TestAWSAPI:
 
             # support event timeout
             mock_mqtt.mqtt_events.device_support_event.wait.return_value = False
-            with pytest.raises(RuntimeError, match=f"An error occurred when refreshing {MOCK_DEVICE_AC} support code."):
+            with pytest.raises(RuntimeError, match=f"Timed out refreshing {MOCK_DEVICE_AC} support code. Please ensure the device is online and avoid opening the official app."):
                 api.refresh_status(MOCK_DEVICE_AC, refresh_support_code=True)
             
             # support not stored in dict
@@ -183,7 +183,7 @@ class TestAWSAPI:
             
             # shadow event timeout
             mock_mqtt.mqtt_events.device_shadow_event.wait.return_value = False
-            with pytest.raises(RuntimeError, match=f"An error occurred when refreshing {MOCK_DEVICE_AC} shadow."):
+            with pytest.raises(RuntimeError, match=f"Timed out refreshing {MOCK_DEVICE_AC} shadow. Please ensure the device is online and avoid opening the official app."):
                 api.refresh_status(MOCK_DEVICE_AC, refresh_shadow=True)
 
             # shadow not stored in dict
