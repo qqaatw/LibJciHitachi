@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 import datetime
 import json
 import logging
@@ -7,6 +8,7 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from random import random
 from typing import Callable, Optional, Union
 
 import awscrt
@@ -24,6 +26,7 @@ AWS_COGNITO_USERPOOL_ID = f"{AWS_REGION}_aTZeaievK"
 #AMAZON_ROOT_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), './cert/AmazonRootCA1.pem')
 AWS_IOT_ENDPOINT = "iot-api.jci-hitachi-smarthome.com"
 AWS_MQTT_ENDPOINT = f"a8kcu267h96in-ats.iot.{AWS_REGION}.amazonaws.com"
+QOS = awscrt.mqtt.QoS.AT_LEAST_ONCE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,11 +50,18 @@ class JciHitachiMqttEvents:
     device_control: dict[str, dict] = field(default_factory=dict)
     device_shadow: dict[str, dict] = field(default_factory=dict)
     mqtt_error: str = field(default_factory=str)
-    device_status_event: threading.Event = field(default_factory=threading.Event)
-    device_support_event: threading.Event = field(default_factory=threading.Event)
-    device_control_event: threading.Event = field(default_factory=threading.Event)
-    device_shadow_event: threading.Event = field(default_factory=threading.Event)
+    device_status_event: dict[str, threading.Event] = field(default_factory=dict)
+    device_support_event: dict[str, threading.Event] = field(default_factory=dict)
+    device_control_event: dict[str, threading.Event] = field(default_factory=dict)
+    device_shadow_event: dict[str, threading.Event] = field(default_factory=dict)
     mqtt_error_event: threading.Event = field(default_factory=threading.Event)
+
+@dataclass
+class JciHitachiExecutionPools:
+    status_execution_pool: list = field(default_factory=list)
+    shadow_execution_pool: list = field(default_factory=list)
+    support_execution_pool: list = field(default_factory=list)
+    control_execution_pool: list = field(default_factory=list)
 
 
 class JciHitachiAWSHttpConnection(ABC):
@@ -505,6 +515,7 @@ class JciHitachiAWSMqttConnection:
         self._shadow_mqttc = None
         self._client_tokens = {}
         self._mqtt_events = JciHitachiMqttEvents()
+        self._execution_pools = JciHitachiExecutionPools()
 
     def __del__(self):
         self.disconnect()
@@ -539,13 +550,13 @@ class JciHitachiAWSMqttConnection:
             thing_name = split_topic[1]
             if split_topic[2] == "status" and split_topic[3] == "response":
                 self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(payload)
-                self._mqtt_events.device_status_event.set()
+                self._mqtt_events.device_status_event[thing_name].set()
             elif split_topic[2] == "registration" and split_topic[3] == "response":
                 self._mqtt_events.device_support[thing_name] = JciHitachiAWSStatusSupport(payload)
-                self._mqtt_events.device_support_event.set()
+                self._mqtt_events.device_support_event[thing_name].set()
             elif split_topic[2] == "control" and split_topic[3] == "response":
                 self._mqtt_events.device_control[thing_name] = payload
-                self._mqtt_events.device_control_event.set()
+                self._mqtt_events.device_control_event[thing_name].set()
 
     def _on_update_named_shadow_accepted(self, response):
         try:
@@ -560,7 +571,7 @@ class JciHitachiAWSMqttConnection:
         if response.state:
             if response.state.reported:
                 self._mqtt_events.device_control[thing_name] = response.state.reported
-                self._mqtt_events.device_control_event.set()
+                self._mqtt_events.device_control_event[thing_name].set()
 
     def _on_update_named_shadow_rejected(self, error):
         _LOGGER.error(f"A shadow request {error.client_token} was rejected by the API: {error.code} {error.message}")
@@ -578,7 +589,7 @@ class JciHitachiAWSMqttConnection:
         if response.state:
             if response.state.reported:
                 self._mqtt_events.device_shadow[thing_name] = response.state.reported
-                self._mqtt_events.device_shadow_event.set()
+                self._mqtt_events.device_shadow_event[thing_name].set()
 
     def _on_get_named_shadow_rejected(self, error):
         _LOGGER.error(f"A shadow request {error.client_token} was rejected by the API: {error.code} {error.message}")
@@ -672,7 +683,7 @@ class JciHitachiAWSMqttConnection:
             return False
 
         try:
-            subscribe_future, _ = self._mqttc.subscribe(f"{host_identity_id}/#", awscrt.mqtt.QoS.AT_LEAST_ONCE, callback=self._on_publish)
+            subscribe_future, _ = self._mqttc.subscribe(f"{host_identity_id}/#", QOS, callback=self._on_publish)
             subscribe_future.result()
             
             if thing_names is not None and shadow_names is not None:
@@ -683,12 +694,12 @@ class JciHitachiAWSMqttConnection:
                     for thing_name in thing_names:
                         update_accepted_subscribed_future, _ = self._shadow_mqttc.subscribe_to_update_named_shadow_accepted(
                             request=iotshadow.UpdateNamedShadowSubscriptionRequest(shadow_name=shadow_name, thing_name=thing_name),
-                            qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+                            qos=QOS,
                             callback=self._on_update_named_shadow_accepted)
 
                         update_rejected_subscribed_future, _ = self._shadow_mqttc.subscribe_to_update_named_shadow_rejected(
                             request=iotshadow.UpdateNamedShadowSubscriptionRequest(shadow_name=shadow_name, thing_name=thing_name),
-                            qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+                            qos=QOS,
                             callback=self._on_update_named_shadow_rejected)
 
                         # Wait for subscriptions to succeed
@@ -697,12 +708,12 @@ class JciHitachiAWSMqttConnection:
 
                         get_accepted_subscribed_future, _ = self._shadow_mqttc.subscribe_to_get_named_shadow_accepted(
                             request=iotshadow.GetNamedShadowSubscriptionRequest(shadow_name=shadow_name, thing_name=thing_name),
-                            qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+                            qos=QOS,
                             callback=self._on_get_named_shadow_accepted)
 
                         get_rejected_subscribed_future, _ = self._shadow_mqttc.subscribe_to_get_named_shadow_rejected(
                             request=iotshadow.GetNamedShadowSubscriptionRequest(shadow_name=shadow_name, thing_name=thing_name),
-                            qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+                            qos=QOS,
                             callback=self._on_get_named_shadow_rejected)
 
                         # Wait for subscriptions to succeed
@@ -717,31 +728,76 @@ class JciHitachiAWSMqttConnection:
             return False
         return True
 
-    def publish(self, topic: str, payload: dict) -> None:
+    async def _wrap_async(self, identifier: str, fn: Callable, timeout: float):
+        await asyncio.sleep(random() / 2)  # randomly wait 0~0.5 seconds to prevent flooding messages to the broker.
+        await asyncio.wait_for(fn(), timeout)
+        return identifier
+
+    def publish(self, host_identity_id: str, thing_name: str, publish_type: str, timeout : float = 10.0, payload: Optional[dict] = None) -> None:
         """Publish message.
         
         Parameters
         ----------
-        topic : str
-            Topic to publish.
-        payload : dict
+        host_identity_id : str
+            host_identity_id.
+        thing_name : str
+            Thing name.
+        publish_type: str
+            Publish type.
+        timeout: float, optional
+            Timeout.
+        payload : dict, optional
             Payload to publish.
         """
+        
+        default_payload = {"Timestamp": time.time()}
+        
+        if publish_type == "support":
+            support_topic = f"{host_identity_id}/{thing_name}/registration/request"
+            if thing_name in self._mqtt_events.device_support_event:
+                self._mqtt_events.device_support_event[thing_name].clear()
+            else:
+                self._mqtt_events.device_support_event[thing_name] = threading.Event()
+                
+            async def wrapper():
+                publish_future, _ = self._mqttc.publish(support_topic, json.dumps(default_payload), QOS)
+                publish_future.result()
+                self._mqtt_events.device_support_event[thing_name].wait()
+            
+            self._execution_pools.support_execution_pool.append(self._wrap_async(thing_name, wrapper, timeout))
+        elif publish_type == "status":
+            status_topic = f"{host_identity_id}/{thing_name}/status/request"
+            if thing_name in self._mqtt_events.device_status_event:
+                self._mqtt_events.device_status_event[thing_name].clear()
+            else:
+                self._mqtt_events.device_status_event[thing_name] = threading.Event()
+            async def wrapper():
+                publish_future, _ = self._mqttc.publish(status_topic, json.dumps(default_payload), QOS)
+                publish_future.result()
+                self._mqtt_events.device_status_event[thing_name].wait()
+            self._execution_pools.status_execution_pool.append(self._wrap_async(thing_name, wrapper, timeout))
+        elif publish_type == "control":
+            control_topic = f"{host_identity_id}/{thing_name}/control/request"
+            if thing_name in self._mqtt_events.device_control_event:
+                self._mqtt_events.device_control_event[thing_name].clear()
+            else:
+                self._mqtt_events.device_control_event[thing_name] = threading.Event()
+            async def wrapper():
+                publish_future, _ = self._mqttc.publish(control_topic, json.dumps(payload), QOS)
+                publish_future.result()
+                self._mqtt_events.device_control_event[thing_name].wait()
+            self._execution_pools.control_execution_pool.append(self._wrap_async(thing_name, wrapper, timeout))
 
-        try:
-            publish_future, _ = self._mqttc.publish(topic, json.dumps(payload), awscrt.mqtt.QoS.AT_LEAST_ONCE)
-            publish_future.result()
-        except Exception as e:
-            self._mqtt_events.mqtt_error = e.__class__.__name__
-            self._mqtt_events.mqtt_error_event.set()
-            _LOGGER.error('Publish failed with exception: {}'.format(e))
+        else:
+            raise ValueError(f"Invalid publish_type: {publish_type}")
 
     def publish_shadow(
         self,
         thing_name: str,
         command_name: str,
         payload: dict = {},
-        shadow_name: Optional[str] = None
+        shadow_name: Optional[str] = None,
+        timeout: float = 10.0,
     ) -> None:
         """Publish message to IoT Shadow Service.
         
@@ -763,66 +819,92 @@ class JciHitachiAWSMqttConnection:
         # The length of client token can't exceed 64 bytes, so we only use gateway mac address as the token.
         client_token = thing_name.split("_")[1] 
         self._client_tokens.update({client_token: thing_name})
-
-        if shadow_name is None:
-            if command_name == "get":
-                publish_future = self._shadow_mqttc.publish_get_shadow(
-                    iotshadow.GetShadowRequest(
-                        client_token=client_token,
-                        thing_name=thing_name
-                    ),
-                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
-                )
-            elif command_name == "update":
-                publish_future = self._shadow_mqttc.publish_update_shadow(
-                    iotshadow.UpdateShadowRequest(
-                        client_token=client_token,
-                        state=iotshadow.ShadowState(reported=payload),
-                        thing_name=thing_name
-                    ),
-                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
-                )
-            elif command_name == "delete":
-                publish_future = self._shadow_mqttc.publish_delete_shadow(
-                    iotshadow.DeleteShadowRequest(
-                        client_token=client_token,
-                        thing_name=thing_name
-                    ),
-                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
-                )
-
+        if thing_name in self._mqtt_events.device_shadow_event:
+            self._mqtt_events.device_shadow_event[thing_name].clear()
         else:
-            if command_name == "get":
-                publish_future = self._shadow_mqttc.publish_get_named_shadow(
-                    iotshadow.GetNamedShadowRequest(
-                        client_token=client_token,
-                        shadow_name=shadow_name,
-                        thing_name=thing_name
-                    ),
-                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
-                )
-            elif command_name == "update":
-                publish_future = self._shadow_mqttc.publish_update_named_shadow(
-                    iotshadow.UpdateNamedShadowRequest(
-                        client_token=client_token,
-                        shadow_name=shadow_name,
-                        state=iotshadow.ShadowState(reported=payload),
-                        thing_name=thing_name
-                    ),
-                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
-                )
-            elif command_name == "delete":
-                publish_future = self._shadow_mqttc.publish_delete_named_shadow(
-                    iotshadow.DeleteNamedShadowRequest(
-                        client_token=client_token,
-                        shadow_name=shadow_name, 
-                        thing_name=thing_name
-                    ),
-                    qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
-                )
-        try:
+            self._mqtt_events.device_shadow_event[thing_name] = threading.Event()
+        
+
+        async def wrapper():
+            if shadow_name is None:
+                if command_name == "get":
+                    publish_future = self._shadow_mqttc.publish_get_shadow(
+                        iotshadow.GetShadowRequest(
+                            client_token=client_token,
+                            thing_name=thing_name
+                        ),
+                        qos=QOS
+                    )
+                elif command_name == "update":
+                    publish_future = self._shadow_mqttc.publish_update_shadow(
+                        iotshadow.UpdateShadowRequest(
+                            client_token=client_token,
+                            state=iotshadow.ShadowState(reported=payload),
+                            thing_name=thing_name
+                        ),
+                        qos=QOS
+                    )
+                elif command_name == "delete":
+                    publish_future = self._shadow_mqttc.publish_delete_shadow(
+                        iotshadow.DeleteShadowRequest(
+                            client_token=client_token,
+                            thing_name=thing_name
+                        ),
+                        qos=QOS
+                    )
+
+            else:
+                if command_name == "get":
+                    publish_future = self._shadow_mqttc.publish_get_named_shadow(
+                        iotshadow.GetNamedShadowRequest(
+                            client_token=client_token,
+                            shadow_name=shadow_name,
+                            thing_name=thing_name
+                        ),
+                        qos=QOS
+                    )
+                elif command_name == "update":
+                    publish_future = self._shadow_mqttc.publish_update_named_shadow(
+                        iotshadow.UpdateNamedShadowRequest(
+                            client_token=client_token,
+                            shadow_name=shadow_name,
+                            state=iotshadow.ShadowState(reported=payload),
+                            thing_name=thing_name
+                        ),
+                        qos=QOS
+                    )
+                elif command_name == "delete":
+                    publish_future = self._shadow_mqttc.publish_delete_named_shadow(
+                        iotshadow.DeleteNamedShadowRequest(
+                            client_token=client_token,
+                            shadow_name=shadow_name, 
+                            thing_name=thing_name
+                        ),
+                        qos=QOS
+                    )
             publish_future.result()
-        except Exception as e:
-            self._mqtt_events.mqtt_error = e.__class__.__name__
-            self._mqtt_events.mqtt_error_event.set()
-            _LOGGER.error("Publish failed with exception: {}".format(e))
+            self._mqtt_events.device_shadow_event[thing_name].wait()
+        self._execution_pools.shadow_execution_pool.append(self._wrap_async(thing_name, wrapper, timeout))
+    
+    def execute(self):
+        async def runner():
+            a, b, c, d = None, None, None, None
+            if len(self._execution_pools.support_execution_pool) != 0:
+                a = await asyncio.gather(*self._execution_pools.support_execution_pool, return_exceptions=True)
+                self._execution_pools.support_execution_pool.clear()
+            if len(self._execution_pools.shadow_execution_pool) != 0:
+                b = await asyncio.gather(*self._execution_pools.shadow_execution_pool, return_exceptions=True)
+                self._execution_pools.shadow_execution_pool.clear()
+            if len(self._execution_pools.status_execution_pool) != 0:
+                c = await asyncio.gather(*self._execution_pools.status_execution_pool, return_exceptions=True)
+                self._execution_pools.status_execution_pool.clear()
+            if len(self._execution_pools.control_execution_pool) != 0:
+                d = await asyncio.gather(*self._execution_pools.control_execution_pool, return_exceptions=True)
+                self._execution_pools.control_execution_pool.clear()
+
+            return a, b, c, d
+
+        results = asyncio.run(runner())
+        
+        return results
+        
