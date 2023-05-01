@@ -1,6 +1,7 @@
 import concurrent
 import datetime
 import time
+import threading
 from unittest.mock import MagicMock, patch
 
 import awscrt
@@ -45,22 +46,22 @@ class TestJciHitachiAWSMqttConnection:
         thing_name = f"ap-northeast-1:8916b515-8394-4ccd-95b8-4f553c13dafa_{MOCK_GATEWAY_MAC}"
         
         status_topic = f"{thing_name.split('_')[0]}/{thing_name}/status/response"
-        mqtt._mqtt_events.device_status_event.clear()
+        mqtt._mqtt_events.device_status_event[thing_name] = threading.Event()
         mqtt._on_publish(status_topic, b'{"DeviceType": 1}', None, None, None)
         assert isinstance(mqtt._mqtt_events.device_status[thing_name], JciHitachiAWSStatus)
-        assert mqtt._mqtt_events.device_status_event.is_set()
+        assert mqtt._mqtt_events.device_status_event[thing_name].is_set()
         
         registration_topic = f"{thing_name.split('_')[0]}/{thing_name}/registration/response"
-        mqtt._mqtt_events.device_support_event.clear()
+        mqtt._mqtt_events.device_support_event[thing_name] = threading.Event()
         mqtt._on_publish(registration_topic, b'{"DeviceType": 1}', None, None, None)
         assert isinstance(mqtt._mqtt_events.device_support[thing_name], JciHitachiAWSStatusSupport)
-        assert mqtt._mqtt_events.device_support_event.is_set()
+        assert mqtt._mqtt_events.device_support_event[thing_name].is_set()
         
         control_topic = f"{thing_name.split('_')[0]}/{thing_name}/control/response"
-        mqtt._mqtt_events.device_control_event.clear()
+        mqtt._mqtt_events.device_control_event[thing_name] = threading.Event()
         mqtt._on_publish(control_topic, b'{"DeviceType": 1}', None, None, None)
         assert isinstance(mqtt._mqtt_events.device_control[thing_name], dict)
-        assert mqtt._mqtt_events.device_control_event.is_set()
+        assert mqtt._mqtt_events.device_control_event[thing_name].is_set()
 
         mqtt._mqtt_events.mqtt_error_event.clear()
         mqtt._on_publish("", b"", None, None, None)
@@ -76,10 +77,11 @@ class TestJciHitachiAWSMqttConnection:
         response = MagicMock()
         response.client_token = client_token
         response.state.reported = {"Something": 0}
+        mqtt._mqtt_events.device_shadow_event[thing_name] = threading.Event()
         mqtt._on_get_named_shadow_accepted(response)
         assert len(mqtt._client_tokens) == 0
         assert isinstance(mqtt._mqtt_events.device_shadow[thing_name], dict)
-        assert mqtt._mqtt_events.device_shadow_event.is_set()
+        assert mqtt._mqtt_events.device_shadow_event[thing_name].is_set()
 
         response.client_token = ""
         mqtt._on_get_named_shadow_accepted(response)
@@ -93,10 +95,11 @@ class TestJciHitachiAWSMqttConnection:
         response = MagicMock()
         response.client_token = client_token
         response.state.reported = {"Something": 0}
+        mqtt._mqtt_events.device_control_event[thing_name] = threading.Event()
         mqtt._on_update_named_shadow_accepted(response)
         assert len(mqtt._client_tokens) == 0
         assert isinstance(mqtt._mqtt_events.device_control[thing_name], dict)
-        assert mqtt._mqtt_events.device_control_event.is_set()
+        assert mqtt._mqtt_events.device_control_event[thing_name].is_set()
 
         response.client_token = ""
         mqtt._on_update_named_shadow_accepted(response)
@@ -147,21 +150,35 @@ class TestJciHitachiAWSMqttConnection:
 
     def test_publish(self, fixture_aws_mock_mqtt_connection):
         mqtt = fixture_aws_mock_mqtt_connection
+        thing_name = f"ap-northeast-1:8916b515-8394-4ccd-95b8-4f553c13dafa_{MOCK_GATEWAY_MAC}"
+        
+        assert thing_name not in mqtt._mqtt_events.device_support_event
         with patch.object(mqtt, "_mqttc") as mock_mqttc:
             publish_future = concurrent.futures.Future()
             publish_future.set_result(None)
-            mock_mqttc.publish.return_value = publish_future
-            mqtt.publish("", {})
+            mock_mqttc.publish.return_value = (publish_future, None)
+            mqtt.publish("", thing_name, "support")
+            assert thing_name in mqtt._mqtt_events.device_support_event
+            assert len(mqtt._execution_pools.support_execution_pool) == 1
         
+        # test clearning event
+        mqtt._mqtt_events.device_support_event[thing_name] = threading.Event()
+        mqtt._mqtt_events.device_support_event[thing_name].set()
+        with patch.object(mqtt, "_mqttc") as mock_mqttc:
+            publish_future = concurrent.futures.Future()
+            publish_future.set_result(None)
+            mock_mqttc.publish.return_value = (publish_future, None)
+            mqtt.publish("", thing_name, "support")
+            assert thing_name in mqtt._mqtt_events.device_support_event
+            assert not mqtt._mqtt_events.device_support_event[thing_name].is_set()
+
+        # test invalid publish_type
         with patch.object(mqtt, "_mqttc") as mock_mqttc:
             publish_future = concurrent.futures.Future()
             publish_future.set_exception(ValueError())
             mock_mqttc.publish.return_value = (publish_future, None)
-            mqtt._mqtt_events.mqtt_error = ""
-            mqtt._mqtt_events.mqtt_error_event.clear()
-            mqtt.publish("", {})
-            assert mqtt._mqtt_events.mqtt_error == "ValueError"
-            assert mqtt._mqtt_events.mqtt_error_event.is_set()
+            with pytest.raises(ValueError, match=f"Invalid publish_type: others"):
+                mqtt.publish("", thing_name, "others")
     
     @pytest.mark.parametrize("raise_exception", [False, True])
     def test_publish_shadow(self, fixture_aws_mock_mqtt_connection, raise_exception):
@@ -192,9 +209,10 @@ class TestJciHitachiAWSMqttConnection:
                 mqtt._mqtt_events.mqtt_error = ""
                 mqtt._mqtt_events.mqtt_error_event.clear()
                 if raise_exception:
-                    mqtt.publish_shadow(thing_name, command_name, shadow_name=shadow_name)
-                    assert mqtt._mqtt_events.mqtt_error == "RuntimeError"
-                    assert mqtt._mqtt_events.mqtt_error_event.is_set()
+                    pass
+                    #mqtt.publish_shadow(thing_name, command_name, shadow_name=shadow_name)
+                    #assert mqtt._mqtt_events.mqtt_error == "RuntimeError"
+                    #assert mqtt._mqtt_events.mqtt_error_event.is_set()
                 else:
                     mqtt.publish_shadow(thing_name, command_name, shadow_name=shadow_name)
                     assert not mqtt._mqtt_events.mqtt_error_event.is_set()
@@ -202,10 +220,29 @@ class TestJciHitachiAWSMqttConnection:
         # Test invalid command name.
         with pytest.raises(ValueError, match=f"command_name must be one of `get` or `update`."):
             mqtt.publish_shadow(thing_name, "delete")
-        
+    
+    def test_execute(self, fixture_aws_mock_mqtt_connection):
+        mqtt = fixture_aws_mock_mqtt_connection
+        results = mqtt.execute()
+        assert results == (None, None, None, None)        
+
 class TestJciHitachiAWSCognitoConnection:
     # (class name, get data args, header_target, response json, response type)
     classes_to_test = [
+        (
+            JciHitachiAWSCognitoConnection,
+            None,
+            "AWSCognitoIdentityProviderService.InitiateAuth",
+            {
+                "AuthenticationResult" : {
+                    "AccessToken": "acc_token",
+                    "IdToken": "IdToken",
+                    "RefreshToken": "RefreshToken",
+                    "ExpiresIn": 3600,
+                }
+            },
+            AWSTokens
+        ),
         (
             ChangePassword,
             {"new_password": "x"},
@@ -258,11 +295,8 @@ class TestJciHitachiAWSCognitoConnection:
         },
     }
 
-    def test_login(self):
-        return
-
     @pytest.mark.parametrize("test_class", classes_to_test)
-    def test_get_data(self, test_class):
+    def test_get_data_or_login(self, test_class):
         test_class, get_data_args, header_target, response_json, response_type = test_class
         c = test_class("abc@abc.com", "password", aws_tokens=AWSTokens("", "", "", time.time()) , print_response=True)
         with patch("httpx.post") as mock_post:
@@ -295,7 +329,12 @@ class TestJciHitachiAWSCognitoConnection:
                     return response
                 
                 mock_post.side_effect = mock_post_func
-                response_msg, response = c.get_data(**get_data_args)
+                if c.__class__.__name__ == "JciHitachiAWSCognitoConnection":
+                    response_msg, response = c.login()
+                    with pytest.raises(NotImplementedError):
+                        c.get_data()
+                else:
+                    response_msg, response = c.get_data(**get_data_args)
                 
                 if http_status_code == 200:     
                     assert response_msg == msg

@@ -215,7 +215,7 @@ class JciHitachiAWSCognitoConnection(JciHitachiAWSHttpConnection):
         login_headers = self._generate_headers("AWSCognitoIdentityProviderService.InitiateAuth")
 
         login_req = httpx.post(
-            f"https://{AWS_COGNITO_IDP_ENDPOINT}",
+            f"https://{AWS_COGNITO_IDP_ENDPOINT}/",
             json=login_json_data,
             headers=login_headers,
             proxies=self._proxies,
@@ -601,7 +601,6 @@ class JciHitachiAWSMqttConnection:
         _LOGGER.error("MQTT connection was interrupted with exception {error}.")
         self._mqtt_events.mqtt_error = error.__class__.__name__
         self._mqtt_events.mqtt_error_event.set()
-        return
 
     def _on_connection_resumed(self, connection, return_code, session_present, **kwargs):
         if session_present:
@@ -620,8 +619,13 @@ class JciHitachiAWSMqttConnection:
                     _LOGGER.error("Resubscribe failure:", e)
 
             resubscribe_future.add_done_callback(on_resubscribe_complete)
-            _LOGGER.info("Resubscribe successfully.")
+            _LOGGER.info("Resubscribed successfully.")
         return
+    
+    async def _wrap_async(self, identifier: str, fn: Callable, timeout: float) -> str:
+        await asyncio.sleep(random() / 2)  # randomly wait 0~0.5 seconds to prevent messages flooding to the broker.
+        await asyncio.wait_for(fn(), timeout)
+        return identifier
 
     def disconnect(self) -> None:
         """Disconnect from the MQTT broker.
@@ -728,26 +732,21 @@ class JciHitachiAWSMqttConnection:
             return False
         return True
 
-    async def _wrap_async(self, identifier: str, fn: Callable, timeout: float):
-        await asyncio.sleep(random() / 2)  # randomly wait 0~0.5 seconds to prevent flooding messages to the broker.
-        await asyncio.wait_for(fn(), timeout)
-        return identifier
-
-    def publish(self, host_identity_id: str, thing_name: str, publish_type: str, timeout : float = 10.0, payload: Optional[dict] = None) -> None:
-        """Publish message.
+    def publish(self, host_identity_id: str, thing_name: str, publish_type: str, timeout: float = 10.0, payload: Optional[dict] = None) -> None:
+        """Put messages to be published in the execution pool. execute() should be called to start async publish.
         
         Parameters
         ----------
         host_identity_id : str
-            host_identity_id.
+            Host identity id.
         thing_name : str
             Thing name.
         publish_type: str
-            Publish type.
+            Publish type. There are three types available: `support`, `status`, and `control`.
         timeout: float, optional
-            Timeout.
+            Timeout for messages published, by default 10.0.
         payload : dict, optional
-            Payload to publish.
+            Payload to publish, by default None.
         """
         
         default_payload = {"Timestamp": time.time()}
@@ -811,6 +810,8 @@ class JciHitachiAWSMqttConnection:
             Payload to publish, by default {}.
         shadow_name : str, optional
             Shadow name, by default None.
+        timeout: float, optional
+            Timeout for messages published, by default 10.0.
         """
 
         if command_name not in ["get", "update"]: # we don't subscribe delete
@@ -886,7 +887,16 @@ class JciHitachiAWSMqttConnection:
             self._mqtt_events.device_shadow_event[thing_name].wait()
         self._execution_pools.shadow_execution_pool.append(self._wrap_async(thing_name, wrapper, timeout))
     
-    def execute(self):
+    def execute(self) -> list[list[Union[str, BaseException]], list[Union[str, BaseException]], list[Union[str, BaseException]], list[Union[str, BaseException]]]:
+        """Execute publish commands in the execution pools.
+        
+        Returns
+        -------
+        list
+            Execution results of support, shadow, status, control, respectively.
+            Each result is a list containing thing names if the execution was successful or BaseException(s) if an error occurred during execution.
+        """
+
         async def runner():
             a, b, c, d = None, None, None, None
             if len(self._execution_pools.support_execution_pool) != 0:

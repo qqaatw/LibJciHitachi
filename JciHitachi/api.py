@@ -976,6 +976,7 @@ class JciHitachiAWSAPI:
                 if user["isHost"]:
                     self._host_identity_id = user["userId"]
                     break
+            assert self._host_identity_id is not None, "Host is not found in the user list"
         else:
             raise RuntimeError(f"An error occurred when listing account users: {conn_status}")
 
@@ -1143,7 +1144,7 @@ class JciHitachiAWSAPI:
         support_results, shadow_results, status_results, _ = self._mqtt.execute()
 
         # gather results
-        for name, thing in self._get_valid_things():
+        for name, thing in self._get_valid_things(device_name):
             if refresh_support_code:
                 if thing.thing_name in support_results:
                     if thing.thing_name not in self._mqtt.mqtt_events.device_support:
@@ -1298,7 +1299,6 @@ class JciHitachiAWSAPI:
         if thing.thing_name in control_results:
             device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
             if device_control.get(status_name) == status_value:
-                thing.status_code = self._mqtt.mqtt_events.device_status[thing.thing_name]
                 thing.status_code.set_new_status(status_name, status_value)
                 return True
         return False
