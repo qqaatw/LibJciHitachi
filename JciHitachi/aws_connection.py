@@ -515,7 +515,7 @@ class JciHitachiAWSMqttConnection:
         self._shadow_mqttc = None
         self._client_tokens = {}
         self._mqtt_events = JciHitachiMqttEvents()
-        self._execution_lock = asyncio.Lock()
+        self._execution_lock = threading.Lock()
         self._execution_pools = JciHitachiExecutionPools()
 
     def __del__(self):
@@ -900,7 +900,8 @@ class JciHitachiAWSMqttConnection:
 
         async def runner():
             a, b, c, d = None, None, None, None
-            async with self._execution_lock:
+            try:
+                self._execution_lock.acquire()
                 if len(self._execution_pools.support_execution_pool) != 0:
                     a = await asyncio.gather(*self._execution_pools.support_execution_pool, return_exceptions=True)
                     self._execution_pools.support_execution_pool.clear()
@@ -913,7 +914,8 @@ class JciHitachiAWSMqttConnection:
                 if len(self._execution_pools.control_execution_pool) != 0:
                     d = await asyncio.gather(*self._execution_pools.control_execution_pool, return_exceptions=True)
                     self._execution_pools.control_execution_pool.clear()
-
+            finally:
+                self._execution_lock.release()
             return a, b, c, d
 
         results = asyncio.run(runner())
