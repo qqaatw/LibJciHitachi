@@ -855,7 +855,7 @@ class AWSThing:
         -------
         str
             Device type. 
-            If not supported, 'unknown' will be returned. (currently supports: `AC`, `DH`)
+            If not supported, 'unknown' will be returned.
         """
 
         return self.supported_device_type.get(
@@ -888,17 +888,17 @@ class JciHitachiAWSAPI:
         password : str,
         device_names : Optional[Union[list[str], str]] = None,
         max_retries : int = 5,
-        device_offline_timeout : float = 45.0,
+        device_offline_timeout : float = 10.0,
         print_response : bool = False
     ) -> None:
         self.email : str = email
         self.password : str = password
         self.device_names : Optional[Union[list[str], str]] = device_names
         self.max_retries : int = max_retries
-        self.device_offline_timeout : float = device_offline_timeout
         self.print_response : bool = print_response
 
         self._mqtt : Optional[aws_connection.JciHitachiAWSMqttConnection] = None
+        self._mqtt_timeout : float = device_offline_timeout
         self._shadow_names : Union[str, list] = ["info"]
         self._device_id : int = random.randint(1000, 6999)
         self._things : dict[str, AWSThing] = {}
@@ -941,12 +941,12 @@ class JciHitachiAWSAPI:
         if self._mqtt.mqtt_events.mqtt_error_event.is_set():
             self._mqtt.mqtt_events.mqtt_error_event.clear()
             self.reauth()
-        
-        # Clear events
-        self._mqtt.mqtt_events.device_control_event.clear()
-        self._mqtt.mqtt_events.device_shadow_event.clear()
-        self._mqtt.mqtt_events.device_status_event.clear()
-        self._mqtt.mqtt_events.device_support_event.clear()
+    
+    def _get_valid_things(self, device_name : Optional[str] = None) -> tuple[str, AWSThing]:
+        for name, thing in self._things.items():
+            if (device_name and name != device_name) or thing.type == "unknown":
+                continue
+            yield name, thing
 
     def _delay(self) -> None:
         time.sleep(0.2)
@@ -976,6 +976,7 @@ class JciHitachiAWSAPI:
                 if user["isHost"]:
                     self._host_identity_id = user["userId"]
                     break
+            assert self._host_identity_id is not None, "Host is not found in the user list"
         else:
             raise RuntimeError(f"An error occurred when listing account users: {conn_status}")
 
@@ -993,6 +994,7 @@ class JciHitachiAWSAPI:
 
             # mqtt
             def get_credential_callable():
+                self._check_before_publish()
                 conn = aws_connection.GetCredentials(
                     email=self.email,
                     password=self.password,
@@ -1127,37 +1129,43 @@ class JciHitachiAWSAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
-        for name, thing in self._things.items():
-            if (device_name and name != device_name) or thing.type == "unknown":
-                continue
-
+        # queue tasks
+        for name, thing in self._get_valid_things(device_name):
             self._check_before_publish()
 
             if refresh_support_code:
-                self._mqtt.publish(f"{self._host_identity_id}/{thing.thing_name}/registration/request", {"Timestamp": time.time()})
-                if not self._mqtt.mqtt_events.device_support_event.wait(timeout=10.0):
-                    raise RuntimeError(f"An error occurred when refreshing {name} support code.")
-                if thing.thing_name not in self._mqtt.mqtt_events.device_support:
-                    raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} support code.")
-                
-                thing.support_code = self._mqtt.mqtt_events.device_support[thing.thing_name]
-
+                self._mqtt.publish(self._host_identity_id, thing.thing_name, "support", self._mqtt_timeout)
             if refresh_shadow:
                 self._mqtt.publish_shadow(thing.thing_name, "get", shadow_name="info")
-                if not self._mqtt.mqtt_events.device_shadow_event.wait(timeout=10.0):
-                    raise RuntimeError(f"An error occurred when refreshing {name} shadow.")
-                if thing.thing_name not in self._mqtt.mqtt_events.device_shadow:
-                    raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} shadow.")
 
-                thing.shadow = self._mqtt.mqtt_events.device_shadow[thing.thing_name]
+            self._mqtt.publish(self._host_identity_id, thing.thing_name, "status", self._mqtt_timeout)
+        
+        # execute
+        support_results, shadow_results, status_results, _ = self._mqtt.execute()
 
-            self._mqtt.publish(f"{self._host_identity_id}/{thing.thing_name}/status/request", {"Timestamp": time.time()})
-            if not self._mqtt.mqtt_events.device_status_event.wait(timeout=10.0):
-                raise RuntimeError(f"An error occurred when refreshing {name} status code.")
-            if thing.thing_name not in self._mqtt.mqtt_events.device_status:
-                raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} status code.")
-            
-            thing.status_code = self._mqtt.mqtt_events.device_status[thing.thing_name]
+        # gather results
+        for name, thing in self._get_valid_things(device_name):
+            if refresh_support_code:
+                if thing.thing_name in support_results:
+                    if thing.thing_name not in self._mqtt.mqtt_events.device_support:
+                        raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} support code.")
+                    thing.support_code = self._mqtt.mqtt_events.device_support[thing.thing_name]
+                else:
+                    raise RuntimeError(f"Timed out refreshing {name} support code. Please ensure the device is online and avoid opening the official app.")
+            if refresh_shadow:
+                if thing.thing_name in shadow_results:
+                    if thing.thing_name not in self._mqtt.mqtt_events.device_shadow:
+                        raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} shadow.")
+                    thing.shadow = self._mqtt.mqtt_events.device_shadow[thing.thing_name]
+                else:
+                    raise RuntimeError(f"Timed out refreshing {name} shadow. Please ensure the device is online and avoid opening the official app.")
+                
+            if thing.thing_name in status_results:
+                if thing.thing_name not in self._mqtt.mqtt_events.device_status:
+                    raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} status code.")
+                thing.status_code = self._mqtt.mqtt_events.device_status[thing.thing_name]
+            else:
+                raise RuntimeError(f"Timed out refreshing {name} status code. Please ensure the device is online and avoid opening the official app.")
 
     def get_status(self, device_name: Optional[str] = None, legacy: bool = False) -> dict[str, JciHitachiAWSStatus]:
         """Get device status after refreshing status.
@@ -1178,9 +1186,7 @@ class JciHitachiAWSAPI:
         """
         
         statuses = {}
-        for name, thing in self._things.items():
-            if (device_name and name != device_name) or thing.type == "unknown":
-                continue
+        for name, thing in self._get_valid_things(device_name):
             if legacy:
                 statuses[name] = thing.status_code.legacy_status
             else:
@@ -1264,7 +1270,7 @@ class JciHitachiAWSAPI:
                 },
                 shadow_name="info"
             )
-            if self._mqtt.mqtt_events.device_control_event.wait(timeout=10.0):
+            if self._mqtt.mqtt_events.device_control_event.wait(timeout=self._mqtt_timeout):
                 device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
                 if device_control["state"]["reported"][status_name] == bool(status_value):
                     self._mqtt.mqtt_events.device_control_event.clear()
@@ -1272,7 +1278,9 @@ class JciHitachiAWSAPI:
                     return True
             return False
 
-        self._mqtt.publish(f"{self._host_identity_id}/{thing.thing_name}/control/request", {
+        self._mqtt.publish(
+            self._host_identity_id, thing.thing_name, "control", self._mqtt_timeout,
+            {
             "Condition": {
                 "ThingName": thing.thing_name,
                 "Index": 0,
@@ -1286,12 +1294,11 @@ class JciHitachiAWSAPI:
             "Timestamp": time.time(),
         })
 
-        for _ in range(self.max_retries):
-            if self._mqtt.mqtt_events.device_control_event.wait(timeout=10.0):
-                device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
-                if device_control.get(status_name) == status_value:
-                    thing.status_code.set_new_status(status_name, status_value)
-                    self._mqtt.mqtt_events.device_control_event.clear()
-                    return True
-            self._delay()
+        _, _, _, control_results = self._mqtt.execute()
+
+        if thing.thing_name in control_results:
+            device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
+            if device_control.get(status_name) == status_value:
+                thing.status_code.set_new_status(status_name, status_value)
+                return True
         return False
