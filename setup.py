@@ -31,7 +31,6 @@ if __name__ == "__main__":
             "Documentation": "https://libjcihitachi.readthedocs.io/en/latest/",
         },
         classifiers=[
-            "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
@@ -41,7 +40,7 @@ if __name__ == "__main__":
         ],
         packages=setuptools.find_packages(include=['JciHitachi']),
         package_data={'JciHitachi': ['cert/*.pem']},
-        python_requires=">=3.7",
+        python_requires=">=3.8",
         install_requires=install_requires,
         tests_require=tests_require,
     )
