@@ -1,6 +1,9 @@
 import hashlib
 import math
+import functools
+import contextvars
 
+import asyncio.events as events
 
 def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):  # pragma: no cover
     """Concatenate two integer.
@@ -110,3 +113,20 @@ def extract_bytes(v, start, end):  # pragma: no cover
          and ending byte must be greater than zero : \
          {}, {}".format(start, end)
     return cast_bytes(v >> end * 8, start-end)
+
+# Copied from https://github.com/python/cpython/blob/main/Lib/asyncio/threads.py
+# TODO: Remove this once we upgrade the minimally supported Python version to 3.9.
+async def to_thread(func, /, *args, **kwargs):  # pragma: no cover
+    """Asynchronously run function *func* in a separate thread.
+
+    Any *args and **kwargs supplied for this function are directly passed
+    to *func*. Also, the current :class:`contextvars.Context` is propagated,
+    allowing context variables from the main thread to be accessed in the
+    separate thread.
+
+    Return a coroutine that can be awaited to get the eventual result of *func*.
+    """
+    loop = events.get_running_loop()
+    ctx = contextvars.copy_context()
+    func_call = functools.partial(ctx.run, func, *args, **kwargs)
+    return await loop.run_in_executor(None, func_call)

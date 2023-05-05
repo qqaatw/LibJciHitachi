@@ -16,6 +16,7 @@ import httpx
 from awsiot import iotshadow, mqtt_connection_builder
 
 from .model import JciHitachiAWSStatus, JciHitachiAWSStatusSupport
+from .utility import to_thread
 
 AWS_REGION = "ap-northeast-1"
 AWS_COGNITO_IDP_ENDPOINT = f"cognito-idp.{AWS_REGION}.amazonaws.com"
@@ -625,7 +626,7 @@ class JciHitachiAWSMqttConnection:
     
     async def _wrap_async(self, identifier: str, fn: Callable, timeout: float) -> str:
         await asyncio.sleep(random() / 2)  # randomly wait 0~0.5 seconds to prevent messages flooding to the broker.
-        await asyncio.wait_for(asyncio.to_thread(fn), timeout)
+        await asyncio.wait_for(to_thread(fn), timeout)
         return identifier
 
     def disconnect(self) -> None:
