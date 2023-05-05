@@ -16,6 +16,7 @@ import httpx
 from awsiot import iotshadow, mqtt_connection_builder
 
 from .model import JciHitachiAWSStatus, JciHitachiAWSStatusSupport
+from .utility import to_thread
 
 AWS_REGION = "ap-northeast-1"
 AWS_COGNITO_IDP_ENDPOINT = f"cognito-idp.{AWS_REGION}.amazonaws.com"
@@ -625,7 +626,7 @@ class JciHitachiAWSMqttConnection:
     
     async def _wrap_async(self, identifier: str, fn: Callable, timeout: float) -> str:
         await asyncio.sleep(random() / 2)  # randomly wait 0~0.5 seconds to prevent messages flooding to the broker.
-        await asyncio.wait_for(fn(), timeout)
+        await asyncio.wait_for(to_thread(fn), timeout)
         return identifier
 
     def disconnect(self) -> None:
@@ -759,34 +760,34 @@ class JciHitachiAWSMqttConnection:
             else:
                 self._mqtt_events.device_support_event[thing_name] = threading.Event()
                 
-            async def wrapper():
+            def fn():
                 publish_future, _ = self._mqttc.publish(support_topic, json.dumps(default_payload), QOS)
                 publish_future.result()
                 self._mqtt_events.device_support_event[thing_name].wait()
             
-            self._execution_pools.support_execution_pool.append(self._wrap_async(thing_name, wrapper, timeout))
+            self._execution_pools.support_execution_pool.append(self._wrap_async(thing_name, fn, timeout))
         elif publish_type == "status":
             status_topic = f"{host_identity_id}/{thing_name}/status/request"
             if thing_name in self._mqtt_events.device_status_event:
                 self._mqtt_events.device_status_event[thing_name].clear()
             else:
                 self._mqtt_events.device_status_event[thing_name] = threading.Event()
-            async def wrapper():
+            def fn():
                 publish_future, _ = self._mqttc.publish(status_topic, json.dumps(default_payload), QOS)
                 publish_future.result()
                 self._mqtt_events.device_status_event[thing_name].wait()
-            self._execution_pools.status_execution_pool.append(self._wrap_async(thing_name, wrapper, timeout))
+            self._execution_pools.status_execution_pool.append(self._wrap_async(thing_name, fn, timeout))
         elif publish_type == "control":
             control_topic = f"{host_identity_id}/{thing_name}/control/request"
             if thing_name in self._mqtt_events.device_control_event:
                 self._mqtt_events.device_control_event[thing_name].clear()
             else:
                 self._mqtt_events.device_control_event[thing_name] = threading.Event()
-            async def wrapper():
+            def fn():
                 publish_future, _ = self._mqttc.publish(control_topic, json.dumps(payload), QOS)
                 publish_future.result()
                 self._mqtt_events.device_control_event[thing_name].wait()
-            self._execution_pools.control_execution_pool.append(self._wrap_async(thing_name, wrapper, timeout))
+            self._execution_pools.control_execution_pool.append(self._wrap_async(thing_name, fn, timeout))
 
         else:
             raise ValueError(f"Invalid publish_type: {publish_type}")
@@ -827,7 +828,7 @@ class JciHitachiAWSMqttConnection:
             self._mqtt_events.device_shadow_event[thing_name] = threading.Event()
         
 
-        async def wrapper():
+        def fn():
             if shadow_name is None:
                 if command_name == "get":
                     publish_future = self._shadow_mqttc.publish_get_shadow(
@@ -886,7 +887,7 @@ class JciHitachiAWSMqttConnection:
                     )
             publish_future.result()
             self._mqtt_events.device_shadow_event[thing_name].wait()
-        self._execution_pools.shadow_execution_pool.append(self._wrap_async(thing_name, wrapper, timeout))
+        self._execution_pools.shadow_execution_pool.append(self._wrap_async(thing_name, fn, timeout))
     
     def execute(self) -> list[list[Union[str, BaseException]], list[Union[str, BaseException]], list[Union[str, BaseException]], list[Union[str, BaseException]]]:
         """Execute publish commands in the execution pools.
