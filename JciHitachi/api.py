@@ -1294,7 +1294,7 @@ class JciHitachiAWSAPI:
             "Timestamp": time.time(),
         })
 
-        _, _, _, control_results = self._mqtt.execute()
+        _, _, _, control_results = self._mqtt.execute(control=True)
 
         if thing.thing_name in control_results:
             device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
