@@ -922,8 +922,14 @@ class JciHitachiAWSMqttConnection:
             
             return a, b, c, d
         
+        locked = self._execution_lock.locked()
+
         try:
+            if locked:
+                _LOGGER.debug("Other execution in progess, waiting for a lock.")
             self._execution_lock.acquire()
+            if locked:
+                _LOGGER.debug("Lock acquired.")
             results = asyncio.run(runner())
         finally:
             self._execution_lock.release()
