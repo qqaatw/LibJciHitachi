@@ -901,25 +901,25 @@ class JciHitachiAWSMqttConnection:
 
         async def runner():
             a, b, c, d = None, None, None, None
-            try:
-                self._execution_lock.acquire()
-                if len(self._execution_pools.support_execution_pool) != 0:
-                    a = await asyncio.gather(*self._execution_pools.support_execution_pool, return_exceptions=True)
-                    self._execution_pools.support_execution_pool.clear()
-                if len(self._execution_pools.shadow_execution_pool) != 0:
-                    b = await asyncio.gather(*self._execution_pools.shadow_execution_pool, return_exceptions=True)
-                    self._execution_pools.shadow_execution_pool.clear()
-                if len(self._execution_pools.status_execution_pool) != 0:
-                    c = await asyncio.gather(*self._execution_pools.status_execution_pool, return_exceptions=True)
-                    self._execution_pools.status_execution_pool.clear()
-                if len(self._execution_pools.control_execution_pool) != 0:
-                    d = await asyncio.gather(*self._execution_pools.control_execution_pool, return_exceptions=True)
-                    self._execution_pools.control_execution_pool.clear()
-            finally:
-                self._execution_lock.release()
+            if len(self._execution_pools.support_execution_pool) != 0:
+                a = await asyncio.gather(*self._execution_pools.support_execution_pool, return_exceptions=True)
+                self._execution_pools.support_execution_pool.clear()
+            if len(self._execution_pools.shadow_execution_pool) != 0:
+                b = await asyncio.gather(*self._execution_pools.shadow_execution_pool, return_exceptions=True)
+                self._execution_pools.shadow_execution_pool.clear()
+            if len(self._execution_pools.status_execution_pool) != 0:
+                c = await asyncio.gather(*self._execution_pools.status_execution_pool, return_exceptions=True)
+                self._execution_pools.status_execution_pool.clear()
+            if len(self._execution_pools.control_execution_pool) != 0:
+                d = await asyncio.gather(*self._execution_pools.control_execution_pool, return_exceptions=True)
+                self._execution_pools.control_execution_pool.clear()
             return a, b, c, d
-
-        results = asyncio.run(runner())
+        
+        try:
+            self._execution_lock.acquire()
+            results = asyncio.run(runner())
+        finally:
+            self._execution_lock.release()
         
         return results
         
