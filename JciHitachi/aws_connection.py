@@ -926,7 +926,7 @@ class JciHitachiAWSMqttConnection:
 
         try:
             if locked:
-                _LOGGER.debug("Other execution in progess, waiting for a lock.")
+                _LOGGER.debug("Other execution in progress, waiting for a lock.")
             self._execution_lock.acquire()
             if locked:
                 _LOGGER.debug("Lock acquired.")
