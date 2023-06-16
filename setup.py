@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 install_requires = [
-    "awsiotsdk==1.12.0", # See: https://github.com/pypa/pip/issues/5898
+    "awsiotsdk==1.15.4",
     "httpx",
     "paho-mqtt",
 ]
