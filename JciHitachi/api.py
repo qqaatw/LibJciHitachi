@@ -11,6 +11,7 @@ from .model import (JciHitachiAC, JciHitachiACSupport, JciHitachiAWSStatus,
                     JciHitachiStatusSupport)
 from .status import (JciHitachiCommand, JciHitachiCommandAC,
                      JciHitachiCommandDH, JciHitachiStatusInterpreter)
+from .analytics import AnalyticsRecorder
 
 
 class Peripheral: # pragma: no cover
@@ -1129,43 +1130,47 @@ class JciHitachiAWSAPI:
             If an error occurs, RuntimeError will be raised.
         """
 
-        # queue tasks
-        for name, thing in self._get_valid_things(device_name):
-            self._check_before_publish()
+        with AnalyticsRecorder(self.email, "refresh_status", debug=True) as recorder:
+            # queue tasks
+            for name, thing in self._get_valid_things(device_name):
+                self._check_before_publish()
 
-            if refresh_support_code:
-                self._mqtt.publish(self._host_identity_id, thing.thing_name, "support", self._mqtt_timeout)
-            if refresh_shadow:
-                self._mqtt.publish_shadow(thing.thing_name, "get", shadow_name="info")
+                if refresh_support_code:
+                    self._mqtt.publish(self._host_identity_id, thing.thing_name, "support", self._mqtt_timeout)
+                if refresh_shadow:
+                    self._mqtt.publish_shadow(thing.thing_name, "get", shadow_name="info")
 
-            self._mqtt.publish(self._host_identity_id, thing.thing_name, "status", self._mqtt_timeout)
+                self._mqtt.publish(self._host_identity_id, thing.thing_name, "status", self._mqtt_timeout)
+            recorder.record_time("queue")
         
-        # execute
-        support_results, shadow_results, status_results, _ = self._mqtt.execute()
+            # execute
+            support_results, shadow_results, status_results, _ = self._mqtt.execute()
+            recorder.record_time("execute")
 
-        # gather results
-        for name, thing in self._get_valid_things(device_name):
-            if refresh_support_code:
-                if thing.thing_name in support_results:
-                    if thing.thing_name not in self._mqtt.mqtt_events.device_support:
-                        raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} support code.")
-                    thing.support_code = self._mqtt.mqtt_events.device_support[thing.thing_name]
+            # gather results
+            for name, thing in self._get_valid_things(device_name):
+                if refresh_support_code:
+                    if thing.thing_name in support_results:
+                        if thing.thing_name not in self._mqtt.mqtt_events.device_support:
+                            raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} support code.")
+                        thing.support_code = self._mqtt.mqtt_events.device_support[thing.thing_name]
+                    else:
+                        raise RuntimeError(f"Timed out refreshing {name} support code. Please ensure the device is online and avoid opening the official app.")
+                if refresh_shadow:
+                    if thing.thing_name in shadow_results:
+                        if thing.thing_name not in self._mqtt.mqtt_events.device_shadow:
+                            raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} shadow.")
+                        thing.shadow = self._mqtt.mqtt_events.device_shadow[thing.thing_name]
+                    else:
+                        raise RuntimeError(f"Timed out refreshing {name} shadow. Please ensure the device is online and avoid opening the official app.")
+                    
+                if thing.thing_name in status_results:
+                    if thing.thing_name not in self._mqtt.mqtt_events.device_status:
+                        raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} status code.")
+                    thing.status_code = self._mqtt.mqtt_events.device_status[thing.thing_name]
                 else:
-                    raise RuntimeError(f"Timed out refreshing {name} support code. Please ensure the device is online and avoid opening the official app.")
-            if refresh_shadow:
-                if thing.thing_name in shadow_results:
-                    if thing.thing_name not in self._mqtt.mqtt_events.device_shadow:
-                        raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} shadow.")
-                    thing.shadow = self._mqtt.mqtt_events.device_shadow[thing.thing_name]
-                else:
-                    raise RuntimeError(f"Timed out refreshing {name} shadow. Please ensure the device is online and avoid opening the official app.")
-                
-            if thing.thing_name in status_results:
-                if thing.thing_name not in self._mqtt.mqtt_events.device_status:
-                    raise RuntimeError(f"An event occurred but wasn't accompanied with data when refreshing {name} status code.")
-                thing.status_code = self._mqtt.mqtt_events.device_status[thing.thing_name]
-            else:
-                raise RuntimeError(f"Timed out refreshing {name} status code. Please ensure the device is online and avoid opening the official app.")
+                    raise RuntimeError(f"Timed out refreshing {name} status code. Please ensure the device is online and avoid opening the official app.")
+            recorder.record_time("gather")
 
     def get_status(self, device_name: Optional[str] = None, legacy: bool = False) -> dict[str, JciHitachiAWSStatus]:
         """Get device status after refreshing status.
