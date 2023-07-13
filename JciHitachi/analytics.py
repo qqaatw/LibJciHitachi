@@ -20,14 +20,14 @@ class AnalyticsRecorder:
     event_name : str
         Event name that will be uploaded to Analytics.
     debug : bool
-        If debug, the grain size will be divided by 6.
+        If debug, the grain size will be 1.
     timeout : float
         The http request timeout.
     """
 
     events = []
     def __init__(self, identifier, event_name, debug=False, timeout=2):
-        self.identifier = hashlib.sha256(identifier).hexdigest()
+        self.identifier = hashlib.sha256(identifier.encode("utf8")).hexdigest()
         self.event_name = event_name
         self.debug = debug
         self.timeout = timeout
@@ -75,6 +75,6 @@ class AnalyticsRecorder:
         self.record("timestamp", time.time())
         AnalyticsRecorder.events.append(self._event)
 
-        grain_size = GRAIN_SIZE / 6 if self.debug else GRAIN_SIZE
+        grain_size = 1 if self.debug else GRAIN_SIZE
         if len(AnalyticsRecorder.events) >= grain_size:
             self._send()
