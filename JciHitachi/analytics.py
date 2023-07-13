@@ -1,6 +1,7 @@
 import time
 import httpx
 import logging
+import hashlib
 
 ENDPOINT = "https://www.google-analytics.com/mp/collect"
 API_SECRET = "N_ckE4wvQk2rIVmjJDs8DA"
@@ -10,9 +11,23 @@ GRAIN_SIZE = 60 # 30 mins if an event is generated every 30 seconds.
 _LOGGER = logging.getLogger(__name__)
 
 class AnalyticsRecorder:
+    """AnalyticsRecorder reporting events to Analytics.
+
+    Parameters
+    ----------
+    identifier : str
+        User identifier.
+    event_name : str
+        Event name that will be uploaded to Analytics.
+    debug : bool
+        If debug, the grain size will be divided by 6.
+    timeout : float
+        The http request timeout.
+    """
+
     events = []
     def __init__(self, identifier, event_name, debug=False, timeout=2):
-        self.identifier = identifier
+        self.identifier = hashlib.sha256(identifier).hexdigest()
         self.event_name = event_name
         self.debug = debug
         self.timeout = timeout
@@ -60,5 +75,5 @@ class AnalyticsRecorder:
         AnalyticsRecorder.events.append(self._event)
 
         grain_size = GRAIN_SIZE / 6 if self.debug else GRAIN_SIZE
-        if len(AnalyticsRecorder.events) == grain_size:
+        if len(AnalyticsRecorder.events) >= grain_size:
             self._send()
