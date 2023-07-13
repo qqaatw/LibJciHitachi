@@ -36,6 +36,7 @@ class AnalyticsRecorder:
 
     def _send(self):
         try:
+            _LOGGER.debug("Uploading data to Analytics.")
             httpx.request(
                 "post",
                 ENDPOINT,
