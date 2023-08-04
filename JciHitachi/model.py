@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+
 class JciHitachiStatus:  # pragma: no cover
     idx = {}
 
@@ -32,27 +33,27 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
     """
 
     idx = {
-        'power': 0,
-        'mode': 1,
-        'air_speed': 2,
-        'target_temp': 3,
-        'indoor_temp': 4,
-        'sleep_timer': 6,
-        'vertical_wind_swingable': 14,
-        'vertical_wind_direction': 15,
-        'horizontal_wind_direction': 17, 
-        'mold_prev': 23,
-        'fast_op': 26,
-        'energy_save': 27,
-        'sound_prompt': 30,
-        'outdoor_temp': 33,
-        'power_kwh': 40,
-        'freeze_clean': 57,
+        "power": 0,
+        "mode": 1,
+        "air_speed": 2,
+        "target_temp": 3,
+        "indoor_temp": 4,
+        "sleep_timer": 6,
+        "vertical_wind_swingable": 14,
+        "vertical_wind_direction": 15,
+        "horizontal_wind_direction": 17,
+        "mold_prev": 23,
+        "fast_op": 26,
+        "energy_save": 27,
+        "sound_prompt": 30,
+        "outdoor_temp": 33,
+        "power_kwh": 40,
+        "freeze_clean": 57,
     }
 
     def __init__(self, status, default=-1):
         super().__init__(status, default)
-        
+
     @property
     def power(self):
         """Power. Controllable.
@@ -63,7 +64,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['power'], self._default)
+        v = self._status.get(self.idx["power"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -83,7 +84,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "cool", "dry", "fan", "auto", "heat", "unknown").
         """
 
-        v = self._status.get(self.idx['mode'], self._default)
+        v = self._status.get(self.idx["mode"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -109,7 +110,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "auto", "silent", "low", "moderate", "high", "unknown").
         """
 
-        v = self._status.get(self.idx['air_speed'], self._default)
+        v = self._status.get(self.idx["air_speed"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -135,7 +136,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             Celsius temperature.
         """
 
-        v = self._status.get(self.idx['target_temp'], self._default)
+        v = self._status.get(self.idx["target_temp"], self._default)
         return v
 
     @property
@@ -148,9 +149,9 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             Celsius temperature.
         """
 
-        v = self._status.get(self.idx['indoor_temp'], self._default)
+        v = self._status.get(self.idx["indoor_temp"], self._default)
         return v
-    
+
     @property
     def max_temp(self):
         """Maximum target temperature.
@@ -162,11 +163,11 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
         """
 
         return 32
-    
+
     @property
     def min_temp(self):
         """Minimum target temperature.
-        
+
         Returns
         -------
         int
@@ -178,16 +179,16 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
     @property
     def sleep_timer(self):
         """Sleep timer. Controllable.
-        
+
         Returns
         -------
         int
             Sleep timer (hours).
         """
 
-        v = self._status.get(self.idx['sleep_timer'], self._default)
+        v = self._status.get(self.idx["sleep_timer"], self._default)
         return v
-    
+
     @property
     def vertical_wind_swingable(self):
         """Vertical wind swingable. Controllable.
@@ -197,8 +198,8 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
         str
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
-        
-        v = self._status.get(self.idx['vertical_wind_swingable'], self._default)
+
+        v = self._status.get(self.idx["vertical_wind_swingable"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -218,7 +219,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             Value between 0 to 15.
         """
 
-        v = self._status.get(self.idx['vertical_wind_direction'], self._default)
+        v = self._status.get(self.idx["vertical_wind_direction"], self._default)
         return v
 
     @property
@@ -231,9 +232,10 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "auto", "leftmost", "middleleft", "central", "middleright", "rightmost", "unknown").
         """
 
-        v = self._status.get(self.idx['horizontal_wind_direction'], self._default)
-        
-        if v > 0: v = 6-v
+        v = self._status.get(self.idx["horizontal_wind_direction"], self._default)
+
+        if v > 0:
+            v = 6 - v
 
         if v == -1:
             return "unsupported"
@@ -262,7 +264,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['mold_prev'], self._default)
+        v = self._status.get(self.idx["mold_prev"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -271,7 +273,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             return "enabled"
         else:
             return "unknown"
-    
+
     @property
     def fast_op(self):
         """Fast operation. Controllable.
@@ -282,7 +284,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['fast_op'], self._default)
+        v = self._status.get(self.idx["fast_op"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -291,7 +293,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             return "enabled"
         else:
             return "unknown"
-    
+
     @property
     def energy_save(self):
         """Energy saving. Controllable.
@@ -302,7 +304,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['energy_save'], self._default)
+        v = self._status.get(self.idx["energy_save"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -322,7 +324,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "enabled", "disabled", "unknown").
         """
 
-        v = self._status.get(self.idx['sound_prompt'], self._default)
+        v = self._status.get(self.idx["sound_prompt"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -335,16 +337,16 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
     @property
     def outdoor_temp(self):
         """Outdoor temperature.
-        
+
         Returns
         -------
         int
             Celsius temperature.
         """
 
-        v = self._status.get(self.idx['outdoor_temp'], self._default)
+        v = self._status.get(self.idx["outdoor_temp"], self._default)
         return v
-    
+
     @property
     def power_kwh(self):
         """Accumulated Kwh in a day.
@@ -355,7 +357,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             Kwh.
         """
 
-        v = self._status.get(self.idx['power_kwh'], self._default)
+        v = self._status.get(self.idx["power_kwh"], self._default)
         if v == -1:
             return v
         return v / 10.0
@@ -370,7 +372,7 @@ class JciHitachiAC(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['freeze_clean'], self._default)
+        v = self._status.get(self.idx["freeze_clean"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -393,31 +395,31 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
     """
 
     idx = {
-        'power': 0,
-        'mode': 1,
-        'target_humidity': 3,
-        'indoor_humidity': 7,
-        'wind_swingable': 8,
-        'water_full_warning': 10,
-        'clean_filter_notify': 11,
-        'air_purify_level': 13,
-        'air_speed': 14,
-        'side_vent': 15,
-        'sound_control': 16,
-        'error_code': 18,
-        'mold_prev': 19,
-        'power_kwh': 29,
-        'air_quality_value': 35,
-        'air_quality_level': 36,
-        'pm25_value': 37,
-        'display_brightness': 39,
-        'odor_level': 40,
-        'air_cleaning_filter': 41
+        "power": 0,
+        "mode": 1,
+        "target_humidity": 3,
+        "indoor_humidity": 7,
+        "wind_swingable": 8,
+        "water_full_warning": 10,
+        "clean_filter_notify": 11,
+        "air_purify_level": 13,
+        "air_speed": 14,
+        "side_vent": 15,
+        "sound_control": 16,
+        "error_code": 18,
+        "mold_prev": 19,
+        "power_kwh": 29,
+        "air_quality_value": 35,
+        "air_quality_level": 36,
+        "pm25_value": 37,
+        "display_brightness": 39,
+        "odor_level": 40,
+        "air_cleaning_filter": 41,
     }
 
     def __init__(self, status, default=-1):
         super().__init__(status, default)
-    
+
     @property
     def power(self):
         """Power. Controllable.
@@ -428,7 +430,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['power'], self._default)
+        v = self._status.get(self.idx["power"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -437,7 +439,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             return "on"
         else:
             return "unknown"
-    
+
     @property
     def mode(self):
         """Mode. Controllable.
@@ -451,7 +453,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             ).
         """
 
-        v = self._status.get(self.idx['mode'], self._default)
+        v = self._status.get(self.idx["mode"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -483,7 +485,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             Relative humidity.
         """
 
-        v = self._status.get(self.idx['target_humidity'], self._default)
+        v = self._status.get(self.idx["target_humidity"], self._default)
         return v
 
     @property
@@ -496,9 +498,9 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             Relative humidity.
         """
 
-        v = self._status.get(self.idx['indoor_humidity'], self._default)
+        v = self._status.get(self.idx["indoor_humidity"], self._default)
         return v
-    
+
     @property
     def max_humidity(self):
         """Maximum target humidity.
@@ -533,7 +535,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['wind_swingable'], self._default)
+        v = self._status.get(self.idx["wind_swingable"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -553,7 +555,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['water_full_warning'], self._default)
+        v = self._status.get(self.idx["water_full_warning"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -562,7 +564,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             return "on"  # activated
         else:
             return "unknown"
-    
+
     @property
     def clean_filter_notify(self):
         """Clean filter notify control. Controllable.
@@ -573,7 +575,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['clean_filter_notify'], self._default)
+        v = self._status.get(self.idx["clean_filter_notify"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -604,7 +606,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "auto", "silent", "low", "moderate", "high", "unknown").
         """
 
-        v = self._status.get(self.idx['air_speed'], self._default)
+        v = self._status.get(self.idx["air_speed"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -630,7 +632,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['side_vent'], self._default)
+        v = self._status.get(self.idx["side_vent"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -650,7 +652,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "silent", "button", "button+waterfull", "unknown").
         """
 
-        v = self._status.get(self.idx['sound_control'], self._default)
+        v = self._status.get(self.idx["sound_control"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -672,7 +674,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             Error code.
         """
 
-        v = self._status.get(self.idx['error_code'], self._default)
+        v = self._status.get(self.idx["error_code"], self._default)
         return v
 
     @property
@@ -685,7 +687,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "off", "on", "unknown").
         """
 
-        v = self._status.get(self.idx['mold_prev'], self._default)
+        v = self._status.get(self.idx["mold_prev"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -705,7 +707,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             Kwh.
         """
 
-        v = self._status.get(self.idx['power_kwh'], self._default)
+        v = self._status.get(self.idx["power_kwh"], self._default)
         if v == -1:
             return v
         return v / 10.0
@@ -731,7 +733,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             Not implemented.
         """
         return "unsupported"
-    
+
     @property
     def pm25_value(self):
         """PM2.5 value.
@@ -742,9 +744,9 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             PM2.5 value.
         """
 
-        v = self._status.get(self.idx['pm25_value'], self._default)
+        v = self._status.get(self.idx["pm25_value"], self._default)
         return v
-    
+
     @property
     def display_brightness(self):
         """Display brightness. Controllable.
@@ -754,7 +756,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
         str
             One of ("unsupported", "bright", "dark", "off", "all_off" "unknown").
         """
-        v = self._status.get(self.idx['display_brightness'], self._default)
+        v = self._status.get(self.idx["display_brightness"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -777,7 +779,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
         str
             One of ("unsupported", "low", "middle", "high", "unknown").
         """
-        v = self._status.get(self.idx['odor_level'], self._default)
+        v = self._status.get(self.idx["odor_level"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -788,7 +790,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             return "high"
         else:
             return "unknown"
-    
+
     @property
     def air_cleaning_filter(self):
         """Air cleaning filter setting.
@@ -799,7 +801,7 @@ class JciHitachiDH(JciHitachiStatus):  # pragma: no cover
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['air_cleaning_filter'], self._default)
+        v = self._status.get(self.idx["air_cleaning_filter"], self._default)
         if v == -1:
             return "unsupported"
         elif v == 0:
@@ -843,7 +845,7 @@ class JciHitachiStatusSupport(JciHitachiStatus):  # pragma: no cover
             Device brand.
         """
 
-        v = self._status.get(self.idx['brand'], self._default)
+        v = self._status.get(self.idx["brand"], self._default)
         return v
 
     @property
@@ -856,21 +858,21 @@ class JciHitachiStatusSupport(JciHitachiStatus):  # pragma: no cover
             Device model.
         """
 
-        v = self._status.get(self.idx['model'], self._default)
+        v = self._status.get(self.idx["model"], self._default)
         return v
 
     def _uni_v(self, v):
-        return (((v >> 0x10) & 0xff) << 8) | (v >> 0x18)
+        return (((v >> 0x10) & 0xFF) << 8) | (v >> 0x18)
 
     def _dual_v(self, v):
-        low = (v >> 0x10) & 0xff
-        high = (v >> 0x18) & 0xff
+        low = (v >> 0x10) & 0xFF
+        high = (v >> 0x18) & 0xFF
         return low, high
 
     def _functional_v(self, v):
         uni_v = self._uni_v(v)
         return ((uni_v >> i) & 0x1 for i in range(16))
-    
+
     def limit(self, status_name, status_value):
         """Limit status_value within an acceptable range.
 
@@ -884,21 +886,22 @@ class JciHitachiStatusSupport(JciHitachiStatus):  # pragma: no cover
         Returns
         -------
         int or None
-            If the status_value can be limited with an acceptable raneg, return int. 
+            If the status_value can be limited with an acceptable raneg, return int.
             Otherwise, if the status_value is invalid, return None.
         """
 
         is_support, *v = getattr(self, status_name)
         if not is_support:
             return None
-        
+
         supported_type = self.supported_type[status_name]
         if supported_type == "uni":
             return min(status_value, v[0])
         elif supported_type == "dual":
             return min(v[1], max(status_value, v[0]))
         elif supported_type == "functional":
-            if v[status_value]: return status_value
+            if v[status_value]:
+                return status_value
         return None
 
 
@@ -914,43 +917,43 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
     """
 
     idx = {
-        'brand': "brand",
-        'model': "model",
-        'power': 0,
-        'mode': 1,
-        'air_speed': 2,
-        'target_temp': 3,
-        'indoor_temp': 4,
-        'sleep_timer': 6,
-        'vertical_wind_swingable': 14,
-        'vertical_wind_direction': 15,
-        'horizontal_wind_direction': 17,
-        'mold_prev': 23,
-        'fast_op': 26,
-        'energy_save': 27,
-        'sound_prompt': 30,
-        'outdoor_temp': 33,
-        'power_kwh': 40,
+        "brand": "brand",
+        "model": "model",
+        "power": 0,
+        "mode": 1,
+        "air_speed": 2,
+        "target_temp": 3,
+        "indoor_temp": 4,
+        "sleep_timer": 6,
+        "vertical_wind_swingable": 14,
+        "vertical_wind_direction": 15,
+        "horizontal_wind_direction": 17,
+        "mold_prev": 23,
+        "fast_op": 26,
+        "energy_save": 27,
+        "sound_prompt": 30,
+        "outdoor_temp": 33,
+        "power_kwh": 40,
     }
 
     supported_type = {
-        'brand': 'str',
-        'model': 'str',
-        'power': 'functional',
-        'mode': 'functional',
-        'air_speed': 'functional',
-        'target_temp': 'dual',
-        'indoor_temp': 'dual',
-        'sleep_timer': 'uni',
-        'vertical_wind_swingable': 'functional',
-        'vertical_wind_direction': 'functional',
-        'horizontal_wind_direction': 'functional',
-        'mold_prev': 'functional',
-        'fast_op': 'functional',
-        'energy_save': 'functional',
-        'sound_prompt': 'functional',
-        'outdoor_temp': 'dual',
-        'power_kwh': 'uni',
+        "brand": "str",
+        "model": "str",
+        "power": "functional",
+        "mode": "functional",
+        "air_speed": "functional",
+        "target_temp": "dual",
+        "indoor_temp": "dual",
+        "sleep_timer": "uni",
+        "vertical_wind_swingable": "functional",
+        "vertical_wind_direction": "functional",
+        "horizontal_wind_direction": "functional",
+        "mold_prev": "functional",
+        "fast_op": "functional",
+        "energy_save": "functional",
+        "sound_prompt": "functional",
+        "outdoor_temp": "dual",
+        "power_kwh": "uni",
     }
 
     def __init__(self, status, default=0):
@@ -966,7 +969,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             (is_support, off, on).
         """
 
-        v = self._status.get(self.idx['power'], self._default)
+        v = self._status.get(self.idx["power"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -981,7 +984,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, (cool, dry, fan, auto, heat, 0...).
         """
 
-        v = self._status.get(self.idx['mode'], self._default)
+        v = self._status.get(self.idx["mode"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -996,7 +999,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, ("auto", "silent", "low", "moderate", "high", 0...).
         """
 
-        v = self._status.get(self.idx['air_speed'], self._default)
+        v = self._status.get(self.idx["air_speed"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1011,7 +1014,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             (is_support, minimum, maximum)
         """
 
-        v = self._status.get(self.idx['target_temp'], self._default)
+        v = self._status.get(self.idx["target_temp"], self._default)
         supports = self._dual_v(v)
 
         return (v != 0, *supports)
@@ -1026,7 +1029,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             (is_support, minimum, maximum)
         """
 
-        v = self._status.get(self.idx['indoor_temp'], self._default)
+        v = self._status.get(self.idx["indoor_temp"], self._default)
         supports = self._dual_v(v)
 
         return (v != 0, *supports)
@@ -1034,18 +1037,18 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
     @property
     def sleep_timer(self):
         """Sleep timer. Controllable.
-        
+
         Returns
         -------
         (bool, int)
             (is_support, maximum).
         """
 
-        v = self._status.get(self.idx['sleep_timer'], self._default)
+        v = self._status.get(self.idx["sleep_timer"], self._default)
         support = self._uni_v(v)
 
         return (v != 0, support)
-    
+
     @property
     def vertical_wind_swingable(self):
         """Vertical wind swingable. Controllable.
@@ -1055,8 +1058,8 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
         (bool, Tuple[int])
             is_support, ("enabled", "disabled", 0...).
         """
-        
-        v = self._status.get(self.idx['vertical_wind_swingable'], self._default)
+
+        v = self._status.get(self.idx["vertical_wind_swingable"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1071,7 +1074,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, ("auto", "level1", "level2", "level3", "level4", "level5", "level6", "level7", 0...).
         """
 
-        v = self._status.get(self.idx['vertical_wind_direction'], self._default)
+        v = self._status.get(self.idx["vertical_wind_direction"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1086,8 +1089,9 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, ("auto", "leftmost", "middleleft", "central", "middleright", "rightmost", 0...).
         """
 
-        v = self._status.get(self.idx['horizontal_wind_direction'], self._default)
-        if v > 0: v = 6-v
+        v = self._status.get(self.idx["horizontal_wind_direction"], self._default)
+        if v > 0:
+            v = 6 - v
 
         supports = self._functional_v(v)
         return (v != 0, *supports)
@@ -1102,11 +1106,11 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, ("enabled", "disabled", 0...).
         """
 
-        v = self._status.get(self.idx['mold_prev'], self._default)
+        v = self._status.get(self.idx["mold_prev"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
-    
+
     @property
     def fast_op(self):
         """Fast operation. Controllable.
@@ -1117,11 +1121,11 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, ("disabled", "enabled", 0...).
         """
 
-        v = self._status.get(self.idx['fast_op'], self._default)
+        v = self._status.get(self.idx["fast_op"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
-    
+
     @property
     def energy_save(self):
         """Energy saving. Controllable.
@@ -1132,7 +1136,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, ("enabled", "disabled", 0...).
         """
 
-        v = self._status.get(self.idx['energy_save'], self._default)
+        v = self._status.get(self.idx["energy_save"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1147,7 +1151,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, ("enabled", "disabled", 0...).
         """
 
-        v = self._status.get(self.idx['sound_prompt'], self._default)
+        v = self._status.get(self.idx["sound_prompt"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1155,18 +1159,18 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
     @property
     def outdoor_temp(self):
         """Outdoor temperature.
-        
+
         Returns
         -------
         (bool, int, int)
             (is_support, minimum, maximum)
         """
 
-        v = self._status.get(self.idx['outdoor_temp'], self._default)
+        v = self._status.get(self.idx["outdoor_temp"], self._default)
         supports = self._dual_v(v)
 
         return (v != 0, *supports)
-    
+
     @property
     def power_kwh(self):
         """Accumulated Kwh in a day.
@@ -1177,7 +1181,7 @@ class JciHitachiACSupport(JciHitachiStatusSupport):  # pragma: no cover
             (is_support, maximum).
         """
 
-        v = self._status.get(self.idx['power_kwh'], self._default)
+        v = self._status.get(self.idx["power_kwh"], self._default)
         supports = self._uni_v(v)
 
         return (v != 0, supports)
@@ -1195,58 +1199,58 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
     """
 
     idx = {
-        'brand': "brand",
-        'model': "model",
-        'power': 0,
-        'mode': 1,
-        'target_humidity': 3,
-        'indoor_humidity': 7,
-        'wind_swingable': 8,
-        'water_full_warning': 10,
-        'clean_filter_notify': 11,
-        'air_purify_level': 13,
-        'air_speed': 14,
-        'side_vent': 15,
-        'sound_control': 16,
-        'error_code': 18,
-        'mold_prev': 19,
-        'power_kwh': 29,
-        'air_quality_value': 35,
-        'air_quality_level': 36,
-        'pm25_value': 37,
-        'display_brightness': 39,
-        'odor_level': 40,
-        'air_cleaning_filter': 41
+        "brand": "brand",
+        "model": "model",
+        "power": 0,
+        "mode": 1,
+        "target_humidity": 3,
+        "indoor_humidity": 7,
+        "wind_swingable": 8,
+        "water_full_warning": 10,
+        "clean_filter_notify": 11,
+        "air_purify_level": 13,
+        "air_speed": 14,
+        "side_vent": 15,
+        "sound_control": 16,
+        "error_code": 18,
+        "mold_prev": 19,
+        "power_kwh": 29,
+        "air_quality_value": 35,
+        "air_quality_level": 36,
+        "pm25_value": 37,
+        "display_brightness": 39,
+        "odor_level": 40,
+        "air_cleaning_filter": 41,
     }
 
     supported_type = {
-        'brand': 'str',
-        'model': 'str',
-        'power': 'functional',
-        'mode': 'functional',
-        'target_humidity': 'dual',
-        'indoor_humidity': 'dual',
-        'wind_swingable': 'functional',
-        'water_full_warning': 'functional',
-        'clean_filter_notify': 'functional',
-        'air_purify_level': 'functional', # not implemented
-        'air_speed': 'functional',
-        'side_vent': 'functional',
-        'sound_control': 'functional',
-        'error_code': 'uni',
-        'mold_prev': 'functional',
-        'power_kwh': 'uni',
-        'air_quality_value': 'uni',
-        'air_quality_level': 'functional',
-        'pm25_value': 'uni',
-        'display_brightness': 'functional',
-        'odor_level': 'functional',
-        'air_cleaning_filter': 'functional'
+        "brand": "str",
+        "model": "str",
+        "power": "functional",
+        "mode": "functional",
+        "target_humidity": "dual",
+        "indoor_humidity": "dual",
+        "wind_swingable": "functional",
+        "water_full_warning": "functional",
+        "clean_filter_notify": "functional",
+        "air_purify_level": "functional",  # not implemented
+        "air_speed": "functional",
+        "side_vent": "functional",
+        "sound_control": "functional",
+        "error_code": "uni",
+        "mold_prev": "functional",
+        "power_kwh": "uni",
+        "air_quality_value": "uni",
+        "air_quality_level": "functional",
+        "pm25_value": "uni",
+        "display_brightness": "functional",
+        "odor_level": "functional",
+        "air_cleaning_filter": "functional",
     }
 
     def __init__(self, status, default=0):
         super().__init__(status, default)
-    
+
     @property
     def power(self):
         """Power. Controllable.
@@ -1257,11 +1261,11 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             (is_support, off, on).
         """
 
-        v = self._status.get(self.idx['power'], self._default)
+        v = self._status.get(self.idx["power"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
-    
+
     @property
     def mode(self):
         """Mode. Controllable.
@@ -1269,10 +1273,10 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
         Returns
         -------
         (bool, Tuple[int])
-            is_support, (auto, custom, continuous, clothes_dry, air_purify, mold_prev, air_supply, human_comfort, low_humidity, eco_comfort, 0...). 
+            is_support, (auto, custom, continuous, clothes_dry, air_purify, mold_prev, air_supply, human_comfort, low_humidity, eco_comfort, 0...).
         """
 
-        v = self._status.get(self.idx['mode'], self._default)
+        v = self._status.get(self.idx["mode"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1287,7 +1291,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             (is_support, minimum, maximum)
         """
 
-        v = self._status.get(self.idx['target_humidity'], self._default)
+        v = self._status.get(self.idx["target_humidity"], self._default)
         supports = self._dual_v(v)
 
         return (v != 0, *supports)
@@ -1302,7 +1306,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             (is_support, minimum, maximum)
         """
 
-        v = self._status.get(self.idx['indoor_humidity'], self._default)
+        v = self._status.get(self.idx["indoor_humidity"], self._default)
         supports = self._dual_v(v)
 
         return (v != 0, *supports)
@@ -1316,9 +1320,8 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
         (bool, Tuple[int])
             is_support, ("off", "on", 0...).
         """
-        
 
-        v = self._status.get(self.idx['wind_swingable'], self._default)
+        v = self._status.get(self.idx["wind_swingable"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1333,11 +1336,11 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, ("off", "on", 0...).
         """
 
-        v = self._status.get(self.idx['water_full_warning'], self._default)
+        v = self._status.get(self.idx["water_full_warning"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
-    
+
     @property
     def clean_filter_notify(self):
         """Clean filter notify control. Controllable.
@@ -1348,7 +1351,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             One of ("unsupported", "disabled", "enabled", "unknown").
         """
 
-        v = self._status.get(self.idx['clean_filter_notify'], self._default)
+        v = self._status.get(self.idx["clean_filter_notify"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1362,7 +1365,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
         str
             Not implemented.
         """
-        
+
         return "unsupported"
 
     @property
@@ -1375,7 +1378,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, ("auto", "silent", "low", "moderate", "high", 0...).
         """
 
-        v = self._status.get(self.idx['air_speed'], self._default)
+        v = self._status.get(self.idx["air_speed"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1390,7 +1393,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             is_support, ("off", "on", 0...).
         """
 
-        v = self._status.get(self.idx['side_vent'], self._default)
+        v = self._status.get(self.idx["side_vent"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1402,10 +1405,10 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
         Returns
         -------
         (bool, Tuple[int])
-            is_support, ("silent", "button", "button+waterfull", 0...).    
+            is_support, ("silent", "button", "button+waterfull", 0...).
         """
 
-        v = self._status.get(self.idx['sound_control'], self._default)
+        v = self._status.get(self.idx["sound_control"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1420,7 +1423,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             (is_support,).
         """
 
-        v = self._status.get(self.idx['error_code'], self._default)
+        v = self._status.get(self.idx["error_code"], self._default)
 
         return (v != 0,)
 
@@ -1431,10 +1434,10 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
         Returns
         -------
         (bool, Tuple[int])
-            is_support, ("silent", "off", "on",, 0...).  
+            is_support, ("silent", "off", "on",, 0...).
         """
 
-        v = self._status.get(self.idx['mold_prev'], self._default)
+        v = self._status.get(self.idx["mold_prev"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1449,7 +1452,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             (is_support, maximum).
         """
 
-        v = self._status.get(self.idx['power_kwh'], self._default)
+        v = self._status.get(self.idx["power_kwh"], self._default)
         supports = self._uni_v(v)
 
         return (v != 0, supports)
@@ -1475,7 +1478,7 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             Not implemented.
         """
         return "unsupported"
-    
+
     @property
     def pm25_value(self):
         """PM2.5 value.
@@ -1486,11 +1489,11 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
             (is_support, maximum).
         """
 
-        v = self._status.get(self.idx['pm25_value'], self._default)
+        v = self._status.get(self.idx["pm25_value"], self._default)
         supports = self._uni_v(v)
 
         return (v != 0, supports)
-    
+
     @property
     def display_brightness(self):
         """Display brightness. Controllable.
@@ -1498,10 +1501,10 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
         Returns
         -------
         (bool, Tuple[int])
-            is_support, ("bright", "dark", "off", 0...).  
+            is_support, ("bright", "dark", "off", 0...).
         """
 
-        v = self._status.get(self.idx['display_brightness'], self._default)
+        v = self._status.get(self.idx["display_brightness"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1513,25 +1516,25 @@ class JciHitachiDHSupport(JciHitachiStatusSupport):  # pragma: no cover
         Returns
         -------
         (bool, Tuple[int])
-            is_support, ("low", "middle", "high", 0...).  
+            is_support, ("low", "middle", "high", 0...).
         """
 
-        v = self._status.get(self.idx['odor_level'], self._default)
+        v = self._status.get(self.idx["odor_level"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
-    
+
     @property
     def air_cleaning_filter(self):
         """Air cleaning filter setting.
 
         Returns
         -------
-        (bool, Tuple[int]) 
+        (bool, Tuple[int])
             is_support, ("enabled", "disabled", 0...). status's reversed order.
         """
 
-        v = self._status.get(self.idx['air_cleaning_filter'], self._default)
+        v = self._status.get(self.idx["air_cleaning_filter"], self._default)
         supports = self._functional_v(v)
 
         return (v != 0, *supports)
@@ -1556,7 +1559,7 @@ class JciHitachiHESupport(JciHitachiStatusSupport):  # pragma: no cover
 
 STATUS_DICT = {
     "AC": {
-        'DeviceType': {
+        "DeviceType": {
             "controllable": False,
             "is_numeric": False,
             "legacy_name": "DeviceType",
@@ -1565,18 +1568,18 @@ STATUS_DICT = {
                 2: "DH",
                 3: "HE",
                 4: "PM25_PANEL",
-            }
+            },
         },
-        'Switch': {
+        "Switch": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": "power",
             "id2str": {
                 0: "off",
                 1: "on",
-            }
+            },
         },
-        'Mode': {
+        "Mode": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": "mode",
@@ -1586,9 +1589,9 @@ STATUS_DICT = {
                 2: "fan",
                 3: "auto",
                 4: "heat",
-            }
+            },
         },
-        'FanSpeed': {
+        "FanSpeed": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": "air_speed",
@@ -1600,138 +1603,138 @@ STATUS_DICT = {
                 4: "high",
                 5: "rapid",
                 6: "express",
-            }
+            },
         },
-        'TemperatureSetting': {
+        "TemperatureSetting": {
             "controllable": True,
             "is_numeric": True,
             "legacy_name": "target_temp",
         },
-        'IndoorTemperature': {
+        "IndoorTemperature": {
             "controllable": False,
             "is_numeric": True,
             "legacy_name": "indoor_temp",
         },
-        'SleepModeRemainingTime': {
+        "SleepModeRemainingTime": {
             "controllable": True,
             "is_numeric": True,
             "legacy_name": "sleep_timer",
         },
-        'VerticalWindDirectionSwitch': {
+        "VerticalWindDirectionSwitch": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": "vertical_wind_swingable",
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'VerticalWindDirectionSetting': {
+        "VerticalWindDirectionSetting": {
             "controllable": True,
             "is_numeric": True,
             "legacy_name": "vertical_wind_direction",
         },
-        'HorizontalWindDirectionSetting': {
+        "HorizontalWindDirectionSetting": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": 'horizontal_wind_direction',
+            "legacy_name": "horizontal_wind_direction",
             "id2str": {
                 0: "auto",
                 1: "leftmost",
                 2: "middleleft",
                 3: "central",
                 4: "middleright",
-                5: "rightmost"
-            }
+                5: "rightmost",
+            },
         },
-        'MildewProof': {
+        "MildewProof": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": 'mold_prev',
+            "legacy_name": "mold_prev",
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'QuickMode': {
+        "QuickMode": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": 'fast_op',
+            "legacy_name": "fast_op",
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'PowerSaving': {
+        "PowerSaving": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name":'energy_save',
+            "legacy_name": "energy_save",
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'ControlTone': {
+        "ControlTone": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name":'sound_prompt',
+            "legacy_name": "sound_prompt",
             "id2str": {
                 0: "enabled",
                 1: "disabled",
-            }
+            },
         },
-        'PowerConsumption': {
+        "PowerConsumption": {
             "controllable": False,
             "is_numeric": True,
-            "legacy_name":'power_kwh',
+            "legacy_name": "power_kwh",
         },
-        'TaiseiaError': {
-            "controllable": False,
-            "is_numeric": True,
-            "legacy_name": None,
-        },
-        'FilterElapsedHour': {
+        "TaiseiaError": {
             "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
-        'CleanSwitch': {
+        "FilterElapsedHour": {
+            "controllable": False,
+            "is_numeric": True,
+            "legacy_name": None,
+        },
+        "CleanSwitch": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name":'freeze_clean',
+            "legacy_name": "freeze_clean",
             "id2str": {
                 0: "off",
                 1: "on",
-            }
+            },
         },
-        'CleanNotification': {
+        "CleanNotification": {
             "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
-        'CleanStatus': {
+        "CleanStatus": {
             "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
-        'Error': {
+        "Error": {
             "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
-        'max_temp': {
+        "max_temp": {
             "controllable": False,
             "is_numeric": True,
-            "legacy_name": 'max_temp',
+            "legacy_name": "max_temp",
         },
-        'min_temp': {
+        "min_temp": {
             "controllable": False,
             "is_numeric": True,
-            "legacy_name": 'min_temp',
+            "legacy_name": "min_temp",
         },
     },
     "DH": {
-        'DeviceType': {
+        "DeviceType": {
             "controllable": False,
             "is_numeric": False,
             "legacy_name": "DeviceType",
@@ -1740,18 +1743,18 @@ STATUS_DICT = {
                 2: "DH",
                 3: "HE",
                 4: "PM25_PANEL",
-            }
+            },
         },
-        'Switch': {
+        "Switch": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": "power",
             "id2str": {
                 0: "off",
                 1: "on",
-            }
+            },
         },
-        'Mode': {
+        "Mode": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": "mode",
@@ -1764,9 +1767,9 @@ STATUS_DICT = {
                 5: "mold_prev",
                 8: "low_humidity",
                 9: "eco_comfort",
-            }
+            },
         },
-        'FanSpeed': {
+        "FanSpeed": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": "air_speed",
@@ -1776,164 +1779,160 @@ STATUS_DICT = {
                 2: "low",
                 3: "moderate",
                 4: "high",
-            }
+            },
         },
-        'MildewProof': {
+        "MildewProof": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": "mold_prev",
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'ControlTone': {
+        "ControlTone": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": 'sound_control',
+            "legacy_name": "sound_control",
             "id2str": {
                 0: "silent",
                 1: "button",
                 2: "button+waterfull",
-            }
+            },
         },
-        'SaaControlTone': {  # currently not supported
+        "SaaControlTone": {  # currently not supported
             "controllable": False,
             "is_numeric": False,
             "legacy_name": None,
-            "id2str": {
-            }
+            "id2str": {},
         },
-        'PowerConsumption': {
+        "PowerConsumption": {
             "controllable": False,
             "is_numeric": True,
-            "legacy_name": 'power_kwh',
+            "legacy_name": "power_kwh",
         },
-        'Ion': {  # currently not supported
+        "Ion": {  # currently not supported
             "controllable": False,
             "is_numeric": False,
             "legacy_name": None,
-            "id2str": {
-            }
+            "id2str": {},
         },
-        'HumiditySetting': {
+        "HumiditySetting": {
             "controllable": True,
             "is_numeric": True,
-            "legacy_name": 'target_humidity',
+            "legacy_name": "target_humidity",
         },
-        'AutoWindDirection': {
+        "AutoWindDirection": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": 'wind_swingable',
+            "legacy_name": "wind_swingable",
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'KeypadLock': {
+        "KeypadLock": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
-            "id2str": {
-            }
+            "id2str": {},
         },
-        'DisplayBrightness': {
+        "DisplayBrightness": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": 'display_brightness',
+            "legacy_name": "display_brightness",
             "id2str": {
                 0: "bright",
                 1: "dark",
                 2: "off",
                 3: "all_off",
-            }
+            },
         },
-        'FilterControl': {
+        "FilterControl": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": 'air_cleaning_filter',
+            "legacy_name": "air_cleaning_filter",
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'PM25': {
+        "PM25": {
             "controllable": False,
             "is_numeric": True,
-            "legacy_name": 'pm25_value',
+            "legacy_name": "pm25_value",
         },
-        'IndoorHumidity': {
+        "IndoorHumidity": {
             "controllable": False,
             "is_numeric": True,
-            "legacy_name": 'indoor_humidity',
+            "legacy_name": "indoor_humidity",
         },
-        'SideAirOutlet': {
+        "SideAirOutlet": {
             "controllable": False,
             "is_numeric": False,
-            "legacy_name": 'side_vent',
+            "legacy_name": "side_vent",
             "id2str": {
                 0: "off",
                 1: "on",
-            }
+            },
         },
-        'Defrost': {
+        "Defrost": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
-            "id2str": {
-            }
+            "id2str": {},
         },
-        'SmellIndex': {
+        "SmellIndex": {
             "controllable": False,
             "is_numeric": False,
-            "legacy_name": 'odor_level',
+            "legacy_name": "odor_level",
             "id2str": {
                 0: "low",
                 1: "middle",
                 2: "high",
-            }
+            },
         },
-        'CleanFilterNotification': {
+        "CleanFilterNotification": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": 'clean_filter_notify',
+            "legacy_name": "clean_filter_notify",
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'TankFullNotification': {
+        "TankFullNotification": {
             "controllable": False,
             "is_numeric": False,
-            "legacy_name": 'water_full_warning',
+            "legacy_name": "water_full_warning",
             "id2str": {
                 0: "off",  # not activated
                 1: "on",  # activated
-            }
+            },
         },
-        'TaiseiaError': {
+        "TaiseiaError": {
             "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
-        'Error': {
+        "Error": {
             "controllable": False,
             "is_numeric": True,
-            "legacy_name": 'error_code',
+            "legacy_name": "error_code",
         },
-        'max_humidity': {
+        "max_humidity": {
             "controllable": False,
             "is_numeric": True,
-            "legacy_name": 'max_humidity',
+            "legacy_name": "max_humidity",
         },
-        'min_humidity': {
+        "min_humidity": {
             "controllable": False,
             "is_numeric": True,
-            "legacy_name": 'min_humidity',
+            "legacy_name": "min_humidity",
         },
     },
     "HE": {
-        'DeviceType': {
+        "DeviceType": {
             "controllable": False,
             "is_numeric": False,
             "legacy_name": "DeviceType",
@@ -1942,18 +1941,18 @@ STATUS_DICT = {
                 2: "DH",
                 3: "HE",
                 4: "PM25_PANEL",
-            }
+            },
         },
-        'Switch': {
+        "Switch": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
                 0: "off",
                 1: "on",
-            }
+            },
         },
-        'Mode': {
+        "Mode": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
@@ -1963,9 +1962,9 @@ STATUS_DICT = {
                 2: "air_supply",
                 3: "auto",
                 4: "heater",
-            }
+            },
         },
-        'FanSpeed': {
+        "FanSpeed": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
@@ -1975,65 +1974,60 @@ STATUS_DICT = {
                 2: "low",
                 3: "moderate",
                 4: "high",
-            }
+            },
         },
-        'IndoorTemperature': {
+        "IndoorTemperature": {
             "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
-        'TaiseiaError': {
+        "TaiseiaError": {
             "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
-        'CleanFilterNotification': {
+        "CleanFilterNotification": {
             "controllable": False,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'BreathMode': {
+        "BreathMode": {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
-            "id2str": {
-                0: "auto",
-                1: "energy_recovery",
-                2: "normal"
-            }
+            "id2str": {0: "auto", 1: "energy_recovery", 2: "normal"},
         },
-        'FrontFilterNotification': {
+        "FrontFilterNotification": {
             "controllable": False,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'Pm25FilterNotification': {
+        "Pm25FilterNotification": {
             "controllable": False,
             "is_numeric": False,
             "legacy_name": None,
             "id2str": {
                 0: "disabled",
                 1: "enabled",
-            }
+            },
         },
-        'Error': {
+        "Error": {
             "controllable": False,
             "is_numeric": True,
             "legacy_name": None,
         },
     },
-    "PM25_PANEL": {
-
-    }
+    "PM25_PANEL": {},
 }
+
 
 class JciHitachiAWSStatus:
     """Data class representing `AWSThing` status.
@@ -2060,16 +2054,20 @@ class JciHitachiAWSStatus:
 
     def __getattr__(self, name):
         return self._status.get(name, "unsupported")
-    
+
     def __repr__(self) -> str:
         return str(self._status)
 
     def _preprocess(self, raw_status):
         # device type
-        if "DeviceType" not in raw_status or \
-            ("DeviceType" in raw_status and raw_status["DeviceType"] not in self.device_type_mapping):
-            raise AttributeError("`DeviceType` isn't in the raw status or has an invalid value.")
-        
+        if "DeviceType" not in raw_status or (
+            "DeviceType" in raw_status
+            and raw_status["DeviceType"] not in self.device_type_mapping
+        ):
+            raise AttributeError(
+                "`DeviceType` isn't in the raw status or has an invalid value."
+            )
+
         if "PowerConsumption" in raw_status:
             raw_status["PowerConsumption"] /= 10.0
 
@@ -2080,7 +2078,9 @@ class JciHitachiAWSStatus:
                 if STATUS_DICT[device_type][key]["is_numeric"]:
                     status[key] = value
                 else:
-                    status[key] = STATUS_DICT[device_type][key]["id2str"].get(value, "unknown")
+                    status[key] = STATUS_DICT[device_type][key]["id2str"].get(
+                        value, "unknown"
+                    )
 
         return status
 
@@ -2095,7 +2095,7 @@ class JciHitachiAWSStatus:
         """
 
         return self._status
-    
+
     @property
     def legacy_status(self):
         """All legacy status name used by the old API.
@@ -2114,18 +2114,33 @@ class JciHitachiAWSStatus:
                     # no legacy name
                     status.update({status_name: status_value})
                 else:
-                    status.update({STATUS_DICT[device_type][status_name]["legacy_name"]: status_value})
+                    status.update(
+                        {
+                            STATUS_DICT[device_type][status_name][
+                                "legacy_name"
+                            ]: status_value
+                        }
+                    )
         return JciHitachiAWSStatus(status, legacy=True)
 
     @staticmethod
     @lru_cache
-    def str2id(device_type: str, status_name: str, status_value: int = None, status_str_value: str = None, support_code: int = None):
+    def str2id(
+        device_type: str,
+        status_name: str,
+        status_value: int = None,
+        status_str_value: str = None,
+        support_code: int = None,
+    ):
         is_valid = (status_value is not None) ^ (status_str_value is not None)
 
         # Name check
         if is_valid:
             if status_name not in STATUS_DICT[device_type]:
-                legacy2new = {specs["legacy_name"]: new_status_name for new_status_name, specs in STATUS_DICT[device_type].items()}
+                legacy2new = {
+                    specs["legacy_name"]: new_status_name
+                    for new_status_name, specs in STATUS_DICT[device_type].items()
+                }
                 if status_name in legacy2new:
                     status_name = legacy2new[status_name]
                 else:
@@ -2134,22 +2149,31 @@ class JciHitachiAWSStatus:
         # Value check
         if is_valid:
             if status_str_value is not None:
-                str2id_dict = {value:key for key, value in STATUS_DICT[device_type][status_name]["id2str"].items()}
+                str2id_dict = {
+                    value: key
+                    for key, value in STATUS_DICT[device_type][status_name][
+                        "id2str"
+                    ].items()
+                }
                 if status_str_value in str2id_dict:
                     status_value = str2id_dict[status_str_value]
                 else:
                     is_valid = False
             else:
-                if not STATUS_DICT[device_type][status_name]["is_numeric"] and status_value not in STATUS_DICT[device_type][status_name]["id2str"]:
+                if (
+                    not STATUS_DICT[device_type][status_name]["is_numeric"]
+                    and status_value
+                    not in STATUS_DICT[device_type][status_name]["id2str"]
+                ):
                     is_valid = False
-        
+
         # if support_code is specified, we check whether the given status value is valid for the device
-        if is_valid and support_code is not None: 
+        if is_valid and support_code is not None:
             if STATUS_DICT[device_type][status_name]["is_numeric"]:
                 if status_value > support_code.status[status_name]:
                     is_valid = False
             else:
-                if 2 ** status_value & support_code.status[status_name] == 0:
+                if 2**status_value & support_code.status[status_name] == 0:
                     is_valid = False
 
         return is_valid, status_name, status_value
@@ -2158,7 +2182,9 @@ class JciHitachiAWSStatus:
         if STATUS_DICT[self._device_type][name]["is_numeric"]:
             self._status[name] = value
         else:
-            self._status[name] = STATUS_DICT[self._device_type][name]["id2str"].get(value, "unknown")
+            self._status[name] = STATUS_DICT[self._device_type][name]["id2str"].get(
+                value, "unknown"
+            )
 
 
 class JciHitachiAWSStatusSupport:
@@ -2185,7 +2211,7 @@ class JciHitachiAWSStatusSupport:
 
     def __getattr__(self, name):
         return self._status.get(name, "unsupported")
-    
+
     def __repr__(self) -> str:
         return str(self._status)
 
@@ -2193,15 +2219,29 @@ class JciHitachiAWSStatusSupport:
         status = status.copy()
         # device type
         status["DeviceType"] = self.device_type_mapping[status["DeviceType"]]
-        
+
         status["Brand"] = "HITACHI"
-        
+
         if status["DeviceType"] == "AC":
-            status["max_temp"] = status["TemperatureSetting"] & 255 if "TemperatureSetting" in status else 32
-            status["min_temp"] = status["TemperatureSetting"] >> 8 & 255 if "TemperatureSetting" in status else 16
+            status["max_temp"] = (
+                status["TemperatureSetting"] & 255
+                if "TemperatureSetting" in status
+                else 32
+            )
+            status["min_temp"] = (
+                status["TemperatureSetting"] >> 8 & 255
+                if "TemperatureSetting" in status
+                else 16
+            )
         elif status["DeviceType"] == "DH":
-            status["max_humidity"] = status["HumiditySetting"] & 255 if "HumiditySetting" in status else 70
-            status["min_humidity"] = status["HumiditySetting"] >> 8 & 255 if "HumiditySetting" in status else 40
+            status["max_humidity"] = (
+                status["HumiditySetting"] & 255 if "HumiditySetting" in status else 70
+            )
+            status["min_humidity"] = (
+                status["HumiditySetting"] >> 8 & 255
+                if "HumiditySetting" in status
+                else 40
+            )
 
         return status
 

@@ -15,17 +15,18 @@ class JciHitachiCommand:  # pragma: no cover
 
     def __init__(self, gateway_mac_address):
         self.job_info_base = bytearray.fromhex(
-                              "d0d100003c6a9dffff03e0d4ffffffff \
-                               00000100000000000000002000010000 \
-                               000000000000000002000d278050f0d4 \
-                               469dafd3605a6ebbdb130d278052f0d4 \
-                               469dafd3605a6ebbdb13060006000000 \
-                               0000")
+            "d0d100003c6a9dffff03e0d4ffffffff \
+             00000100000000000000002000010000 \
+             000000000000000002000d278050f0d4 \
+             469dafd3605a6ebbdb130d278052f0d4 \
+             469dafd3605a6ebbdb13060006000000 \
+             0000"
+        )
         self.job_info_base[32:40] = bytearray.fromhex(hex(int(gateway_mac_address))[2:])
-    
+
     def get_command(self, command, value):
         raise NotImplementedError
-    
+
     def get_b64command(self, command, value):
         """A wrapper of get_command, generating base64 command.
 
@@ -53,7 +54,7 @@ class JciHitachiCommandAC(JciHitachiCommand):  # pragma: no cover
     gateway_mac_address : str
         Gateway mac address.
     """
-    
+
     def __init__(self, gateway_mac_address):
         super().__init__(gateway_mac_address)
 
@@ -74,7 +75,7 @@ class JciHitachiCommandAC(JciHitachiCommand):  # pragma: no cover
         """
 
         job_info = self.job_info_base.copy()
-        
+
         # Device type
         job_info[77] = 1
 
@@ -84,12 +85,12 @@ class JciHitachiCommandAC(JciHitachiCommand):  # pragma: no cover
         # Value (eg. 27)
         job_info[80] = value
 
-        # Checksum 
+        # Checksum
         # Original algorithm:
         # xor job_info 76~80
         # Since byte 76(0x06), 77(device type), and 79(0x00) are constants,
         # here is the simplified algorithm:
-        # command ^ value ^ 0x07 (flip last 3 bits) 
+        # command ^ value ^ 0x07 (flip last 3 bits)
         job_info[81] = job_info[78] ^ job_info[80] ^ 0x07
 
         return job_info
@@ -124,7 +125,7 @@ class JciHitachiCommandDH(JciHitachiCommand):  # pragma: no cover
         """
 
         job_info = self.job_info_base.copy()
-        
+
         # Device type
         job_info[77] = 4
 
@@ -174,7 +175,7 @@ class JciHitachiCommandHE(JciHitachiCommand):  # pragma: no cover
         """
 
         job_info = self.job_info_base.copy()
-        
+
         # Device type
         job_info[77] = 14
 
@@ -208,11 +209,14 @@ class JciHitachiStatusInterpreter:  # pragma: no cover
         self.base64_bytes = base64.standard_b64decode(code)
 
     def _decode_status_number(self):
-        if 6 < self.base64_bytes[0] and (self.base64_bytes[1], self.base64_bytes[2]) == (0, 8):
+        if 6 < self.base64_bytes[0] and (
+            self.base64_bytes[1],
+            self.base64_bytes[2],
+        ) == (0, 8):
             return int((self.base64_bytes[0] - 4) / 3)
         else:
             return 0
-    
+
     def _decode_support_number(self):
         if 9 < self.base64_bytes[0]:
             return int((self.base64_bytes[0] - 26) / 3)
@@ -225,29 +229,29 @@ class JciHitachiStatusInterpreter:  # pragma: no cover
         if stat_idx + 3 <= self.base64_bytes[0] - 1:
             status_bytes = bytearray(4)
             status_bytes[0] = (self.base64_bytes[stat_idx] & 0x80) != 0
-            status_bytes[1] = self.base64_bytes[stat_idx] & 0xffff7fff
-            status_bytes[2:4] = self.base64_bytes[stat_idx + 1: stat_idx + 3]
+            status_bytes[1] = self.base64_bytes[stat_idx] & 0xFFFF7FFF
+            status_bytes[2:4] = self.base64_bytes[stat_idx + 1 : stat_idx + 3]
 
-            output = int.from_bytes(status_bytes, byteorder='little')
+            output = int.from_bytes(status_bytes, byteorder="little")
             return output
         else:
-            output = util.bin_concat(0xff, max_func_number)
-            output = (output << 16) & 0xffff0000 | max_func_number
+            output = util.bin_concat(0xFF, max_func_number)
+            output = (output << 16) & 0xFFFF0000 | max_func_number
         return output
-    
+
     def _decode_single_support(self, max_func_number, while_counter, init):
         stat_idx = while_counter * 3 + init
 
         if stat_idx + 3 <= self.base64_bytes[0] - 1:
             status_bytes = bytearray(4)
             status_bytes[0] = (self.base64_bytes[stat_idx] & 0x80) != 0
-            status_bytes[1] = self.base64_bytes[stat_idx] & 0xffff7fff
-            status_bytes[2:4] = self.base64_bytes[stat_idx + 1: stat_idx + 3]
+            status_bytes[1] = self.base64_bytes[stat_idx] & 0xFFFF7FFF
+            status_bytes[2:4] = self.base64_bytes[stat_idx + 1 : stat_idx + 3]
 
-            output = int.from_bytes(status_bytes, byteorder='little')
+            output = int.from_bytes(status_bytes, byteorder="little")
         else:
-            output = util.bin_concat(0xff, max_func_number)
-            output = (output << 16) & 0xffff0000 | max_func_number
+            output = util.bin_concat(0xFF, max_func_number)
+            output = (output << 16) & 0xFFFF0000 | max_func_number
         return output
 
     def _get_strs(self, start_idx, num_strs):
@@ -280,7 +284,7 @@ class JciHitachiStatusInterpreter:  # pragma: no cover
             idx = util.cast_bytes(ret >> 8, 1)
             table[idx] = ret >> 0x18 + (ret >> 0x10 * 0x100)
         return table
-    
+
     def decode_support(self):
         """Decode all support codes of a peripheral.
 
@@ -292,10 +296,7 @@ class JciHitachiStatusInterpreter:  # pragma: no cover
 
         init, (brand, model) = self._get_strs(8, 2)
 
-        table = {
-            'brand': brand,
-            'model': model
-        }
+        table = {"brand": brand, "model": model}
 
         num_idx = self._decode_support_number()
 

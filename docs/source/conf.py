@@ -12,7 +12,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../'))
+
+sys.path.insert(0, os.path.abspath("../../"))
 
 print(sys.path)
 
@@ -20,12 +21,12 @@ from JciHitachi import __author__, __version__
 
 # -- Project information -----------------------------------------------------
 
-project = 'LibJciHitachi'
-copyright = f'2023, {__author__}'
+project = "LibJciHitachi"
+copyright = f"2023, {__author__}"
 author = __author__
 
 # The full version, including alpha/beta/rc tags
-release = f'v{__version__}'
+release = f"v{__version__}"
 
 
 # -- General configuration ---------------------------------------------------
@@ -33,25 +34,28 @@ release = f'v{__version__}'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.viewcode', 'myst_parser']
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "myst_parser",
+]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["build", "Thumbs.db", ".DS_Store"]
 
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.txt': 'markdown',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".txt": "markdown",
+    ".md": "markdown",
 }
 
-autodoc_default_options = {
-    'member-order': 'bysource'
-}
+autodoc_default_options = {"member-order": "bysource"}
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -63,4 +67,4 @@ html_theme = "sphinx_rtd_theme"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
