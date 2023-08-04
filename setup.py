@@ -11,6 +11,7 @@ install_requires = [
     "paho-mqtt",
 ]
 tests_require = [
+    "pre-commit",
     "pytest>=6.2",
     "pytest-cov",
 ]
@@ -38,8 +39,8 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=setuptools.find_packages(include=['JciHitachi']),
-        package_data={'JciHitachi': ['cert/*.pem']},
+        packages=setuptools.find_packages(include=["JciHitachi"]),
+        package_data={"JciHitachi": ["cert/*.pem"]},
         python_requires=">=3.8",
         install_requires=install_requires,
         tests_require=tests_require,

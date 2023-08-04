@@ -2,7 +2,7 @@
 
 ## API
 
-1. Import API and define credential information. 
+1. Import API and define credential information.
 
     ```
     from JciHitachi.api import JciHitachiAWSAPI
@@ -20,16 +20,16 @@
     api = JciHitachiAWSAPI(EMAIL, PASSWORD, DEVICENAME)
     api.login()
 
-    # Check device status 
+    # Check device status
     # device_status = api.get_status(legacy=True) # return legacy status class
     device_status = api.get_status()
     print(device_status[DEVICENAME].status)
     ```
 
 3. Set a new status to a device.
-    
+
     ```
-    # Set device status 
+    # Set device status
     # For available command names and values, please refer to
     # model.py->STATUS_DICT
     if api.set_status(status_name='TemperatureSetting', device_name=DEVICENAME, status_value=27):
@@ -39,7 +39,7 @@
     ```
 
 4. Check the updated status.
-    
+
     ```
     # Check the updated device status
     api.refresh_status()
@@ -51,7 +51,7 @@ The python script can be found [here](https://github.com/qqaatw/LibJciHitachi/bl
 
 ## Legacy API
 
-1. Import API and define credential information. 
+1. Import API and define credential information.
 
     ```
     from JciHitachi.api import JciHitachiAPI
@@ -69,15 +69,15 @@ The python script can be found [here](https://github.com/qqaatw/LibJciHitachi/bl
     api = JciHitachiAPI(EMAIL, PASSWORD, DEVICENAME)
     api.login()
 
-    # Check device status 
+    # Check device status
     device_status = api.get_status()
     print(device_status[DEVICENAME].status)
     ```
 
 3. Set a new status to a device.
-    
+
     ```
-    # Set device status 
+    # Set device status
     # For available command names and values, please refer to
     # Air conditioner: model.py->JciHitachiAC
     # Dehumidifier: model.py->JciHitachiDH
@@ -88,7 +88,7 @@ The python script can be found [here](https://github.com/qqaatw/LibJciHitachi/bl
     ```
 
 4. Check the updated status.
-    
+
     ```
     # Check the updated device status
     api.refresh_status()

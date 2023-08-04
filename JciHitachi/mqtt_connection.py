@@ -13,9 +13,14 @@ from .utility import convert_hash
 MQTT_ENDPOINT = "mqtt.jci-hitachi-smarthome.com"
 MQTT_PORT = 8893
 MQTT_VERSION = 4
-MQTT_SSL_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cert/mqtt-jci-hitachi-smarthome-com-chain.pem")
+MQTT_SSL_CERT = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "cert/mqtt-jci-hitachi-smarthome-com-chain.pem",
+)
 MQTT_SSL_CONTEXT = ssl.create_default_context(cafile=MQTT_SSL_CERT)
-MQTT_SSL_CONTEXT.set_ciphers("DEFAULT@SECLEVEL=1")  # the cert uses SHA1-RSA1024bits ciphers so unfortunately we have to lower the security level
+MQTT_SSL_CONTEXT.set_ciphers(
+    "DEFAULT@SECLEVEL=1"
+)  # the cert uses SHA1-RSA1024bits ciphers so unfortunately we have to lower the security level
 MQTT_SSL_CONTEXT.hostname_checks_common_name = True  # the cert lacks a subjectaltname
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,7 +54,7 @@ class JciHitachiMqttConnection:  # pragma: no cover
         self._password = password
         self._user_id = user_id
         self._print_response = print_response
-        
+
         self._mqttc = mqtt.Client()
         self._mqtt_events = JciHitachiMqttEvents()
 
@@ -73,11 +78,11 @@ class JciHitachiMqttConnection:  # pragma: no cover
             print(f"Mqtt connected with result code {rc}")
 
         client.subscribe(f"out/ugroup/{self._user_id}/#")
-    
+
     def _on_disconnect(self, client, userdata, rc):
         if self._print_response:
             print(f"Mqtt disconnected with result code {rc}")
-        
+
         if rc == mqtt.MQTT_ERR_SUCCESS:
             self._mqttc.loop_stop()
         else:
@@ -86,8 +91,8 @@ class JciHitachiMqttConnection:  # pragma: no cover
     def _on_message(self, client, userdata, msg):
         if self._print_response:
             print(f"{msg.topic} {str(msg.payload)}")
-        
-        split_topic = msg.topic.split('/')
+
+        split_topic = msg.topic.split("/")
         payload = json.loads(msg.payload)
         if len(split_topic) == 6 and split_topic[-1] == "status":
             gateway_id = payload["args"]["ObjectID"]
@@ -103,10 +108,12 @@ class JciHitachiMqttConnection:  # pragma: no cover
                 self._mqtt_events.job.set()
 
     def configure(self):
-        """Configure MQTT.
-        """
+        """Configure MQTT."""
 
-        self._mqttc.username_pw_set(f"$MAIL${self._email}", f"{self._email}{convert_hash(f'{self._email}{self._password}')}")
+        self._mqttc.username_pw_set(
+            f"$MAIL${self._email}",
+            f"{self._email}{convert_hash(f'{self._email}{self._password}')}",
+        )
         self._mqttc.tls_set_context(MQTT_SSL_CONTEXT)
         self._mqttc.on_connect = self._on_connect
         self._mqttc.on_disconnect = self._on_disconnect
@@ -116,14 +123,14 @@ class JciHitachiMqttConnection:  # pragma: no cover
             self._mqttc.enable_logger(logger=_LOGGER)
 
     def connect(self):
-        """Connect to the MQTT broker and start loop.
-        """
+        """Connect to the MQTT broker and start loop."""
 
-        self._mqttc.connect_async(MQTT_ENDPOINT, port=MQTT_PORT, keepalive=60, bind_address="")
+        self._mqttc.connect_async(
+            MQTT_ENDPOINT, port=MQTT_PORT, keepalive=60, bind_address=""
+        )
         self._mqttc.loop_start()
 
     def disconnect(self):
-        """Disconnect from the MQTT broker.
-        """
+        """Disconnect from the MQTT broker."""
 
         self._mqttc.disconnect()

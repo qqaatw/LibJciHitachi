@@ -5,6 +5,7 @@ import contextvars
 
 import asyncio.events as events
 
+
 def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):  # pragma: no cover
     """Concatenate two integer.
     Steps:
@@ -44,6 +45,7 @@ def bin_concat(int_1, int_2, int_1_byte=None, int_2_byte=None):  # pragma: no co
 
     return int(int_1_bin + int_2_bin, base=2)
 
+
 def cast_bytes(v, nbytes):  # pragma: no cover
     """Cast byte(s) from v.
 
@@ -60,15 +62,15 @@ def cast_bytes(v, nbytes):  # pragma: no cover
         Casted value.
     """
 
-    assert nbytes >= 1 and nbytes <= 8, \
-        "Invalid nbytes : {}".format(nbytes)
-    return v & (0x100 ** nbytes - 1)
+    assert nbytes >= 1 and nbytes <= 8, "Invalid nbytes : {}".format(nbytes)
+    return v & (0x100**nbytes - 1)
+
 
 def convert_hash(v):  # pragma: no cover
     """Convert md5 from string.
     Steps:
         1. Use hashlib to convert md5.
-        2. Perform "And 255" then "Or 256" to ensure 
+        2. Perform "And 255" then "Or 256" to ensure
            the length of hashed code is limited within 511 (0b111111111).
 
     Parameters
@@ -82,10 +84,11 @@ def convert_hash(v):  # pragma: no cover
         Converted hash code.
     """
 
-    md5 = hashlib.md5(v.encode('utf8')).digest()
-    code = [hex((i & 0xff) | 0x100)[3:5] for i in md5]
-        
-    return ''.join(code)
+    md5 = hashlib.md5(v.encode("utf8")).digest()
+    code = [hex((i & 0xFF) | 0x100)[3:5] for i in md5]
+
+    return "".join(code)
+
 
 def extract_bytes(v, start, end):  # pragma: no cover
     """Extract bytes scope, from start(left) to end(right).
@@ -108,11 +111,15 @@ def extract_bytes(v, start, end):  # pragma: no cover
         Extracted value.
     """
 
-    assert start > end and end >= 0, \
-        "Starting byte must be greater than ending byte, \
+    assert (
+        start > end and end >= 0
+    ), "Starting byte must be greater than ending byte, \
          and ending byte must be greater than zero : \
-         {}, {}".format(start, end)
-    return cast_bytes(v >> end * 8, start-end)
+         {}, {}".format(
+        start, end
+    )
+    return cast_bytes(v >> end * 8, start - end)
+
 
 # Copied from https://github.com/python/cpython/blob/main/Lib/asyncio/threads.py
 # TODO: Remove this once we upgrade the minimally supported Python version to 3.9.
