@@ -6,7 +6,7 @@
 [![docs](https://readthedocs.org/projects/libjcihitachi/badge/?version=latest)](https://libjcihitachi.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/LibJciHitachi.svg?color=%23007ec6)](https://pypi.python.org/pypi/LibJciHitachi/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/LibJciHitachi.svg)](https://pypi.python.org/pypi/LibJciHitachi/)
-[![Downloads](https://pepy.tech/badge/libjcihitachi)](https://pepy.tech/project/libjcihitachi)
+[![Downloads](https://static.pepy.tech/badge/libjcihitachi)](https://pepy.tech/project/libjcihitachi)
 
 ## Feature
 
