@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 install_requires = [
-    "awsiotsdk==1.15.4",
+    "awsiotsdk==1.20.0",
     "httpx",
     "paho-mqtt",
 ]
@@ -32,7 +32,6 @@ if __name__ == "__main__":
             "Documentation": "https://libjcihitachi.readthedocs.io/en/latest/",
         },
         classifiers=[
-            "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",

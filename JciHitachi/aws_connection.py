@@ -5,10 +5,9 @@ import json
 import logging
 import threading
 import time
-import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from random import random
+from random import random, choices
 from typing import Callable, Optional, Union
 
 import awscrt
@@ -16,7 +15,6 @@ import httpx
 from awsiot import iotshadow, mqtt_connection_builder
 
 from .model import JciHitachiAWSStatus, JciHitachiAWSStatusSupport
-from .utility import to_thread
 
 AWS_REGION = "ap-northeast-1"
 AWS_COGNITO_IDP_ENDPOINT = f"cognito-idp.{AWS_REGION}.amazonaws.com"
@@ -43,6 +41,7 @@ class AWSTokens:
 @dataclass
 class AWSIdentity:
     identity_id: str
+    host_identity_id: str
     user_name: str
     user_attributes: dict
 
@@ -204,7 +203,7 @@ class JciHitachiAWSCognitoConnection(JciHitachiAWSHttpConnection):
         """
 
         # https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html
-        if use_refresh_token and self._aws_tokens != None:
+        if use_refresh_token and self._aws_tokens is not None:
             login_json_data = {
                 "AuthFlow": "REFRESH_TOKEN_AUTH",
                 "AuthParameters": {
@@ -312,6 +311,7 @@ class GetUser(JciHitachiAWSCognitoConnection):
             }
             aws_identity = AWSIdentity(
                 identity_id=user_attributes["custom:cognito_identity_id"],
+                host_identity_id=user_attributes["custom:host_identity_id"],
                 user_name=response["Username"],
                 user_attributes=user_attributes,
             )
@@ -653,7 +653,7 @@ class JciHitachiAWSMqttConnection:
         return
 
     def _on_connection_interrupted(self, connection, error, **kwargs):
-        _LOGGER.error("MQTT connection was interrupted with exception {error}.")
+        _LOGGER.error(f"MQTT connection was interrupted with exception {error}")
         self._mqtt_events.mqtt_error = error.__class__.__name__
         self._mqtt_events.mqtt_error_event.set()
 
@@ -681,11 +681,11 @@ class JciHitachiAWSMqttConnection:
             _LOGGER.info("Resubscribed successfully.")
         return
 
-    async def _wrap_async(self, identifier: str, fn: Callable, timeout: float) -> str:
+    async def _wrap_async(self, identifier: str, fn: Callable) -> str:
         await asyncio.sleep(
             random() / 2
         )  # randomly wait 0~0.5 seconds to prevent messages flooding to the broker.
-        await asyncio.wait_for(to_thread(fn), timeout)
+        await asyncio.to_thread(fn)
         return identifier
 
     def disconnect(self) -> None:
@@ -694,7 +694,7 @@ class JciHitachiAWSMqttConnection:
         if self._mqttc is not None:
             self._mqttc.disconnect()
 
-    def configure(self) -> None:
+    def configure(self, identity_id) -> None:
         """Configure MQTT."""
 
         cred_provider = awscrt.auth.AwsCredentialsProvider.new_delegate(
@@ -708,7 +708,7 @@ class JciHitachiAWSMqttConnection:
             cred_provider,
             client_bootstrap=client_bootstrap,
             endpoint=AWS_MQTT_ENDPOINT,
-            client_id=str(uuid.uuid4()),
+            client_id=f"{identity_id}_{''.join(choices('abcdef0123456789', k=16))}",  # {identityid}_{64bit_hex}
             on_connection_interrupted=self._on_connection_interrupted,
             on_connection_resumed=self._on_connection_resumed,
         )
@@ -750,7 +750,7 @@ class JciHitachiAWSMqttConnection:
 
         try:
             subscribe_future, _ = self._mqttc.subscribe(
-                f"{host_identity_id}/#", QOS, callback=self._on_publish
+                f"{host_identity_id}/+/+/response", QOS, callback=self._on_publish
             )
             subscribe_future.result()
 
@@ -861,11 +861,11 @@ class JciHitachiAWSMqttConnection:
                 publish_future, _ = self._mqttc.publish(
                     support_topic, json.dumps(default_payload), QOS
                 )
-                publish_future.result()
-                self._mqtt_events.device_support_event[thing_name].wait()
+                publish_future.result(timeout)
+                self._mqtt_events.device_support_event[thing_name].wait(timeout)
 
             self._execution_pools.support_execution_pool.append(
-                self._wrap_async(thing_name, fn, timeout)
+                self._wrap_async(thing_name, fn)
             )
         elif publish_type == "status":
             status_topic = f"{host_identity_id}/{thing_name}/status/request"
@@ -878,11 +878,11 @@ class JciHitachiAWSMqttConnection:
                 publish_future, _ = self._mqttc.publish(
                     status_topic, json.dumps(default_payload), QOS
                 )
-                publish_future.result()
-                self._mqtt_events.device_status_event[thing_name].wait()
+                publish_future.result(timeout)
+                self._mqtt_events.device_status_event[thing_name].wait(timeout)
 
             self._execution_pools.status_execution_pool.append(
-                self._wrap_async(thing_name, fn, timeout)
+                self._wrap_async(thing_name, fn)
             )
         elif publish_type == "control":
             control_topic = f"{host_identity_id}/{thing_name}/control/request"
@@ -895,11 +895,11 @@ class JciHitachiAWSMqttConnection:
                 publish_future, _ = self._mqttc.publish(
                     control_topic, json.dumps(payload), QOS
                 )
-                publish_future.result()
-                self._mqtt_events.device_control_event[thing_name].wait()
+                publish_future.result(timeout)
+                self._mqtt_events.device_control_event[thing_name].wait(timeout)
 
             self._execution_pools.control_execution_pool.append(
-                self._wrap_async(thing_name, fn, timeout)
+                self._wrap_async(thing_name, fn)
             )
 
         else:
@@ -995,11 +995,11 @@ class JciHitachiAWSMqttConnection:
                         ),
                         qos=QOS,
                     )
-            publish_future.result()
-            self._mqtt_events.device_shadow_event[thing_name].wait()
+            publish_future.result(timeout)
+            self._mqtt_events.device_shadow_event[thing_name].wait(timeout)
 
         self._execution_pools.shadow_execution_pool.append(
-            self._wrap_async(thing_name, fn, timeout)
+            self._wrap_async(thing_name, fn)
         )
 
     def execute(

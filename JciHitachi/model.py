@@ -2196,13 +2196,6 @@ class JciHitachiAWSStatusSupport:
         Status retrieved from `JciHitachiAWSMqttConnection` _on_publish() callback.
     """
 
-    extended_mapping = {
-        "FirmwareId": None,
-        "Model": "model",
-        "Brand": "brand",
-        "FindMe": None,
-    }
-
     device_type_mapping = JciHitachiAWSStatus.device_type_mapping
 
     def __init__(self, raw_status: dict) -> None:
@@ -2217,6 +2210,10 @@ class JciHitachiAWSStatusSupport:
 
     def _preprocess(self, status):
         status = status.copy()
+
+        if status.get("Error", 0) != 0:
+            return status
+
         # device type
         status["DeviceType"] = self.device_type_mapping[status["DeviceType"]]
 
