@@ -23,7 +23,6 @@ from JciHitachi.aws_connection import (
     GetHistoryEventByUser,
     GetUser,
     JciHitachiAWSCognitoConnection,
-    JciHitachiAWSIoTConnection,
     JciHitachiAWSMqttConnection,
     ListSubUser,
 )
@@ -139,7 +138,7 @@ class TestJciHitachiAWSMqttConnection:
         assert mqtt._mqttc is None
         assert mqtt._shadow_mqttc is None
 
-        mqtt.configure()
+        mqtt.configure(identity_id="identity_id")
 
         assert isinstance(mqtt._mqttc, awscrt.mqtt.Connection)
         assert isinstance(mqtt._shadow_mqttc, awsiot.iotshadow.IotShadowClient)
@@ -191,7 +190,7 @@ class TestJciHitachiAWSMqttConnection:
             assert thing_name in mqtt._mqtt_events.device_support_event
             assert len(mqtt._execution_pools.support_execution_pool) == 1
 
-        # test clearning event
+        # test clearing event
         mqtt._mqtt_events.device_support_event[thing_name] = threading.Event()
         mqtt._mqtt_events.device_support_event[thing_name].set()
         with patch.object(mqtt, "_mqttc") as mock_mqttc:
@@ -207,8 +206,10 @@ class TestJciHitachiAWSMqttConnection:
             publish_future = concurrent.futures.Future()
             publish_future.set_exception(ValueError())
             mock_mqttc.publish.return_value = (publish_future, None)
-            with pytest.raises(ValueError, match=f"Invalid publish_type: others"):
+            with pytest.raises(ValueError, match="Invalid publish_type: others"):
                 mqtt.publish("", thing_name, "others")
+
+        # TODO: test timeout
 
     @pytest.mark.parametrize("raise_exception", [False, True])
     def test_publish_shadow(self, fixture_aws_mock_mqtt_connection, raise_exception):
@@ -254,7 +255,7 @@ class TestJciHitachiAWSMqttConnection:
 
         # Test invalid command name.
         with pytest.raises(
-            ValueError, match=f"command_name must be one of `get` or `update`."
+            ValueError, match="command_name must be one of `get` or `update`."
         ):
             mqtt.publish_shadow(thing_name, "delete")
 
@@ -298,14 +299,18 @@ class TestJciHitachiAWSCognitoConnection:
                     {
                         "Name": "custom:cognito_identity_id",
                         "Value": "identity_id",
-                    }
+                    },
+                    {
+                        "Name": "custom:host_identity_id",
+                        "Value": "host_identity_id",
+                    },
                 ],
             },
             AWSIdentity,
         ),
         (
             GetCredentials,
-            {"aws_identity": AWSIdentity("", "", {})},
+            {"aws_identity": AWSIdentity("", "", "", {})},
             "AWSCognitoIdentityService.GetCredentialsForIdentity",
             {
                 "Credentials": {

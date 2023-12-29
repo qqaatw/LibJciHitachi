@@ -347,10 +347,13 @@ class JciHitachiAPI:  # pragma: no cover
         Returns
         -------
         int
-            Serial number counted from 0.
+            Serial number counted from 0, with maximum 999.
         """
 
         self._task_id += 1
+        if self._task_id >= 1000:
+            self._task_id = 1
+
         return self._task_id
 
     def _sync_peripherals_availablity(self) -> None:
@@ -914,7 +917,6 @@ class JciHitachiAWSAPI:
         self._things: dict[str, AWSThing] = {}
         self._aws_tokens: Optional[aws_connection.AWSTokens] = None
         self._aws_identity: Optional[aws_connection.AWSIdentity] = None
-        self._host_identity_id: Optional[str] = None
         self._task_id: int = 0
 
     @property
@@ -980,24 +982,6 @@ class JciHitachiAWSAPI:
         self._aws_tokens = conn.aws_tokens
         conn_status, self._aws_identity = conn.get_data()
 
-        conn = aws_connection.ListSubUser(
-            self._aws_tokens, print_response=self.print_response
-        )
-        conn_status, conn_json = conn.get_data()
-
-        if conn_status == "OK":
-            for user in conn_json["results"]["FamilyMemberList"]:
-                if user["isHost"]:
-                    self._host_identity_id = user["userId"]
-                    break
-            assert (
-                self._host_identity_id is not None
-            ), "Host is not found in the user list"
-        else:
-            raise RuntimeError(
-                f"An error occurred when listing account users: {conn_status}"
-            )
-
         conn = aws_connection.GetAllDevice(
             self._aws_tokens, print_response=self.print_response
         )
@@ -1028,13 +1012,13 @@ class JciHitachiAWSAPI:
             self._mqtt = aws_connection.JciHitachiAWSMqttConnection(
                 get_credential_callable, print_response=self.print_response
             )
-            self._mqtt.configure()
+            self._mqtt.configure(self._aws_identity.identity_id)
 
             if not self._mqtt.connect(
-                self._host_identity_id, self._shadow_names, thing_names
+                self._aws_identity.host_identity_id, self._shadow_names, thing_names
             ):
                 raise RuntimeError(
-                    f"An error occurred when connecting to MQTT endpoint."
+                    "An error occurred when connecting to MQTT endpoint."
                 )
 
             # status
@@ -1175,7 +1159,7 @@ class JciHitachiAWSAPI:
 
             if refresh_support_code:
                 self._mqtt.publish(
-                    self._host_identity_id,
+                    self._aws_identity.host_identity_id,
                     thing.thing_name,
                     "support",
                     self._mqtt_timeout,
@@ -1184,7 +1168,10 @@ class JciHitachiAWSAPI:
                 self._mqtt.publish_shadow(thing.thing_name, "get", shadow_name="info")
 
             self._mqtt.publish(
-                self._host_identity_id, thing.thing_name, "status", self._mqtt_timeout
+                self._aws_identity.host_identity_id,
+                thing.thing_name,
+                "status",
+                self._mqtt_timeout,
             )
 
         # execute
@@ -1324,9 +1311,7 @@ class JciHitachiAWSAPI:
             "enableQAMode": "qa",
         }
 
-        if (
-            False
-        ):  # status_name in shadow_publish_mapping: # TODO: replace False cond after shadow function is completed.
+        if False:  # status_name in shadow_publish_mapping: # TODO: replace False cond after shadow function is completed.
             shadow_publish_schema = {}
             if (
                 shadow_publish_mapping[status_name] == "filter"
@@ -1356,22 +1341,14 @@ class JciHitachiAWSAPI:
             return False
 
         self._mqtt.publish(
-            self._host_identity_id,
+            self._aws_identity.host_identity_id,
             thing.thing_name,
             "control",
             self._mqtt_timeout,
             {
-                "Condition": {
-                    "ThingName": thing.thing_name,
-                    "Index": 0,
-                    "Geofencing": {
-                        "Arrive": None,
-                        "Leave": None,
-                    },
-                },
                 status_name: status_value,
                 "TaskID": self.task_id,
-                "Timestamp": time.time(),
+                "Timestamp": int(time.time()),
             },
         )
 
