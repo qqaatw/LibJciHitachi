@@ -141,9 +141,11 @@ class TestAWSAPI:
             api._aws_tokens = None
             mock_get_data_get_user.return_value = (
                 "OK",
-                AWSIdentity("id", "username", {"attr", "attr"}),
+                AWSIdentity("id", "host_id", "username", {"attr", "attr"}),
             )
             mock_login_get_user.return_value = ("OK", aws_tokens)
+
+            # mock_get_data_list_subuser currently unused.
             mock_get_data_list_subuser.return_value = (
                 "OK",
                 {
@@ -160,7 +162,6 @@ class TestAWSAPI:
             api.refresh_status = MagicMock()
             assert api._aws_tokens is None
             assert api._aws_identity is None
-            assert api._host_identity_id is None
             assert len(api._things) == 3
             assert api.device_names is None
 
@@ -168,7 +169,8 @@ class TestAWSAPI:
             api.login()
             assert api._aws_tokens == aws_tokens
             assert api._aws_identity is not None
-            assert api._host_identity_id == "uid2"
+            assert api._aws_identity.identity_id == "id"
+            assert api._aws_identity.host_identity_id == "host_id"
             assert len(api._things) == 2
             assert len(api.device_names) == 2
 
@@ -186,7 +188,7 @@ class TestAWSAPI:
             mock_get_data_1.return_value = ("Not OK", "")
             with pytest.raises(
                 RuntimeError,
-                match=f"An error occurred when changing AWS Cognito password: Not OK",
+                match="An error occurred when changing AWS Cognito password: Not OK",
             ):
                 api.change_password("new_password")
 
@@ -194,7 +196,7 @@ class TestAWSAPI:
             mock_get_data_2.return_value = ("Not OK", "")
             with pytest.raises(
                 RuntimeError,
-                match=f"An error occurred when changing Hitachi password: Not OK",
+                match="An error occurred when changing Hitachi password: Not OK",
             ):
                 api.change_password("new_password")
 
@@ -264,6 +266,8 @@ class TestAWSAPI:
 
     def test_refresh_status(self, fixture_aws_mock_api):
         api = fixture_aws_mock_api
+        api._aws_identity = AWSIdentity("id", "host_id", "username", {"attr", "attr"})
+
         thing_name = api.things[MOCK_DEVICE_AC].thing_name
         with patch.object(api, "_mqtt") as mock_mqtt:
             mock_mqtt.publish.return_value = None
@@ -421,7 +425,7 @@ class TestAWSAPI:
                 },
             )
 
-            assert api.things[MOCK_DEVICE_AC].monthly_data == None
+            assert api.things[MOCK_DEVICE_AC].monthly_data is None
             api.refresh_monthly_data(2, MOCK_DEVICE_AC)
             assert api.things[MOCK_DEVICE_AC].monthly_data == [
                 {"Timestamp": current_time},
@@ -432,7 +436,7 @@ class TestAWSAPI:
 
             with pytest.raises(
                 RuntimeError,
-                match=f"An error occurred when getting monthly data: Not OK",
+                match="An error occurred when getting monthly data: Not OK",
             ):
                 api.refresh_monthly_data(2, MOCK_DEVICE_AC)
 
