@@ -14,6 +14,7 @@ tests_require = [
     "pre-commit",
     "pytest>=6.2",
     "pytest-cov",
+    "pytest-rerunfailures",
 ]
 
 
