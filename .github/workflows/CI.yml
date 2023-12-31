@@ -36,6 +36,6 @@ jobs:
         TEST_DEVICE_AC: ${{ secrets.TEST_DEVICE_AC }}
         TEST_DEVICE_DH: ${{ secrets.TEST_DEVICE_DH }}
       run: |
-        python -m pytest ./tests --cov=./JciHitachi --cov-report xml
+        python -m pytest ./tests --cov=./JciHitachi --cov-report xml --reruns 2
     - name: Upload coverage reports to Codecov with GitHub Action
       uses: codecov/codecov-action@v2

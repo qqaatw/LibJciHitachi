@@ -26,4 +26,4 @@ jobs:
           TEST_DEVICE_AC: ${{ secrets.TEST_DEVICE_AC }}
           TEST_DEVICE_DH: ${{ secrets.TEST_DEVICE_DH }}
         run: |
-          python -m pytest tests/test_integration.py::TestAWSAPILogin::test_api
+          python -m pytest --reruns 2 tests/test_integration.py::TestAWSAPILogin::test_api
