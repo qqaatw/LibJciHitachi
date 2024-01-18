@@ -1732,6 +1732,17 @@ STATUS_DICT = {
             "is_numeric": True,
             "legacy_name": "min_temp",
         },
+        "Panel": {
+            "controllable": True,
+            "is_numeric": True,
+            "legacy_name": None,
+            "id2str": {
+                0: "bright",
+                1: "dark",
+                2: "off",
+                3: "all_off",
+            },
+        },
     },
     "DH": {
         "DeviceType": {
