@@ -1734,7 +1734,7 @@ STATUS_DICT = {
         },
         "Panel": {
             "controllable": True,
-            "is_numeric": True,
+            "is_numeric": False,
             "legacy_name": None,
             "id2str": {
                 0: "bright",
