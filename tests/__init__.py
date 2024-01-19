@@ -1,14 +1,17 @@
 import os
 
 # For integration tests
-TEST_EMAIL = os.environ["TEST_EMAIL"] if "TEST_EMAIL" in os.environ else None
-TEST_PASSWORD = os.environ["TEST_PASSWORD"] if "TEST_PASSWORD" in os.environ else None
+TEST_EMAIL = os.environ["TEST_EMAIL"] if os.environ.get("TEST_EMAIL", "") else None
+TEST_PASSWORD = (
+    os.environ["TEST_PASSWORD"] if os.environ.get("TEST_PASSWORD", "") else None
+)
 TEST_DEVICE_AC = (
-    os.environ["TEST_DEVICE_AC"] if "TEST_DEVICE_AC" in os.environ else None
+    os.environ["TEST_DEVICE_AC"] if os.environ.get("TEST_DEVICE_AC", "") else None
 )
 TEST_DEVICE_DH = (
-    os.environ["TEST_DEVICE_DH"] if "TEST_DEVICE_DH" in os.environ else None
+    os.environ["TEST_DEVICE_DH"] if os.environ.get("TEST_DEVICE_DH", "") else None
 )
+
 
 MOCK_GATEWAY_MAC = "10416149025290813292"
 
