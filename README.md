@@ -32,6 +32,7 @@ A Python library for controlling Jci-Hitachi devices.
   - Fast operation 快速運轉
   - Power consumption 用電統計
   - Monthly power consumption 月用電統計
+  - Panel 顯示器亮度
 - Hitachi Dehumidifier 日立除濕機
   - Power 電源
   - Mode 運轉模式
