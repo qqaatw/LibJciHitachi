@@ -261,8 +261,34 @@ class TestJciHitachiAWSMqttConnection:
 
     def test_execute(self, fixture_aws_mock_mqtt_connection):
         mqtt = fixture_aws_mock_mqtt_connection
+        # The executed functions are no-op.
+        mqtt._execution_pools.support_execution_pool.append(
+            mqtt._wrap_async("support_identifier", lambda: None)
+        )
+        mqtt._execution_pools.shadow_execution_pool.append(
+            mqtt._wrap_async("shadow_identifier", lambda: None)
+        )
+        mqtt._execution_pools.status_execution_pool.append(
+            mqtt._wrap_async("status_identifier", lambda: None)
+        )
+        mqtt._execution_pools.control_execution_pool.append(
+            mqtt._wrap_async("control_identifier", lambda: None)
+        )
+
         results = mqtt.execute()
-        assert results == (None, None, None, None)
+        assert results == (
+            ["support_identifier"],
+            ["shadow_identifier"],
+            ["status_identifier"],
+            None,
+        )
+        assert len(mqtt._execution_pools.support_execution_pool) == 0
+        assert len(mqtt._execution_pools.shadow_execution_pool) == 0
+        assert len(mqtt._execution_pools.status_execution_pool) == 0
+
+        results = mqtt.execute(control=True)
+        assert results == (None, None, None, ["control_identifier"])
+        assert len(mqtt._execution_pools.control_execution_pool) == 0
 
 
 class TestJciHitachiAWSCognitoConnection:
