@@ -548,15 +548,15 @@ class JciHitachiAWSMqttConnection:
     def __init__(
         self, get_credentials_callable: Callable, print_response: bool = False
     ):
-        self._get_credentials_callable = get_credentials_callable
-        self._print_response = print_response
+        self._get_credentials_callable: Callable = get_credentials_callable
+        self._print_response: bool = print_response
 
-        self._mqttc = None
-        self._shadow_mqttc = None
-        self._client_tokens = {}
-        self._mqtt_events = JciHitachiMqttEvents()
-        self._execution_lock = threading.Lock()
-        self._execution_pools = JciHitachiExecutionPools()
+        self._mqttc: Optional[awscrt.mqtt.Connection] = None
+        self._shadow_mqttc: Optional[iotshadow.IotShadowClient] = None
+        self._client_tokens: dict[str, str] = {}
+        self._mqtt_events: JciHitachiMqttEvents = JciHitachiMqttEvents()
+        self._execution_lock: threading.Lock = threading.Lock()
+        self._execution_pools: JciHitachiExecutionPools = JciHitachiExecutionPools()
 
     def __del__(self):
         self.disconnect()
@@ -1055,15 +1055,12 @@ class JciHitachiAWSMqttConnection:
             return a, b, c, d
 
         locked = self._execution_lock.locked()
+        if locked:
+            _LOGGER.debug("Other execution in progress, waiting for a lock.")
 
-        try:
-            if locked:
-                _LOGGER.debug("Other execution in progress, waiting for a lock.")
-            self._execution_lock.acquire()
+        with self._execution_lock:
             if locked:
                 _LOGGER.debug("Lock acquired.")
             results = asyncio.run(runner())
-        finally:
-            self._execution_lock.release()
 
         return results
