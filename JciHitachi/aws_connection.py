@@ -695,7 +695,13 @@ class JciHitachiAWSMqttConnection:
             self._mqttc.disconnect()
 
     def configure(self, identity_id) -> None:
-        """Configure MQTT."""
+        """Configure MQTT.
+
+        Parameters
+        ----------
+        identity_id : str
+            Identity ID.
+        """
 
         cred_provider = awscrt.auth.AwsCredentialsProvider.new_delegate(
             self._get_credentials_callable
