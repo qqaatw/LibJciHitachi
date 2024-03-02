@@ -938,10 +938,13 @@ class JciHitachiAWSAPI:
         Returns
         -------
         int
-            Serial number counted from 0.
+            Serial number counted from 0, with maximum 999.
         """
 
         self._task_id += 1
+        if self._task_id >= 1000:
+            self._task_id = 1
+
         return self._task_id
 
     def _check_before_publish(self) -> None:
