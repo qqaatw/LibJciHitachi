@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 install_requires = [
     "awsiotsdk==1.20.0",
     "httpx",
-    "paho-mqtt",
+    "paho-mqtt<=1.6.1",
 ]
 tests_require = [
     "pre-commit",
