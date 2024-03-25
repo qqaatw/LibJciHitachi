@@ -76,16 +76,13 @@ class JciHitachiAWSHttpConnection(ABC):
         self._print_response = print_response
 
     @abstractmethod
-    def _generate_headers(self):
-        ...
+    def _generate_headers(self): ...
 
     @abstractmethod
-    def _handle_response(self, response: httpx.Response):
-        ...
+    def _handle_response(self, response: httpx.Response): ...
 
     @abstractmethod
-    def _send(self):
-        ...
+    def _send(self): ...
 
     def get_data(self):
         raise NotImplementedError
@@ -597,9 +594,9 @@ class JciHitachiAWSMqttConnection:
                 )
                 self._mqtt_events.device_status_event[thing_name].set()
             elif split_topic[2] == "registration" and split_topic[3] == "response":
-                self._mqtt_events.device_support[
-                    thing_name
-                ] = JciHitachiAWSStatusSupport(payload)
+                self._mqtt_events.device_support[thing_name] = (
+                    JciHitachiAWSStatusSupport(payload)
+                )
                 self._mqtt_events.device_support_event[thing_name].set()
             elif split_topic[2] == "control" and split_topic[3] == "response":
                 self._mqtt_events.device_control[thing_name] = payload
