@@ -491,9 +491,9 @@ class TestJciHitachiIoTConnection:
                             "Accept": "application/json",
                         }
                         if test_class.__name__ not in self.no_need_access_token:
-                            h[
-                                "accesstoken"
-                            ] = f"Bearer {fixture_aws_tokens.access_token}"
+                            h["accesstoken"] = (
+                                f"Bearer {fixture_aws_tokens.access_token}"
+                            )
                         assert (
                             endpoint
                             == f"https://{AWS_IOT_ENDPOINT}/{c.__class__.__name__}"
