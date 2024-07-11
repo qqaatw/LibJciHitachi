@@ -9,6 +9,7 @@ install_requires = [
     "awsiotsdk==1.20.0",
     "httpx",
     "paho-mqtt<=1.6.1",
+    "setuptools",
 ]
 tests_require = [
     "pre-commit",
