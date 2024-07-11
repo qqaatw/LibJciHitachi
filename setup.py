@@ -9,6 +9,7 @@ install_requires = [
     "awsiotsdk==1.20.0",
     "httpx",
     "paho-mqtt<=1.6.1",
+    "setuptools",
 ]
 tests_require = [
     "pre-commit",
@@ -33,7 +34,6 @@ if __name__ == "__main__":
             "Documentation": "https://libjcihitachi.readthedocs.io/en/latest/",
         },
         classifiers=[
-            "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
             "Programming Language :: Python :: 3.12",

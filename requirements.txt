@@ -1,3 +1,4 @@
 awsiotsdk==1.20.0
 httpx
 paho-mqtt<=1.6.1
+setuptools
