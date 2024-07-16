@@ -42,7 +42,7 @@ if __name__ == "__main__":
         ],
         packages=setuptools.find_packages(include=["JciHitachi"]),
         package_data={"JciHitachi": ["cert/*.pem"]},
-        python_requires=">=3.9",
+        python_requires=">=3.10",
         install_requires=install_requires,
         tests_require=tests_require,
     )
