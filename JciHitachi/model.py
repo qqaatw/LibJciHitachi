@@ -1896,11 +1896,8 @@ STATUS_DICT = {
         "Defrost": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": "defrost",
-            "id2str": {
-                0: "disabled",
-                1: "enabled"
-            },
+            "legacy_name": None,
+            "id2str": {},
         },
         "SmellIndex": {
             "controllable": False,
@@ -2094,7 +2091,6 @@ class JciHitachiAWSStatus:
         status = {}
         device_type = self.device_type_mapping[raw_status["DeviceType"]]
         for key, value in raw_status.items():
-            print(f"key: {key}, value: {value}")
             if key in STATUS_DICT[device_type]:
                 if STATUS_DICT[device_type][key]["is_numeric"]:
                     status[key] = value
