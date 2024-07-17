@@ -1822,11 +1822,14 @@ STATUS_DICT = {
             "is_numeric": True,
             "legacy_name": "power_kwh",
         },
-        "Ion": {  # currently not supported
-            "controllable": False,
+        "Ion": {
+            "controllable": True,
             "is_numeric": False,
-            "legacy_name": None,
-            "id2str": {},
+            "legacy_name": "ion",
+            "id2str": {
+                0: "disabled",
+                1: "enabled"
+            },
         },
         "HumiditySetting": {
             "controllable": True,
@@ -1845,8 +1848,11 @@ STATUS_DICT = {
         "KeypadLock": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": None,
-            "id2str": {},
+            "legacy_name": "keypad_lock",
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            },
         },
         "DisplayBrightness": {
             "controllable": True,
@@ -1890,8 +1896,11 @@ STATUS_DICT = {
         "Defrost": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": None,
-            "id2str": {},
+            "legacy_name": "defrost",
+            "id2str": {
+                0: "disabled",
+                1: "enabled"
+            },
         },
         "SmellIndex": {
             "controllable": False,
@@ -2085,6 +2094,7 @@ class JciHitachiAWSStatus:
         status = {}
         device_type = self.device_type_mapping[raw_status["DeviceType"]]
         for key, value in raw_status.items():
+            print(f"key: {key}, value: {value}")
             if key in STATUS_DICT[device_type]:
                 if STATUS_DICT[device_type][key]["is_numeric"]:
                     status[key] = value
