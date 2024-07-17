@@ -1826,7 +1826,10 @@ STATUS_DICT = {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": "ion",
-            "id2str": {0: "disabled", 1: "enabled"},
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            },
         },
         "HumiditySetting": {
             "controllable": True,
