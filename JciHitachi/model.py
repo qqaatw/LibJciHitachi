@@ -1822,11 +1822,14 @@ STATUS_DICT = {
             "is_numeric": True,
             "legacy_name": "power_kwh",
         },
-        "Ion": {  # currently not supported
-            "controllable": False,
+        "Ion": {
+            "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
-            "id2str": {},
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            },
         },
         "HumiditySetting": {
             "controllable": True,
@@ -1846,7 +1849,10 @@ STATUS_DICT = {
             "controllable": True,
             "is_numeric": False,
             "legacy_name": None,
-            "id2str": {},
+            "id2str": {
+                0: "disabled",
+                1: "enabled",
+            },
         },
         "DisplayBrightness": {
             "controllable": True,
