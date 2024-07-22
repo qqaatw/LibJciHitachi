@@ -1825,7 +1825,7 @@ STATUS_DICT = {
         "Ion": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": "ion",
+            "legacy_name": None,
             "id2str": {
                 0: "disabled",
                 1: "enabled",
@@ -1848,7 +1848,7 @@ STATUS_DICT = {
         "KeypadLock": {
             "controllable": True,
             "is_numeric": False,
-            "legacy_name": "keypad_lock",
+            "legacy_name": None,
             "id2str": {
                 0: "disabled",
                 1: "enabled",
