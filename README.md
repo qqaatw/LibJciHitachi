@@ -48,6 +48,8 @@ A Python library for controlling Jci-Hitachi devices.
   - PM2.5 value PM2.5數值
   - Sound control 聲音控制
   - Display brightness 顯示器亮度
+  - Ion 負離子
+  - Keypad Lock 按鍵鎖
   - Odor level 異味等級
   - Air cleaning filter setting 空氣清淨濾網設定
   - Power consumption 用電統計
