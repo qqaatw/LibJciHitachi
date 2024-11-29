@@ -8,6 +8,10 @@ with open("README.md", "r", encoding="utf-8") as f:
 with open("requirements.txt", "r", encoding="utf-8") as f:
     install_requires = f.read().split("\n")
 
+with open("requirements_test.txt", "r", encoding="utf-8") as f:
+    tests_require = f.read().split("\n")
+
+
 if __name__ == "__main__":
     setuptools.setup(
         name="LibJciHitachi",
