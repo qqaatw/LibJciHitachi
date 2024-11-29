@@ -6,4 +6,5 @@ coverage.xml
 private_example.py
 
 /dist
+/build
 *.egg-info

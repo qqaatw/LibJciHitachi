@@ -5,18 +5,11 @@ from JciHitachi import __author__, __version__
 with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
-install_requires = [
-    "awsiotsdk==1.20.0",
-    "httpx",
-    "paho-mqtt<=1.6.1",
-    "setuptools",
-]
-tests_require = [
-    "pre-commit",
-    "pytest>=6.2",
-    "pytest-cov",
-    "pytest-rerunfailures",
-]
+with open("requirements.txt", "r", encoding="utf-8") as f:
+    install_requires = f.read().split("\n")
+
+with open("requirements_test.txt", "r", encoding="utf-8") as f:
+    tests_require = f.read().split("\n")
 
 
 if __name__ == "__main__":
@@ -37,6 +30,7 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
             "Programming Language :: Python :: 3.12",
+            "Programming Language :: Python :: 3.13",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
