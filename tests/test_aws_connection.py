@@ -392,7 +392,7 @@ class TestJciHitachiAWSCognitoConnection:
             for http_status_code, msg in response_code:
 
                 def mock_post_func(
-                    endpoint, headers=None, json=None, proxies=None, **kwargs
+                    endpoint, headers=None, json=None, proxy=None, **kwargs
                 ):
                     if isinstance(c, GetCredentials):
                         assert endpoint == f"https://{AWS_COGNITO_ENDPOINT}/"
@@ -482,7 +482,7 @@ class TestJciHitachiIoTConnection:
                 for http_status_code in [200, 400]:
 
                     def mock_post_func(
-                        endpoint, headers=None, json=None, proxies=None, **kwargs
+                        endpoint, headers=None, json=None, proxy=None, **kwargs
                     ):
                         h = {
                             "authorization": f"Bearer {fixture_aws_tokens.id_token}",
