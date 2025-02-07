@@ -118,7 +118,7 @@ class JciHitachiAWSCognitoConnection(JciHitachiAWSHttpConnection):
         otherwise, a login procedure is performed to obtain new aws_tokens,
         by default None.
     proxy : str, optional
-        Proxy setting. Format:"IP:port", by default None.
+        Proxy setting. Format:"schema://IP:port", e.g., http://127.0.0.1:8080, by default None.
     print_response : bool, optional
         If set, all responses of httpx will be printed, by default False.
     """
@@ -135,7 +135,7 @@ class JciHitachiAWSCognitoConnection(JciHitachiAWSHttpConnection):
         self._login_response = None
         self._email = email
         self._password = password
-        self._proxies = {"http": proxy, "https": proxy} if proxy else None
+        self._proxy = proxy
 
         if aws_tokens:
             self._aws_tokens = aws_tokens
@@ -166,14 +166,24 @@ class JciHitachiAWSCognitoConnection(JciHitachiAWSHttpConnection):
                 response_json,
             )
 
-    def _send(self, target: str, json_data: Optional[dict] = None):
+    def _send(
+        self, target: str, json_data: Optional[dict] = None, endpoint: str = None
+    ) -> tuple[str, dict]:
         headers = self._generate_headers(target)
 
+        if endpoint is None:
+            endpoint = (
+                AWS_COGNITO_ENDPOINT
+                if self.__class__.__name__ == "GetCredentials"
+                else AWS_COGNITO_IDP_ENDPOINT
+            )
+
         req = httpx.post(
-            f"https://{AWS_COGNITO_ENDPOINT if self.__class__.__name__ == 'GetCredentials' else AWS_COGNITO_IDP_ENDPOINT}/",
+            f"https://{endpoint}/",
             json=json_data,
             headers=headers,
-            proxies=self._proxies,
+            proxy=self._proxy,
+            verify=True if self._proxy is None else False,
         )
 
         self.maybe_print_http_response(req)
@@ -219,20 +229,11 @@ class JciHitachiAWSCognitoConnection(JciHitachiAWSHttpConnection):
                 "ClientId": AWS_COGNITO_CLIENT_ID,
             }
 
-        login_headers = self._generate_headers(
-            "AWSCognitoIdentityProviderService.InitiateAuth"
+        status, response = self._send(
+            "AWSCognitoIdentityProviderService.InitiateAuth",
+            login_json_data,
+            AWS_COGNITO_IDP_ENDPOINT,
         )
-
-        login_req = httpx.post(
-            f"https://{AWS_COGNITO_IDP_ENDPOINT}/",
-            json=login_json_data,
-            headers=login_headers,
-            proxies=self._proxies,
-        )
-
-        self.maybe_print_http_response(login_req)
-
-        status, response = self._handle_response(login_req)
 
         aws_tokens = None
         if status == "OK":
@@ -362,7 +363,7 @@ class JciHitachiAWSIoTConnection(JciHitachiAWSHttpConnection):
     aws_tokens : AWSTokens
         AWS tokens.
     proxy : str, optional
-        Proxy setting. Format:"IP:port", by default None.
+        Proxy setting. Format:"schema://IP:port", e.g., http://127.0.0.1:8080, by default None.
     print_response : bool, optional
         If set, all responses of httpx will be printed, by default False.
     """
@@ -375,7 +376,7 @@ class JciHitachiAWSIoTConnection(JciHitachiAWSHttpConnection):
     ):
         super().__init__(print_response)
         self._aws_tokens = aws_tokens
-        self._proxies = {"http": proxy, "https": proxy} if proxy else None
+        self._proxy = proxy
 
     def _generate_headers(self, need_access_token: bool) -> dict[str, str]:
         headers = {
@@ -414,7 +415,8 @@ class JciHitachiAWSIoTConnection(JciHitachiAWSHttpConnection):
             f"https://{AWS_IOT_ENDPOINT}{api_name}",
             headers=self._generate_headers(need_access_token),
             json=json,
-            proxies=self._proxies,
+            proxy=self._proxy,
+            verify=True if self._proxy is None else False,
         )
 
         self.maybe_print_http_response(req)

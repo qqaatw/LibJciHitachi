@@ -38,7 +38,7 @@ class JciHitachiConnection:  # pragma: no cover
         otherwise perform a login procedure to obtain a new token,
         by default None.
     proxy : str, optional
-        Proxy setting. Format:"IP:port", by default None.
+        Proxy setting. Format:"schema://IP:port", e.g., http://127.0.0.1:8080, by default None.
     print_response : bool, optional
         If set, all responses of httpx will be printed, by default False.
     """
@@ -50,7 +50,7 @@ class JciHitachiConnection:  # pragma: no cover
         self._email = email
         self._password = password
         self._print_response = print_response
-        self._proxies = {"http": proxy, "https": proxy} if proxy else None
+        self._proxy = proxy
 
         if session_token:
             self._session_token = session_token
@@ -96,8 +96,8 @@ class JciHitachiConnection:  # pragma: no cover
                 "{}{}".format(API_ENDPOINT, api_name),
                 headers=self._generate_normal_headers(),
                 json=json,
-                verify=API_SSL_CONTEXT,
-                proxies=self._proxies,
+                verify=API_SSL_CONTEXT if self._proxy is None else False,
+                proxy=self._proxy,
             )
             if self._print_response:
                 self.print_response(req)
@@ -131,8 +131,8 @@ class JciHitachiConnection:  # pragma: no cover
             "{}{}".format(API_ENDPOINT, "UserLogin.php"),
             json=login_json_data,
             headers=login_headers,
-            verify=API_SSL_CONTEXT,
-            proxies=self._proxies,
+            verify=API_SSL_CONTEXT if self._proxy is None else False,
+            proxy=self._proxy,
         )
 
         if self._print_response:
