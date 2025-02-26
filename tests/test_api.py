@@ -188,20 +188,12 @@ class TestAWSAPI:
             "JciHitachi.aws_connection.ChangePassword.get_data"
         ) as mock_get_data_1, patch(
             "JciHitachi.connection.UpdateUserCredential.get_data"
-        ) as mock_get_data_2, patch(
-            "httpx.post"
-        ) as mock_post: 
+        ) as mock_get_data_2, patch("httpx.post") as mock_post:
             mock_get_data_1.return_value = ("OK", "")
             mock_get_data_2.return_value = ("OK", "")
             mock_post.return_value = httpx.Response(
-                        200,
-                        text=json.dumps({
-                            "status": {
-                                "code": "OK",
-                                "message": ""
-                            }
-                        })
-                    )
+                200, text=json.dumps({"status": {"code": "OK", "message": ""}})
+            )
             api.change_password("new_password")
 
             mock_get_data_1.return_value = ("Not OK", "")
