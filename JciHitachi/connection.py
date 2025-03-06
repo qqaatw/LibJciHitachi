@@ -32,8 +32,7 @@ class JciHitachiConnection:
         self._print_response = print_response
         self._proxy = proxy
         self._client = httpx.Client(
-            verify=API_SSL_CONTEXT if self._proxy is None else False,
-            proxy=self._proxy
+            verify=API_SSL_CONTEXT if self._proxy is None else False, proxy=self._proxy
         )
 
         if session_token:
@@ -168,9 +167,15 @@ class GetPeripheralsByUser(JciHitachiConnection):
 
 class GetDataContainerByID(JciHitachiConnection):
     def get_data(self, picked_peripheral_json):
-        ContMID = picked_peripheral_json["Peripherals"][0]["DataContainer"][0]["ContMID"]
-        ContDID_1 = picked_peripheral_json["Peripherals"][0]["DataContainer"][0]["ContDetails"][0]["ContDID"]
-        ContDID_2 = picked_peripheral_json["Peripherals"][0]["DataContainer"][0]["ContDetails"][1]["ContDID"]
+        ContMID = picked_peripheral_json["Peripherals"][0]["DataContainer"][0][
+            "ContMID"
+        ]
+        ContDID_1 = picked_peripheral_json["Peripherals"][0]["DataContainer"][0][
+            "ContDetails"
+        ][0]["ContDID"]
+        ContDID_2 = picked_peripheral_json["Peripherals"][0]["DataContainer"][0][
+            "ContDetails"
+        ][1]["ContDID"]
 
         json_data = {
             "Format": 0,
