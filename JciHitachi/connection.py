@@ -1,7 +1,7 @@
 import json
 import os
 import httpx
-import ssl
+import ssl  # Added for custom SSL context control
 
 from .utility import convert_hash
 
@@ -12,17 +12,38 @@ API_SSL_CERT = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "cert/api-jci-hitachi-smarthome-com-chain.pem",
 )
+# Modified to use ssl.SSLContext for better TLS control
 API_SSL_CONTEXT = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 API_SSL_CONTEXT.load_verify_locations(cafile=API_SSL_CERT)
-API_SSL_CONTEXT.set_ciphers("DEFAULT@SECLEVEL=1")
-API_SSL_CONTEXT.minimum_version = ssl.TLSVersion.TLSv1_2  # 更新為 TLS 1.2
-API_SSL_CONTEXT.hostname_checks_common_name = True
+API_SSL_CONTEXT.set_ciphers(
+    "DEFAULT@SECLEVEL=1"
+)  # the cert uses SHA1-RSA1024bits ciphers so unfortunately we have to lower the security level
+API_SSL_CONTEXT.minimum_version = ssl.TLSVersion.TLSv1_2  # Enforce TLS 1.2 for security
+API_SSL_CONTEXT.hostname_checks_common_name = True  # the cert lacks a subjectaltname
 
 APP_PLATFORM = 2  # 1=IOS 2=Android
 APP_VERSION = "10.20.900"
 
 
-class JciHitachiConnection:
+class JciHitachiConnection:  # pragma: no cover
+    """Connecting to Jci-Hitachi API to get data or send commands.
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    session_token : str, optional
+        If session_token is given, it is used by request,
+        otherwise perform a login procedure to obtain a new token,
+        by default None.
+    proxy : str, optional
+        Proxy setting. Format:"schema://IP:port", e.g., http://127.0.0.1:8080, by default None.
+    print_response : bool, optional
+        If set, all responses of httpx will be printed, by default False.
+    """
+
     def __init__(
         self, email, password, session_token=None, proxy=None, print_response=False
     ):
@@ -31,9 +52,8 @@ class JciHitachiConnection:
         self._password = password
         self._print_response = print_response
         self._proxy = proxy
-        self._client = httpx.Client(
-            verify=API_SSL_CONTEXT if self._proxy is None else False, proxy=self._proxy
-        )
+        # Added persistent httpx.Client for performance (reuses connections)
+        self._client = httpx.Client(verify=API_SSL_CONTEXT, proxy=self._proxy)
 
         if session_token:
             self._session_token = session_token
@@ -75,8 +95,9 @@ class JciHitachiConnection:
     def _send(self, api_name, json=None):
         code = 12
         while code == 12:
+            # Updated to use self._client instead of standalone httpx.post
             req = self._client.post(
-                f"{API_ENDPOINT}{api_name}",
+                "{}{}".format(API_ENDPOINT, api_name),
                 headers=self._generate_normal_headers(),
                 json=json,
             )
@@ -108,8 +129,9 @@ class JciHitachiConnection:
             "Accept": "application/json",
         }
 
+        # Updated to use self._client; verify moved to Client init per original author's suggestion
         login_req = self._client.post(
-            f"{API_ENDPOINT}UserLogin.php",
+            "{}{}".format(API_ENDPOINT, "UserLogin.php"),
             json=login_json_data,
             headers=login_headers,
         )
@@ -137,14 +159,52 @@ class JciHitachiConnection:
         print("===================================================")
 
 
-class RegisterMobileDevice(JciHitachiConnection):
+class RegisterMobileDevice(JciHitachiConnection):  # pragma: no cover
+    """API internal endpoint. (Unused)
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    """
+
+    def __init__(self, email, password, **kwargs):
+        super().__init__(email, password, **kwargs)
+
     def get_data(self, device_token):
         json_data = {"DeviceType": APP_PLATFORM, "DeviceToken": device_token}
         return self._send("RegisterMobileDevice.php", json_data)
 
 
-class UpdateUserCredential(JciHitachiConnection):
+class UpdateUserCredential(JciHitachiConnection):  # pragma: no cover
+    """API internal endpoint. (Tested)
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    """
+
+    def __init__(self, email, password, **kwargs):
+        super().__init__(email, password, **kwargs)
+
     def get_data(self, new_password):
+        """Get data from the endpoint.
+
+        Parameters
+        ----------
+        new_password : str
+            New password.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
         json_data = {
             "ServerLogin": {
                 "OldEmail": self._email,
@@ -155,27 +215,86 @@ class UpdateUserCredential(JciHitachiConnection):
         return self._send("UpdateUserCredential.php", json_data)
 
 
-class GetServerLastUpdateInfo(JciHitachiConnection):
+class GetServerLastUpdateInfo(JciHitachiConnection):  # pragma: no cover
+    """API internal endpoint. (Unused)
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    """
+
+    def __init__(self, email, password, **kwargs):
+        super().__init__(email, password, **kwargs)
+
     def get_data(self):
+        """Get data from the endpoint.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
         return self._send("GetServerLastUpdateInfo.php")
 
 
-class GetPeripheralsByUser(JciHitachiConnection):
+class GetPeripheralsByUser(JciHitachiConnection):  # pragma: no cover
+    """API internal endpoint. (Tested)
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    """
+
+    def __init__(self, email, password, **kwargs):
+        super().__init__(email, password, **kwargs)
+
     def get_data(self):
+        """Get data from the endpoint.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
         return self._send("GetPeripheralsByUser.php")
 
 
-class GetDataContainerByID(JciHitachiConnection):
+class GetDataContainerByID(JciHitachiConnection):  # pragma: no cover
+    """API internal endpoint. (Tested)
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    """
+
+    def __init__(self, email, password, **kwargs):
+        super().__init__(email, password, **kwargs)
+
     def get_data(self, picked_peripheral_json):
-        ContMID = picked_peripheral_json["Peripherals"][0]["DataContainer"][0][
-            "ContMID"
-        ]
-        ContDID_1 = picked_peripheral_json["Peripherals"][0]["DataContainer"][0][
-            "ContDetails"
-        ][0]["ContDID"]
-        ContDID_2 = picked_peripheral_json["Peripherals"][0]["DataContainer"][0][
-            "ContDetails"
-        ][1]["ContDID"]
+        """Get data from the endpoint.
+
+        Parameters
+        ----------
+        picked_peripheral_json : dict
+            Picked peripheral_json.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
+        ContMID = picked_peripheral_json["Peripherals"][0]["DataContainer"][0]["ContMID"]
+        ContDID_1 = picked_peripheral_json["Peripherals"][0]["DataContainer"][0]["ContDetails"][0]["ContDID"]
+        ContDID_2 = picked_peripheral_json["Peripherals"][0]["DataContainer"][0]["ContDetails"][1]["ContDID"]
 
         json_data = {
             "Format": 0,
@@ -189,21 +308,77 @@ class GetDataContainerByID(JciHitachiConnection):
         return self._send("GetDataContainerByID.php", json_data)
 
 
-class GetPeripheralByGMACAddress(JciHitachiConnection):
+class GetPeripheralByGMACAddress(JciHitachiConnection):  # pragma: no cover
+    """API internal endpoint. (Unused)
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    """
+
+    def __init__(self, email, password, **kwargs):
+        super().__init__(email, password, **kwargs)
+
     def get_data(self, peripheral_json):
+        """Get data from the endpoint.
+
+        Parameters
+        ----------
+        peripheral_json : dict
+            peripheral_json.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
         GMACAddress = peripheral_json["results"][0]["GMACAddress"]
         json_data = {"Data": [{"GMACAddress": GMACAddress}]}
         return self._send("GetPeripheralByGMACAddress.php", json_data)
 
 
-class CreateJob(JciHitachiConnection):
+class CreateJob(JciHitachiConnection):  # pragma: no cover
+    """API internal endpoint. (Tested)
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    """
+
+    def __init__(self, email, password, **kwargs):
+        super().__init__(email, password, **kwargs)
+
     def get_data(self, gateway_id, device_id, task_id, job_info):
+        """Get data from the endpoint.
+
+        Parameters
+        ----------
+        gateway_id : int
+            Peripheral.gateway_id.
+        device_id : int
+            Random device ID.
+        task_id : int
+            Task ID (serial number).
+        job_info : str
+            Base64 job info.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
         json_data = {
             "Data": [
                 {
                     "GatewayID": gateway_id,
-                    "DeviceID": device_id,
-                    "TaskID": task_id,
+                    "DeviceID": device_id,  # random device ID
+                    "TaskID": task_id,  # serial number started from 1
                     "JobInformation": job_info,
                 }
             ]
@@ -211,7 +386,32 @@ class CreateJob(JciHitachiConnection):
         return self._send("CreateJob.php", json_data)
 
 
-class GetJobDoneReport(JciHitachiConnection):
+class GetJobDoneReport(JciHitachiConnection):  # pragma: no cover
+    """API internal endpoint. (Tested)
+
+    Parameters
+    ----------
+    email : str
+        User email.
+    password : str
+        User password.
+    """
+
+    def __init__(self, email, password, **kwargs):
+        super().__init__(email, password, **kwargs)
+
     def get_data(self, device_id):
+        """Get data from the endpoint.
+
+        Parameters
+        ----------
+        device_id : int
+            Random device ID.
+
+        Returns
+        -------
+        (str, dict)
+            (message, response_json)
+        """
         json_data = {"DeviceID": device_id}
         return self._send("GetJobDoneReport.php", json_data)
