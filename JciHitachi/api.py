@@ -1114,7 +1114,7 @@ class JciHitachiAWSAPI:
         current_time = time.time()
         if self._aws_tokens.expiration - current_time <= 300:
             self.reauth()
-        
+
         conn = aws_connection.GetAvailableAggregationMonthlyData(
             self._aws_tokens, print_response=self.print_response
         )
