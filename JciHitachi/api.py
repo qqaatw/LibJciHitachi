@@ -1111,6 +1111,10 @@ class JciHitachiAWSAPI:
         thing = self._things[device_name]
         current_timestamp_millis = time.time() * 1000
 
+        current_time = time.time()
+        if self._aws_tokens.expiration - current_time <= 300:
+            self.reauth()
+        
         conn = aws_connection.GetAvailableAggregationMonthlyData(
             self._aws_tokens, print_response=self.print_response
         )
