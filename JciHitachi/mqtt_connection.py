@@ -18,6 +18,8 @@ MQTT_SSL_CERT = os.path.join(
     "cert/mqtt-jci-hitachi-smarthome-com-chain.pem",
 )
 MQTT_SSL_CONTEXT = ssl.create_default_context(cafile=MQTT_SSL_CERT)
+if hasattr(MQTT_SSL_CONTEXT, "verify_flags"):
+    MQTT_SSL_CONTEXT.verify_flags &= ~ssl.VERIFY_X509_STRICT
 MQTT_SSL_CONTEXT.set_ciphers(
     "DEFAULT@SECLEVEL=1"
 )  # the cert uses SHA1-RSA1024bits ciphers so unfortunately we have to lower the security level
@@ -55,7 +57,7 @@ class JciHitachiMqttConnection:  # pragma: no cover
         self._user_id = user_id
         self._print_response = print_response
 
-        self._mqttc = mqtt.Client()
+        self._mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
         self._mqtt_events = JciHitachiMqttEvents()
 
     def __del__(self):

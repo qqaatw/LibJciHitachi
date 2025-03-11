@@ -1,5 +1,6 @@
 import json
 import os
+import ssl
 
 import httpx
 
@@ -12,7 +13,9 @@ API_SSL_CERT = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "cert/api-jci-hitachi-smarthome-com-chain.pem",
 )
-API_SSL_CONTEXT = httpx.create_ssl_context()
+API_SSL_CONTEXT = ssl.create_default_context()
+if hasattr(API_SSL_CONTEXT, "verify_flags"):
+    API_SSL_CONTEXT.verify_flags &= ~ssl.VERIFY_X509_STRICT
 API_SSL_CONTEXT.load_verify_locations(cafile=API_SSL_CERT)
 API_SSL_CONTEXT.set_ciphers(
     "DEFAULT@SECLEVEL=1"
