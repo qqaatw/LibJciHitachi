@@ -950,8 +950,11 @@ class JciHitachiAWSAPI:
     def _check_before_publish(self) -> None:
         # Reauthenticate 5 mins before AWSTokens expiration.
         current_time = time.time()
-        
-        if self._aws_tokens is None or self._aws_tokens.expiration - current_time <= 300:
+
+        if (
+            self._aws_tokens is None
+            or self._aws_tokens.expiration - current_time <= 300
+        ):
             self.reauth()
 
         if self._mqtt.mqtt_events.mqtt_error_event.is_set():
