@@ -5,6 +5,7 @@ import json
 import logging
 import threading
 import time
+import functools
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from random import random, choices
@@ -687,6 +688,22 @@ class JciHitachiAWSMqttConnection:
         await asyncio.to_thread(fn)
         return identifier
 
+    @staticmethod
+    def _lock(fn):
+        @functools.wraps(fn)
+        def wrapper(self, *args, **kwargs):
+            locked = self._execution_lock.locked()
+            if locked:
+                _LOGGER.debug("Other execution in progress, waiting for a lock.")
+
+            with self._execution_lock:
+                if locked:
+                    _LOGGER.debug("Lock acquired.")
+                result = fn(self, *args, **kwargs)
+            return result
+
+        return wrapper
+
     def disconnect(self) -> None:
         """Disconnect from the MQTT broker."""
 
@@ -829,6 +846,7 @@ class JciHitachiAWSMqttConnection:
             return False
         return True
 
+    @_lock
     def publish(
         self,
         host_identity_id: str,
@@ -910,6 +928,7 @@ class JciHitachiAWSMqttConnection:
         else:
             raise ValueError(f"Invalid publish_type: {publish_type}")
 
+    @_lock
     def publish_shadow(
         self,
         thing_name: str,
@@ -1007,6 +1026,7 @@ class JciHitachiAWSMqttConnection:
             self._wrap_async(thing_name, fn)
         )
 
+    @_lock
     def execute(
         self, control: bool = False
     ) -> list[
@@ -1059,13 +1079,4 @@ class JciHitachiAWSMqttConnection:
 
             return a, b, c, d
 
-        locked = self._execution_lock.locked()
-        if locked:
-            _LOGGER.debug("Other execution in progress, waiting for a lock.")
-
-        with self._execution_lock:
-            if locked:
-                _LOGGER.debug("Lock acquired.")
-            results = asyncio.run(runner())
-
-        return results
+        return asyncio.run(runner())
