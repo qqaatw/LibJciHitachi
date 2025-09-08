@@ -93,9 +93,9 @@ class Peripheral:  # pragma: no cover
                 if device_type in cls.supported_device_type:
                     peripherals[device_name] = cls(result)
 
-        assert device_names is None or len(device_names) == len(
-            peripherals
-        ), "Some of device_names are not available from the API."
+        assert device_names is None or len(device_names) == len(peripherals), (
+            "Some of device_names are not available from the API."
+        )
 
         return peripherals
 
@@ -688,9 +688,9 @@ class AWSThing:
                 if device_type in cls.supported_device_type:
                     things[device_name] = cls(thing)
 
-        assert device_names is None or len(device_names) == len(
-            things
-        ), "Some of device_names are not available from the API."
+        assert device_names is None or len(device_names) == len(things), (
+            "Some of device_names are not available from the API."
+        )
 
         return things
 
