@@ -131,17 +131,21 @@ def fixture_aws_identity():
 class TestAWSAPI:
     def test_login(self, fixture_aws_mock_api, fixture_aws_identity):
         api = fixture_aws_mock_api
-        with patch(
-            "JciHitachi.aws_connection.GetUser.get_data"
-        ) as mock_get_data_get_user, patch(
-            "JciHitachi.aws_connection.GetUser.login"
-        ) as mock_login_get_user, patch(
-            "JciHitachi.aws_connection.ListSubUser.get_data"
-        ) as mock_get_data_list_subuser, patch(
-            "JciHitachi.aws_connection.GetAllDevice.get_data"
-        ) as mock_get_data_get_all_device, patch(
-            "JciHitachi.aws_connection.JciHitachiAWSMqttConnection.connect"
-        ) as mock_connect_mqtt:
+        with (
+            patch(
+                "JciHitachi.aws_connection.GetUser.get_data"
+            ) as mock_get_data_get_user,
+            patch("JciHitachi.aws_connection.GetUser.login") as mock_login_get_user,
+            patch(
+                "JciHitachi.aws_connection.ListSubUser.get_data"
+            ) as mock_get_data_list_subuser,
+            patch(
+                "JciHitachi.aws_connection.GetAllDevice.get_data"
+            ) as mock_get_data_get_all_device,
+            patch(
+                "JciHitachi.aws_connection.JciHitachiAWSMqttConnection.connect"
+            ) as mock_connect_mqtt,
+        ):
             # initialization
             aws_tokens = api._aws_tokens
             api._aws_tokens = None
@@ -182,11 +186,14 @@ class TestAWSAPI:
 
     def test_change_password(self, fixture_aws_mock_api):
         api = fixture_aws_mock_api
-        with patch(
-            "JciHitachi.aws_connection.ChangePassword.get_data"
-        ) as mock_get_data_1, patch(
-            "JciHitachi.connection.UpdateUserCredential.get_data"
-        ) as mock_get_data_2:
+        with (
+            patch(
+                "JciHitachi.aws_connection.ChangePassword.get_data"
+            ) as mock_get_data_1,
+            patch(
+                "JciHitachi.connection.UpdateUserCredential.get_data"
+            ) as mock_get_data_2,
+        ):
             mock_get_data_1.return_value = ("OK", "")
             mock_get_data_2.return_value = ("OK", "")
             api.change_password("new_password")
