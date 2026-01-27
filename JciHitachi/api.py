@@ -100,7 +100,8 @@ class Peripheral:  # pragma: no cover
                         if device_name in peripherals:
                             existing = peripherals.pop(device_name)
                             existing_type = cls.supported_device_type.get(
-                                existing._json["Peripherals"][0]["DeviceType"], "unknown"
+                                existing._json["Peripherals"][0]["DeviceType"],
+                                "unknown",
                             )
                             peripherals[f"{device_name}_{existing_type}"] = existing
                     peripherals[key] = cls(result)
