@@ -91,11 +91,25 @@ class Peripheral:  # pragma: no cover
 
             if device_names is None or (device_names and device_name in device_names):
                 if device_type in cls.supported_device_type:
-                    peripherals[device_name] = cls(result)
+                    key = device_name
+                    if key in peripherals:
+                        # Name collision — disambiguate with device type suffix
+                        type_str = cls.supported_device_type[device_type]
+                        key = f"{device_name}_{type_str}"
+                        # Also rename the existing entry
+                        if device_name in peripherals:
+                            existing = peripherals.pop(device_name)
+                            existing_type = cls.supported_device_type.get(
+                                existing._json["Peripherals"][0]["DeviceType"], "unknown"
+                            )
+                            peripherals[f"{device_name}_{existing_type}"] = existing
+                    peripherals[key] = cls(result)
 
-        assert device_names is None or len(device_names) == len(peripherals), (
-            "Some of device_names are not available from the API."
-        )
+        if device_names is not None:
+            missing = [n for n in device_names if n not in peripherals]
+            assert len(missing) == 0, (
+                f"Some of device_names are not available from the API: {missing}"
+            )
 
         return peripherals
 
@@ -686,11 +700,25 @@ class AWSThing:
 
             if device_names is None or (device_names and device_name in device_names):
                 if device_type in cls.supported_device_type:
-                    things[device_name] = cls(thing)
+                    key = device_name
+                    if key in things:
+                        # Name collision — disambiguate with device type suffix
+                        type_str = cls.supported_device_type[device_type]
+                        key = f"{device_name}_{type_str}"
+                        # Also rename the existing entry
+                        if device_name in things:
+                            existing = things.pop(device_name)
+                            existing_type = cls.supported_device_type.get(
+                                existing._json["DeviceType"], "unknown"
+                            )
+                            things[f"{device_name}_{existing_type}"] = existing
+                    things[key] = cls(thing)
 
-        assert device_names is None or len(device_names) == len(things), (
-            "Some of device_names are not available from the API."
-        )
+        if device_names is not None:
+            missing = [n for n in device_names if n not in things]
+            assert len(missing) == 0, (
+                f"Some of device_names are not available from the API: {missing}"
+            )
 
         return things
 
