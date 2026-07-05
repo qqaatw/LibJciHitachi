@@ -867,9 +867,7 @@ class JciHitachiAWSMqttConnection:
                     support_topic, json.dumps(default_payload), QOS
                 )
                 publish_future.result(timeout)
-                if not self._mqtt_events.device_support_event[thing_name].wait(
-                    timeout
-                ):
+                if not self._mqtt_events.device_support_event[thing_name].wait(timeout):
                     raise TimeoutError(
                         f"Timed out waiting for a support-code response from {thing_name}."
                     )
