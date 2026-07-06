@@ -209,7 +209,26 @@ class TestJciHitachiAWSMqttConnection:
             with pytest.raises(ValueError, match="Invalid publish_type: others"):
                 mqtt.publish("", thing_name, "others")
 
-        # TODO: test timeout
+        # test support timeout
+        import asyncio
+
+        async def run_support_test():
+            mqtt._mqtt_events.device_support_event[thing_name] = threading.Event()
+            with patch.object(mqtt, "_mqttc") as mock_mqttc:
+                publish_future = concurrent.futures.Future()
+                publish_future.set_result(None)
+                mock_mqttc.publish.return_value = (publish_future, None)
+                mqtt.publish("", thing_name, "support", timeout=0.01)
+                exec_pool = mqtt._execution_pools.support_execution_pool
+                results = await asyncio.gather(*exec_pool, return_exceptions=True)
+                mqtt._execution_pools.support_execution_pool.clear()
+                assert isinstance(results[0], TimeoutError)
+                assert (
+                    f"Timed out waiting for a support-code response from {thing_name}"
+                    in str(results[0])
+                )
+
+        asyncio.run(run_support_test())
 
     @pytest.mark.parametrize("raise_exception", [False, True])
     def test_publish_shadow(self, fixture_aws_mock_mqtt_connection, raise_exception):
