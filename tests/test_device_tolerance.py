@@ -202,15 +202,19 @@ class TestRefreshStatusPerDevice:
         }
         mock.mqtt_events.device_status = {b: status}
         mock.mqtt_events.device_undecodable = {
-            a: {"registration": (f"{IDENTITY}/{a}/registration/response", BINARY_FRAME)}
+            a: {
+                "registration": (f"{IDENTITY}/{a}/registration/response", BINARY_FRAME),
+                "status": (f"{IDENTITY}/{a}/status/response", BINARY_FRAME),
+            }
         }
 
         api.refresh_status(refresh_support_code=True, refresh_shadow=True)  # no raise
 
         thing_a, thing_b = api.things["Device A"], api.things["Device B"]
         assert thing_a.available is False
+        # unavailable because of the status channel, so the reason names that channel
         assert "not JSON (hex fcffff1f0101)" in thing_a.attention_reason
-        assert "registration/response" in thing_a.attention_reason
+        assert "status/response" in thing_a.attention_reason
         assert thing_a.support_code is None and thing_a.status_code is None
         # the shadow channel did answer, so it is kept even though the device failed
         assert thing_a.shadow == {"CleanNotification": True}
@@ -329,6 +333,23 @@ class TestStructuredAttention:
             "Timed out refreshing Device A status code."
         )
 
+    def test_reason_names_the_status_failure_when_status_failed(self, api):
+        """Code review finding: support undecodable + status timeout blamed the support code."""
+        a = api.things["Device A"].thing_name
+        mock = self._api(api, [[a], [], [BaseException], []])
+        mock.mqtt_events.device_undecodable = {
+            a: {"registration": (f"{IDENTITY}/{a}/registration/response", BINARY_FRAME)}
+        }
+        with pytest.raises(JciHitachiDeviceError):
+            api.refresh_status(refresh_support_code=True)
+        thing = api.things["Device A"]
+        assert thing.available is False
+        # every failed channel is named, the status one included; the structure points at status
+        assert "registration/response" in thing.attention_reason
+        assert "Timed out refreshing Device A status code." in thing.attention_reason
+        assert thing.attention["cause"] == "timeout"
+        assert thing.attention["topic"] == "status/response"
+
     def test_cleared_on_success(self, api):
         a = api.things["Device A"].thing_name
         mock = self._api(api, [[], [], [a], []])
@@ -337,6 +358,46 @@ class TestStructuredAttention:
         mock.mqtt_events.device_status = {a: JciHitachiAWSStatus({"DeviceType": 1})}
         api.refresh_status()
         assert api.things["Device A"].attention is None
+
+
+class TestPublishForgetsPreviousUndecodable:
+    """Code review finding: a previous non-JSON answer must not explain a later request."""
+
+    def test_support_and_status_requests_clear_their_kind(self, mqtt):
+        thing = f"{IDENTITY}_{GW_A}"
+        mqtt._mqtt_events.device_undecodable[thing] = {
+            "registration": (f"{IDENTITY}/{thing}/registration/response", BINARY_FRAME),
+            "status": (f"{IDENTITY}/{thing}/status/response", BINARY_FRAME),
+            "control": (f"{IDENTITY}/{thing}/control/response", BINARY_FRAME),
+        }
+        mqtt.publish(IDENTITY, thing, "support", 1)
+        assert set(mqtt._mqtt_events.device_undecodable[thing]) == {"status", "control"}
+        mqtt.publish(IDENTITY, thing, "status", 1)
+        assert set(mqtt._mqtt_events.device_undecodable[thing]) == {"control"}
+        # the queued publish coroutines are not run in this test
+        for pool in (
+            mqtt._execution_pools.support_execution_pool,
+            mqtt._execution_pools.status_execution_pool,
+        ):
+            for coroutine in pool:
+                coroutine.close()
+            pool.clear()
+
+    def test_next_poll_without_answer_is_no_data(self, api):
+        a = api.things["Device A"].thing_name
+        api._things = {"Device A": api.things["Device A"]}
+        mock = TestRefreshStatusPerDevice._mock_mqtt(None, api, [[a], [], [a], []])
+        mock.mqtt_events.device_status = {a: JciHitachiAWSStatus({"DeviceType": 1})}
+        mock.mqtt_events.device_undecodable = {
+            a: {"registration": (f"{IDENTITY}/{a}/registration/response", BINARY_FRAME)}
+        }
+        api.refresh_status(refresh_support_code=True)
+        assert api.things["Device A"].attention["cause"] == "undecodable"
+
+        # next poll: publish() forgot the frame, and no answer arrived at all
+        mock.mqtt_events.device_undecodable = {a: {}}
+        api.refresh_status(refresh_support_code=True)
+        assert api.things["Device A"].attention["cause"] == "no_data"
 
 
 class TestThingWithoutSupportCode:

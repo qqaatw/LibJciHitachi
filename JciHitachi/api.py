@@ -1325,8 +1325,16 @@ class JciHitachiAWSAPI:
                 lambda v: setattr(thing, "status_code", v),
             )
             failures.append(status_failure)
-            first = next((f for f in failures if f is not None), None)
-            reason = first[0] if first is not None else None
+            failed = [f for f in failures if f is not None]
+            if status_failure is not None:
+                # unavailable because of the status: every failed channel in request order
+                # (so the status failure is never hidden behind an earlier one), and the
+                # structured attention describes the status failure
+                reason = " ".join(f[0] for f in failed)
+                first = status_failure
+            else:
+                first = failed[0] if failed else None
+                reason = first[0] if first is not None else None
 
             previous_reason = thing.attention_reason
             was_available = thing.available

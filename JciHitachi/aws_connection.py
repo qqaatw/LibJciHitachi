@@ -968,8 +968,11 @@ class JciHitachiAWSMqttConnection:
                 self._mqtt_events.device_support_event[thing_name].clear()
             else:
                 self._mqtt_events.device_support_event[thing_name] = threading.Event()
-            # a new request must not be satisfied by the previous answer
+            # a new request must not be satisfied by the previous answer, JSON or not
             self._mqtt_events.device_support.pop(thing_name, None)
+            self._mqtt_events.device_undecodable.get(thing_name, {}).pop(
+                "registration", None
+            )
 
             def fn():
                 publish_future, _ = self._mqttc.publish(
@@ -988,6 +991,7 @@ class JciHitachiAWSMqttConnection:
             else:
                 self._mqtt_events.device_status_event[thing_name] = threading.Event()
             self._mqtt_events.device_status.pop(thing_name, None)
+            self._mqtt_events.device_undecodable.get(thing_name, {}).pop("status", None)
 
             def fn():
                 publish_future, _ = self._mqttc.publish(
