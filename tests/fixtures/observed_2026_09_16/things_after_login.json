@@ -1,0 +1,14 @@
+{
+  "Device A": {
+    "available": true,
+    "reason": null
+  },
+  "Device B": {
+    "available": true,
+    "reason": null
+  },
+  "Device C": {
+    "available": false,
+    "reason": "Device C answered the support code request on registration/response with an undecodable payload (hex fcffff1f0101, not JSON). The device may need attention in the official app (pending freeze-clean / filter notification) or run a firmware whose protocol this library does not understand yet."
+  }
+}
