@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AC control/response to a CleanSwitch command",
+  "description": "Payload of <identity>/<thing>/control/response, the answer to control/request {\"CleanSwitch\": 0|1, \"Timestamp\": ...}. Only CleanSwitch commands are captured in this profile; other controls are expected to echo their own field instead of CleanSwitch (not captured).",
+  "x-profile": "ac-rad-fw6.0.032",
+  "x-sources": [
+    "../observed_2026_09_17_freeze_clean/control_response_clean_start_started.json",
+    "../observed_2026_09_17_freeze_clean/control_response_clean_start_not_started.json",
+    "../observed_2026_09_17_freeze_clean/control_response_clean_stop.json"
+  ],
+  "x-samples": 3,
+  "x-note": "The answer is identical in shape and in CleanSwitch/Error for a start the unit carried out and for a start it did not carry out (7 starts on 2026-09-17: 3 cleaned, 4 did not, all answered CleanSwitch 1, Error 0). Only the next status/response shows whether the unit started. See tests/fixtures/observed_2026_09_17_freeze_clean/README.md.",
+  "type": "object",
+  "required": [
+    "CleanSwitch",
+    "DeviceType",
+    "Error",
+    "RequestTimestamp",
+    "TaskID",
+    "Timestamp"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "DeviceType": {
+      "type": "integer",
+      "x-observed-values": [1]
+    },
+    "CleanSwitch": {
+      "type": "integer",
+      "x-observed-values": [0, 1],
+      "x-note": "echo of the value sent in control/request"
+    },
+    "Error": {
+      "type": "integer",
+      "x-observed-values": [0],
+      "x-note": "0 also when the unit did not start"
+    },
+    "TaskID": {
+      "type": "integer",
+      "x-note": "the library's per-session control counter echoed back (1, 2, 3, 4 in the order sent)"
+    },
+    "RequestTimestamp": {
+      "type": "integer",
+      "x-note": "echo of Timestamp in control/request (epoch seconds)"
+    },
+    "Timestamp": {
+      "type": "integer",
+      "x-note": "epoch seconds; 0 or 1 s after RequestTimestamp"
+    }
+  }
+}

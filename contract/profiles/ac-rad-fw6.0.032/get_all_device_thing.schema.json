@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GetAllDevice results.Things[]",
+  "description": "One element of results.Things in the HTTP POST /GetAllDevice response (status.code 0). No model, no installed firmware.",
+  "x-profile": "ac-rad-fw6.0.032",
+  "x-sources": [
+    "get_all_device.json"
+  ],
+  "x-samples": 3,
+  "type": "object",
+  "required": [
+    "CustomDeviceName",
+    "DeviceType",
+    "FirmwareId",
+    "GeoLoc",
+    "LatestFirmwareVersion",
+    "ThingName",
+    "TimeZone"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "CustomDeviceName": {
+      "type": "string",
+      "x-observed-values": [
+        "Device A",
+        "Device B",
+        "Device C"
+      ],
+      "x-placeholder": true
+    },
+    "DeviceType": {
+      "type": "string",
+      "x-observed-values": [
+        "1"
+      ]
+    },
+    "FirmwareId": {
+      "type": "string",
+      "x-observed-values": [
+        "3"
+      ]
+    },
+    "GeoLoc": {
+      "type": "object",
+      "x-placeholder": true
+    },
+    "LatestFirmwareVersion": {
+      "type": "string",
+      "x-observed-values": [
+        "8.0.006:6"
+      ],
+      "x-note": "\"8.0.006:6\" for all three units while their FirmwareVersion is 6.0.032"
+    },
+    "ThingName": {
+      "type": "string",
+      "x-observed-values": [
+        "<identity>_<gw-A>",
+        "<identity>_<gw-B>",
+        "<identity>_<gw-C>"
+      ],
+      "x-placeholder": true
+    },
+    "TimeZone": {
+      "type": "string",
+      "x-observed-values": [
+        "Asia/Taipei"
+      ]
+    }
+  }
+}

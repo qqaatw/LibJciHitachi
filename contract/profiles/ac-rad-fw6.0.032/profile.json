@@ -1,0 +1,87 @@
+{
+  "profile": "ac-rad-fw6.0.032",
+  "device_family": "Hitachi RAD-series ceiling-embedded air conditioners (Taiwan cloud 雲端智慧控); exact models withheld",
+  "units": 3,
+  "DeviceType": "1",
+  "FirmwareId": "3",
+  "FirmwareVersion": "6.0.032",
+  "LatestFirmwareVersion": "8.0.006:6",
+  "captured": "2026-09-16 / 2026-09-17",
+  "captured_with": "LibJciHitachi 1.7.2 + fork fix/tolerate-undecodable-device-responses; awsiotsdk 1.31.0; official app 雲端智慧控 11.30.600 (iOS) used only to read prompts",
+  "fixtures": "tests/fixtures/observed_2026_09_16/",
+  "messages": {
+    "GetAllDevice": "get_all_device_thing.schema.json",
+    "registration/response": "registration_response.schema.json",
+    "status/response": "status_response.schema.json",
+    "status-secondary/response": "status_response.schema.json (same key set; topic is requested by the official app, not by the library)",
+    "shadow info": "shadow_info.schema.json",
+    "control/response": "control_response.schema.json (CleanSwitch commands only)",
+    "statistic/response": "NOT CAPTURED as JSON (only the 6-byte frame was seen on this topic, from a running unit)"
+  },
+  "non_json_answers": {
+    "bytes_hex": "fcffff1f0101",
+    "seen_on": [
+      "registration/response",
+      "status/response",
+      "status-secondary/response",
+      "statistic/response"
+    ],
+    "observed": [
+      "always exactly these 6 bytes, from three different units, 2026-09-03 .. 2026-09-17",
+      "per device: in the same poll other units on the account answer JSON",
+      "correlates with the unit running: a unit switched on from Home Assistant answered the frame on the next poll; a unit switched off went back to JSON within 6 minutes; in the 00:02 capture the only unit with status Switch 1 was the only one answering the frame; at 16:57 all three answered the frame (power state not recorded)",
+      "BUT running is not sufficient: at 01:13 on 2026-09-17 the unit that had answered the frame since 23:52 answered JSON again while its status said Mode cool, Switch 1 (Home Assistant showed it cooling at 25 °C); what changed on the unit at that moment is not known",
+      "and running is not necessary: on 2026-09-17 from 13:01 (right after a Home Assistant restart) until at least 13:57, all three units answered registration/response with the frame on every poll while all three were idle (status Switch 0, CleanSwitch 0, CleanStatus 0) and their status/response was JSON; two of them had finished a freeze clean at 11:45 and 12:40; at 13:57 one unit answered JSON again, the other two still the frame",
+      "not correlated with the official app's freeze-clean prompt (shown for units that answered JSON)",
+      "shadow info still answers JSON for the same unit; status/response was JSON for the running unit in the same poll where its registration/response was the frame",
+      "a control still takes effect while the unit answers registration/response with the frame: on 2026-09-17 15:20 one idle unit whose support code was the frame on every poll got TemperatureSetting 26 and then 25; each control/response echoed the value with Error 0 and the following status/response carried it 7.8 s and 8.9 s after the command"
+    ],
+    "meaning": "unknown"
+  },
+  "nested_mqtt_publish_answer": {
+    "fixture": "registration_response_gw-B_nested_mqtt_publish.bin",
+    "seen": "once, 2026-09-17 00:36:12, on registration/response from an idle unit (Switch 0) that had answered the frame-free JSON on the previous polls",
+    "observed": [
+      "761 bytes: exactly the length of that unit's normal registration/response JSON (registration_response_gw-B.json is 761 bytes)",
+      "bytes 0..706 are a complete MQTT PUBLISH packet: type 0x32 (PUBLISH, QoS 1), remaining length 704, topic <identity>/<identity>_<gw>/status/response (134 bytes), packet id 4709, then a 620-byte status/response JSON (26 keys, Switch 0, CleanNotification 1)",
+      "bytes 707..760 are the first 54 bytes of a second MQTT PUBLISH (0x32, remaining length 714, topic length 144) cut off mid-topic",
+      "one poll earlier (00:35:22) the same unit's status/response event fired without JSON data; two polls later (00:38:29) it answered normally again"
+    ],
+    "meaning": "unknown; the content is a raw MQTT byte stream delivered as a payload. Placeholders in the fixture keep the original lengths so the framing stays valid."
+  },
+  "not_observed_in_this_profile": {
+    "STATUS_DICT[AC] fields absent from every payload": [
+      "HorizontalWindDirectionSetting",
+      "Panel",
+      "VerticalWindDirectionSetting",
+      "VerticalWindDirectionSwitch"
+    ],
+    "note": "max_temp / min_temp are derived by the library from TemperatureSetting in registration/response, not cloud fields"
+  },
+  "fixtures_freeze_clean": "tests/fixtures/observed_2026_09_17_freeze_clean/",
+  "freeze_clean": {
+    "captured": "2026-09-17 10:16 .. 12:40, two of the three units (Device A, Device B), commands from this library's set_status",
+    "observed": [
+      "control/response echoed CleanSwitch and Error 0 for all 7 starts; 3 cleaned and 4 did not, so the echo does not tell whether the unit started",
+      "accepted start: status CleanSwitch 1, CleanStatus 1 within about 1 s; CleanStatus 2 at most 28 s later; CleanSwitch 0, CleanStatus 0 at the end",
+      "completed cleans took about 62 min (Device A) and 54 min (Device B) from the command; one sample each",
+      "CleanNotification 1 -> 0 during the clean, 33 min (Device A) and 25 min (Device B) after the command",
+      "Switch stayed 0 throughout",
+      "a start of Device A while Device B was cleaning was not carried out; the official app pushed '<device>凍結洗淨未執行，請確認是否要重新設定' within 30 s",
+      "three starts of Device B 2, 7 and 17 min after interrupting its own clean were not carried out, with no other unit cleaning; cause unknown; a start 84 min after the interrupt was accepted",
+      "Device B started 1 min after Device A completed a clean"
+    ],
+    "owner_manual": {
+      "source": "https://www.hitachiaircon.com/tw/storage/files/downloads/download_file_851146c22c930e869e10be4b544ac2cc.pdf (pp. 13-14), the owner's manual of these indoor units",
+      "clauses": [
+        "a freeze clean takes at most about 86 min and starts with about 30 s of environment detection",
+        "the reminder appears after about 100 h of operation",
+        "runs only with outdoor 2-46 degC, indoor 10-32 degC, relative humidity 30-85 %",
+        "not carried out within 60 min after the previous freeze clean completed",
+        "one-to-many (multi-split) systems: only one indoor unit can freeze clean at a time",
+        "an air-conditioning request stops the freeze clean; it does not resume after a power failure"
+      ],
+      "scope": "Written for this unit family. Other device types, firmware or single-split systems may behave differently. These are manual statements, not cloud behaviour, and the library does not enforce any of them."
+    }
+  }
+}
