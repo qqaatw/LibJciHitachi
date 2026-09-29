@@ -566,6 +566,18 @@ def _login_patches(refresh_side_effect):
     ]
 
 
+def _disconnects_of(disconnect, connection):
+    """Calls of the patched disconnect() that were made on `connection` itself.
+
+    JciHitachiAWSMqttConnection.__del__ calls disconnect(), so a connection left over from an
+    earlier test can be garbage-collected while the patch is active and add a call of its own.
+    Counting every call made the result depend on test order and garbage collection timing.
+    """
+    return sum(
+        1 for c in disconnect.call_args_list if c.args and c.args[0] is connection
+    )
+
+
 class TestLoginCleanup:
     def test_all_devices_failing_still_logs_in(self, api, caplog):
         patches = _login_patches(JciHitachiDeviceError("Device A timed out"))
@@ -578,12 +590,13 @@ class TestLoginCleanup:
             patches[5],
             patches[6],
             patch(
-                "JciHitachi.aws_connection.JciHitachiAWSMqttConnection.disconnect"
+                "JciHitachi.aws_connection.JciHitachiAWSMqttConnection.disconnect",
+                autospec=True,
             ) as disconnect,
             caplog.at_level(logging.WARNING),
         ):
             api.login()
-        disconnect.assert_not_called()
+        assert _disconnects_of(disconnect, api._mqtt) == 0
         assert "no device is available yet" in caplog.text
 
     def test_unexpected_failure_disconnects_mqtt(self, api):
@@ -597,12 +610,13 @@ class TestLoginCleanup:
             patches[5],
             patches[6],
             patch(
-                "JciHitachi.aws_connection.JciHitachiAWSMqttConnection.disconnect"
+                "JciHitachi.aws_connection.JciHitachiAWSMqttConnection.disconnect",
+                autospec=True,
             ) as disconnect,
         ):
             with pytest.raises(RuntimeError, match="boom"):
                 api.login()
-        disconnect.assert_called_once()
+        assert _disconnects_of(disconnect, api._mqtt) == 1
 
     def test_identity_failure_is_an_auth_error(self, api):
         with (
