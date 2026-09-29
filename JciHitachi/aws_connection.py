@@ -29,6 +29,23 @@ QOS = awscrt.mqtt.QoS.AT_LEAST_ONCE
 
 _LOGGER = logging.getLogger(__name__)
 
+# An undecodable payload is shown in full only while it is short. A long one can be a raw MQTT
+# frame whose topic carries the account's identity id: a 755-byte PUBLISH frame (first byte
+# 0x32) arrived as a registration answer on 2026-09-29.
+PAYLOAD_HEX_LIMIT = 16
+
+
+def payload_preview(payload: bytes) -> str:
+    """``hex <payload>`` up to `PAYLOAD_HEX_LIMIT` bytes, otherwise its size and first byte."""
+    if len(payload) <= PAYLOAD_HEX_LIMIT:
+        return f"hex {payload.hex()}"
+    return f"{len(payload)} bytes, starts with 0x{payload[0]:02x}"
+
+
+# Topic kinds (split_topic[2]) whose responses are awaited by publish(); other kinds such as
+# `statistic` or `status-secondary` are only requested by the official app and are ignored here.
+_AWAITED_TOPIC_KINDS = ("status", "registration")
+
 
 class JciHitachiAuthError(RuntimeError):
     """The account could not be authenticated (AWS Cognito rejected the e-mail/password or token)."""
@@ -53,6 +70,10 @@ def cognito_error(status: str, message: str) -> RuntimeError:
     return RuntimeError(f"{message}: {status}")
 
 
+class JciHitachiDeviceError(RuntimeError):
+    """Every requested device failed to answer; per-device failures are recorded on `AWSThing` instead."""
+
+
 @dataclass
 class AWSTokens:
     access_token: str
@@ -75,6 +96,11 @@ class JciHitachiMqttEvents:
     device_support: dict[str, JciHitachiAWSStatusSupport] = field(default_factory=dict)
     device_control: dict[str, dict] = field(default_factory=dict)
     device_shadow: dict[str, dict] = field(default_factory=dict)
+    # thing_name -> topic kind (`registration`, `status`, ...) -> (topic, raw payload) of the
+    # latest response on that kind that was not JSON
+    device_undecodable: dict[str, dict[str, tuple[str, bytes]]] = field(
+        default_factory=dict
+    )
     mqtt_error: str = field(default_factory=str)
     device_status_event: dict[str, threading.Event] = field(default_factory=dict)
     device_support_event: dict[str, threading.Event] = field(default_factory=dict)
@@ -596,37 +622,74 @@ class JciHitachiAWSMqttConnection:
 
         return self._mqtt_events
 
+    def _set_device_event(self, thing_name: str, kind: str) -> None:
+        """Wake the publish() waiter of `kind` for `thing_name`, if there is one.
+
+        Responses can arrive before publish() created the event (or for a thing this instance
+        never asked about, e.g. when the official app is open), so a missing event is not an error.
+        """
+        events = {
+            "status": self._mqtt_events.device_status_event,
+            "registration": self._mqtt_events.device_support_event,
+            "control": self._mqtt_events.device_control_event,
+        }.get(kind)
+        if events is None:
+            return
+        event = events.get(thing_name)
+        if event is not None:
+            event.set()
+
     def _on_publish(self, topic: str, payload: bytes, dup, qos, retain, **kwargs):
+        split_topic = topic.split("/")
+        is_device_topic = len(split_topic) >= 4 and split_topic[3] != "shadow"
+        thing_name = split_topic[1] if is_device_topic else None
+        kind = split_topic[2] if is_device_topic else None
+
         try:
-            payload = json.loads(payload.decode(errors="replace"))
+            decoded = json.loads(payload.decode(errors="replace"))
         except Exception as e:
             self._mqtt_events.mqtt_error = e.__class__.__name__
-            self._mqtt_events.mqtt_error_event.set()
-            _LOGGER.error(
-                f"Mqtt topic {topic} published with payload {payload} cannot be decoded: {e}"
+            # attributable to a device -> DEBUG (refresh_status reports it once per device,
+            # with the hex, when the device's state changes); otherwise ERROR as before
+            (_LOGGER.debug if thing_name is not None else _LOGGER.error)(
+                f"Mqtt topic {topic} published a payload that cannot be decoded "
+                f"({payload_preview(bytes(payload))}): {e}"
             )
+            if thing_name is None:
+                # Not attributable to a device: keep the old behaviour (reauth on next publish).
+                self._mqtt_events.mqtt_error_event.set()
+                return
+            # Attributable to one device: remember the raw frame for diagnostics and release the
+            # waiter right away instead of letting it burn the whole timeout. refresh_status()
+            # turns this into a per-device `attention_reason`; the other devices are unaffected.
+            self._mqtt_events.device_undecodable.setdefault(thing_name, {})[kind] = (
+                topic,
+                bytes(payload),
+            )
+            if kind in _AWAITED_TOPIC_KINDS and split_topic[3] == "response":
+                self._set_device_event(thing_name, kind)
             return
 
+        payload = decoded
         if self._print_response:
             print(f"Mqtt topic {topic} published with payload \n {payload}")
 
-        split_topic = topic.split("/")
-
-        if len(split_topic) >= 4 and split_topic[3] != "shadow":
-            thing_name = split_topic[1]
-            if split_topic[2] == "status" and split_topic[3] == "response":
+        if is_device_topic and split_topic[3] == "response":
+            if kind == "status":
                 self._mqtt_events.device_status[thing_name] = JciHitachiAWSStatus(
                     payload
                 )
-                self._mqtt_events.device_status_event[thing_name].set()
-            elif split_topic[2] == "registration" and split_topic[3] == "response":
+            elif kind == "registration":
                 self._mqtt_events.device_support[thing_name] = (
                     JciHitachiAWSStatusSupport(payload)
                 )
-                self._mqtt_events.device_support_event[thing_name].set()
-            elif split_topic[2] == "control" and split_topic[3] == "response":
+            elif kind == "control":
                 self._mqtt_events.device_control[thing_name] = payload
-                self._mqtt_events.device_control_event[thing_name].set()
+            else:
+                return
+            # A well-formed answer supersedes an earlier undecodable one on the same kind.
+            self._mqtt_events.device_undecodable.get(thing_name, {}).pop(kind, None)
+            self._set_device_event(thing_name, kind)
 
     def _pop_shadow_token(self, client_token: str) -> Optional[str]:
         """Match a shadow answer to a request of this client; None when it is not ours.
@@ -918,6 +981,11 @@ class JciHitachiAWSMqttConnection:
                 self._mqtt_events.device_support_event[thing_name].clear()
             else:
                 self._mqtt_events.device_support_event[thing_name] = threading.Event()
+            # a new request must not be satisfied by the previous answer, JSON or not
+            self._mqtt_events.device_support.pop(thing_name, None)
+            self._mqtt_events.device_undecodable.get(thing_name, {}).pop(
+                "registration", None
+            )
 
             def fn():
                 publish_future, _ = self._mqttc.publish(
@@ -935,6 +1003,8 @@ class JciHitachiAWSMqttConnection:
                 self._mqtt_events.device_status_event[thing_name].clear()
             else:
                 self._mqtt_events.device_status_event[thing_name] = threading.Event()
+            self._mqtt_events.device_status.pop(thing_name, None)
+            self._mqtt_events.device_undecodable.get(thing_name, {}).pop("status", None)
 
             def fn():
                 publish_future, _ = self._mqttc.publish(
@@ -1001,6 +1071,7 @@ class JciHitachiAWSMqttConnection:
             self._mqtt_events.device_shadow_event[thing_name].clear()
         else:
             self._mqtt_events.device_shadow_event[thing_name] = threading.Event()
+        self._mqtt_events.device_shadow.pop(thing_name, None)
 
         def fn():
             if shadow_name is None:
