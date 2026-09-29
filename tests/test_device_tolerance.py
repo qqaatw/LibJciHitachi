@@ -477,6 +477,99 @@ class TestNoStaleAnswers:
         assert thing not in mqtt._mqtt_events.device_support
         assert thing not in mqtt._mqtt_events.device_shadow
 
+    def _control_mock(self, api, answered, on_execute):
+        a = api.things["Device A"].thing_name
+        api.things["Device A"].status_code = JciHitachiAWSStatus(
+            {"DeviceType": 1, "Switch": 0}
+        )
+        mock = MagicMock()
+        mock.mqtt_events.mqtt_error_event.is_set.return_value = False
+        mock.mqtt_events.device_control = {}
+        # a stale non-JSON control answer from an earlier request must not count
+        mock.mqtt_events.device_undecodable = {
+            a: {"control": (f"{IDENTITY}/{a}/control/response", b"stale")}
+        }
+
+        def execute(control=False):
+            on_execute(mock.mqtt_events, a)  # the answer arrives while executing
+            return [None, None, None, [a] if answered else []]
+
+        mock.execute.side_effect = execute
+        api._mqtt = mock
+        return api.things["Device A"]
+
+    def test_control_request_forgets_the_previous_answer(self, mqtt):
+        thing = f"{IDENTITY}_{GW_A}"
+        mqtt._mqtt_events.device_control[thing] = {"Switch": 1}
+        with patch.object(mqtt, "_mqttc"):
+            mqtt.publish(IDENTITY, thing, "control", payload={})
+        for coro in mqtt._execution_pools.control_execution_pool:
+            coro.close()
+        mqtt._execution_pools.control_execution_pool.clear()
+        assert thing not in mqtt._mqtt_events.device_control
+
+    def test_set_status_returns_false_on_undecodable_control_answer(self, api, caplog):
+        def arrive(events, a):
+            events.device_undecodable[a]["control"] = (
+                f"{IDENTITY}/{a}/control/response",
+                BINARY_FRAME,
+            )
+
+        thing = self._control_mock(api, True, arrive)
+        with caplog.at_level(logging.WARNING):
+            assert api.set_status("Switch", "Device A", status_str_value="on") is False
+        assert "fcffff1f0101" in caplog.text
+        assert thing.last_control_response == BINARY_FRAME
+        assert thing.last_control_request["Switch"] == 1
+        assert thing.last_control_at is not None
+
+    def test_long_undecodable_control_answer_is_logged_by_size(self, api, caplog):
+        def arrive(events, a):
+            events.device_undecodable[a]["control"] = (
+                f"{IDENTITY}/{a}/control/response",
+                LONG_FRAME,
+            )
+
+        self._control_mock(api, True, arrive)
+        with caplog.at_level(logging.DEBUG):
+            assert api.set_status("Switch", "Device A", status_str_value="on") is False
+        assert f"{len(LONG_FRAME)} bytes, starts with 0x32" in caplog.text
+        assert not _leaks_marker(caplog.text)
+
+    def test_set_status_keeps_json_control_answer(self, api):
+        def arrive(events, a):
+            events.device_control[a] = {"Switch": 1, "TaskID": 1}
+
+        thing = self._control_mock(api, True, arrive)
+        assert api.set_status("Switch", "Device A", status_str_value="on") is True
+        assert thing.last_control_response == {"Switch": 1, "TaskID": 1}
+        assert thing.status_code.Switch == "on"
+
+    def test_set_status_without_control_event_returns_false(self, api, caplog):
+        thing = self._control_mock(api, False, lambda events, a: None)
+        with caplog.at_level(logging.WARNING):
+            assert api.set_status("Switch", "Device A", status_str_value="on") is False
+        assert "did not answer the control request" in caplog.text
+        assert thing.last_control_response is None
+
+    def test_set_status_without_answer_forgets_stale_frame(self, api, caplog):
+        # the control event fired but nothing was stored: the non-JSON record of an earlier
+        # request must not be reported as this request's answer
+        thing = self._control_mock(api, True, lambda events, a: None)
+        with caplog.at_level(logging.WARNING):
+            assert api.set_status("Switch", "Device A", status_str_value="on") is False
+        assert "control response carried no data" in caplog.text
+        assert b"stale".hex() not in caplog.text
+        assert thing.last_control_response is None
+
+    def test_matching_echo_without_status_does_not_raise(self, api):
+        def arrive(events, a):
+            events.device_control[a] = {"Switch": 1, "TaskID": 1}
+
+        thing = self._control_mock(api, True, arrive)
+        thing.status_code = None  # an unavailable device has no status yet
+        assert api.set_status("Switch", "Device A", status_str_value="on") is True
+
 
 class TestCognitoErrorClassification:
     def test_only_credential_errors_are_auth_errors(self):

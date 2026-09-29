@@ -770,6 +770,13 @@ class AWSThing:
     def attention(self, x: Optional[dict]) -> None:
         self._attention = x
 
+    # Last control round trip, kept for diagnostics (set by JciHitachiAWSAPI.set_status()):
+    # the request that was sent, when, and the raw answer (dict if JSON, bytes if not,
+    # None if the device did not answer).
+    last_control_at: Optional[float] = None
+    last_control_request: Optional[dict] = None
+    last_control_response: Optional[Union[dict, bytes]] = None
+
     @property
     def brand(self) -> Optional[str]:
         """Device brand.
@@ -1550,23 +1557,67 @@ class JciHitachiAWSAPI:
                     return True
             return False
 
+        request = {
+            status_name: status_value,
+            "TaskID": self.task_id,
+            "Timestamp": int(time.time()),
+        }
+        # forget an earlier non-JSON control answer so it cannot be taken for this one
+        self._mqtt.mqtt_events.device_undecodable.get(thing.thing_name, {}).pop(
+            "control", None
+        )
+        thing.last_control_at = time.time()
+        thing.last_control_request = dict(request)
+        thing.last_control_response = None
+
         self._mqtt.publish(
             self._aws_identity.host_identity_id,
             thing.thing_name,
             "control",
             self._mqtt_timeout,
-            {
-                status_name: status_value,
-                "TaskID": self.task_id,
-                "Timestamp": int(time.time()),
-            },
+            request,
         )
 
         _, _, _, control_results = self._mqtt.execute(control=True)
 
-        if thing.thing_name in control_results:
-            device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
-            if device_control.get(status_name) == status_value:
+        if thing.thing_name not in control_results:
+            _LOGGER.warning(
+                f"{device_name} did not answer the control request {status_name}={status_value} "
+                f"within {self._mqtt_timeout} s."
+            )
+            return False
+
+        device_control = self._mqtt.mqtt_events.device_control.get(thing.thing_name)
+        if device_control is None:
+            # the event fired without JSON data: the device answered the control request
+            # with an undecodable payload (recorded in mqtt_events.device_undecodable)
+            undecodable = self._mqtt.mqtt_events.device_undecodable.get(
+                thing.thing_name, {}
+            ).get("control")
+            if undecodable:
+                thing.last_control_response = undecodable[1]
+            _LOGGER.warning(
+                f"{device_name} did not acknowledge {status_name}: "
+                + (
+                    "undecodable control response "
+                    f"({aws_connection.payload_preview(undecodable[1])})"
+                    if undecodable
+                    else "control response carried no data"
+                )
+            )
+            return False
+
+        thing.last_control_response = dict(device_control)
+        # The echo means the cloud accepted the request, not that the device carried it out:
+        # on 2026-09-17 four CleanSwitch=1 commands were echoed with Error 0 while the units
+        # stayed idle. The value cached below is replaced by the device's own value on the
+        # next refresh_status.
+        if device_control.get(status_name) == status_value:
+            if thing.status_code is not None:
                 thing.status_code.set_new_status(status_name, status_value)
-                return True
+            return True
+        _LOGGER.warning(
+            f"{device_name} answered the control request {status_name}={status_value} "
+            f"with {status_name}={device_control.get(status_name)!r}."
+        )
         return False

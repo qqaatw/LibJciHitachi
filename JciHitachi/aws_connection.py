@@ -44,7 +44,7 @@ def payload_preview(payload: bytes) -> str:
 
 # Topic kinds (split_topic[2]) whose responses are awaited by publish(); other kinds such as
 # `statistic` or `status-secondary` are only requested by the official app and are ignored here.
-_AWAITED_TOPIC_KINDS = ("status", "registration")
+_AWAITED_TOPIC_KINDS = ("status", "registration", "control")
 
 
 class JciHitachiAuthError(RuntimeError):
@@ -1022,6 +1022,7 @@ class JciHitachiAWSMqttConnection:
                 self._mqtt_events.device_control_event[thing_name].clear()
             else:
                 self._mqtt_events.device_control_event[thing_name] = threading.Event()
+            self._mqtt_events.device_control.pop(thing_name, None)
 
             def fn():
                 publish_future, _ = self._mqttc.publish(
