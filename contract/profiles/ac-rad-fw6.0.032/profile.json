@@ -22,7 +22,7 @@
     "bytes_hex": "fcffff1f0101",
     "seen_on": [
       "registration/response",
-      "status/response",
+      "status/response (once, in a raw capture on 2026-09-17; not kept as a fixture)",
       "status-secondary/response",
       "statistic/response"
     ],
@@ -43,7 +43,7 @@
     "seen": "once, 2026-09-17 00:36:12, on registration/response from an idle unit (Switch 0) that had answered the frame-free JSON on the previous polls",
     "observed": [
       "761 bytes: exactly the length of that unit's normal registration/response JSON (registration_response_gw-B.json is 761 bytes)",
-      "bytes 0..706 are a complete MQTT PUBLISH packet: type 0x32 (PUBLISH, QoS 1), remaining length 704, topic <identity>/<identity>_<gw>/status/response (134 bytes), packet id 4709, then a 620-byte status/response JSON (26 keys, Switch 0, CleanNotification 1)",
+      "bytes 0..706 are a complete MQTT PUBLISH packet: type 0x32 (PUBLISH, QoS 1), remaining length 704, topic <identity>/<identity>_<gw>/status/response (134 bytes), packet id 4709, then a 566-byte status/response JSON (26 keys, Switch 0, CleanNotification 1)",
       "bytes 707..760 are the first 54 bytes of a second MQTT PUBLISH (0x32, remaining length 714, topic length 144) cut off mid-topic",
       "one poll earlier (00:35:22) the same unit's status/response event fired without JSON data; two polls later (00:38:29) it answered normally again"
     ],

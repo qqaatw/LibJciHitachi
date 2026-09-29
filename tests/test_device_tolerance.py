@@ -397,7 +397,11 @@ class TestThingWithoutSupportCode:
         # observed 2026-09-16 in a registration/response: "Model": "RAD-\xff\x06\x01R"
         thing = _thing("Device A", GW_A)
         thing.support_code = JciHitachiAWSStatusSupport(
-            {"DeviceType": 1, "Model": "RAD-�\x06\x01R", "FirmwareVersion": "6.0.032"}
+            {
+                "DeviceType": 1,
+                "Model": "RAD-\ufffd\x06\x01R",
+                "FirmwareVersion": "6.0.032",
+            }
         )
         assert thing.model is None
         assert thing.firmware_version == "6.0.032"
@@ -415,17 +419,14 @@ class TestNoStaleAnswers:
         mqtt._mqtt_events.device_support[thing] = JciHitachiAWSStatusSupport(
             {"DeviceType": 1}
         )
-        mqtt._mqtt_events.device_control[thing] = {"Switch": 1}
         mqtt._mqtt_events.device_shadow[thing] = {"online": True}
         with patch.object(mqtt, "_mqttc"), patch.object(mqtt, "_shadow_mqttc"):
             mqtt.publish(IDENTITY, thing, "status")
             mqtt.publish(IDENTITY, thing, "support")
-            mqtt.publish(IDENTITY, thing, "control", payload={})
             mqtt.publish_shadow(thing, "get", shadow_name="info")
         for pool in (
             mqtt._execution_pools.status_execution_pool,
             mqtt._execution_pools.support_execution_pool,
-            mqtt._execution_pools.control_execution_pool,
             mqtt._execution_pools.shadow_execution_pool,
         ):
             for coro in pool:
@@ -433,7 +434,6 @@ class TestNoStaleAnswers:
             pool.clear()
         assert thing not in mqtt._mqtt_events.device_status
         assert thing not in mqtt._mqtt_events.device_support
-        assert thing not in mqtt._mqtt_events.device_control
         assert thing not in mqtt._mqtt_events.device_shadow
 
     def _control_mock(self, api, answered, on_execute):
@@ -456,6 +456,16 @@ class TestNoStaleAnswers:
         mock.execute.side_effect = execute
         api._mqtt = mock
         return api.things["Device A"]
+
+    def test_control_request_forgets_the_previous_answer(self, mqtt):
+        thing = f"{IDENTITY}_{GW_A}"
+        mqtt._mqtt_events.device_control[thing] = {"Switch": 1}
+        with patch.object(mqtt, "_mqttc"):
+            mqtt.publish(IDENTITY, thing, "control", payload={})
+        for coro in mqtt._execution_pools.control_execution_pool:
+            coro.close()
+        mqtt._execution_pools.control_execution_pool.clear()
+        assert thing not in mqtt._mqtt_events.device_control
 
     def test_set_status_returns_false_on_undecodable_control_answer(self, api, caplog):
         def arrive(events, a):
@@ -481,12 +491,30 @@ class TestNoStaleAnswers:
         assert thing.last_control_response == {"Switch": 1, "TaskID": 1}
         assert thing.status_code.Switch == "on"
 
-    def test_set_status_without_answer_forgets_stale_frame(self, api, caplog):
+    def test_set_status_without_control_event_returns_false(self, api, caplog):
         thing = self._control_mock(api, False, lambda events, a: None)
         with caplog.at_level(logging.WARNING):
             assert api.set_status("Switch", "Device A", status_str_value="on") is False
         assert "did not answer the control request" in caplog.text
         assert thing.last_control_response is None
+
+    def test_set_status_without_answer_forgets_stale_frame(self, api, caplog):
+        # the control event fired but nothing was stored: the non-JSON record of an earlier
+        # request must not be reported as this request's answer
+        thing = self._control_mock(api, True, lambda events, a: None)
+        with caplog.at_level(logging.WARNING):
+            assert api.set_status("Switch", "Device A", status_str_value="on") is False
+        assert "control response carried no data" in caplog.text
+        assert b"stale".hex() not in caplog.text
+        assert thing.last_control_response is None
+
+    def test_matching_echo_without_status_does_not_raise(self, api):
+        def arrive(events, a):
+            events.device_control[a] = {"Switch": 1, "TaskID": 1}
+
+        thing = self._control_mock(api, True, arrive)
+        thing.status_code = None  # an unavailable device has no status yet
+        assert api.set_status("Switch", "Device A", status_str_value="on") is True
 
 
 class TestCognitoErrorClassification:

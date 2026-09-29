@@ -47,8 +47,9 @@ Answers arrive **per device**; in the same poll one device can answer and anothe
 
 ### 3.2 Non-JSON answers (observed, meaning unknown)
 
-- A 6-byte payload `fc ff ff 1f 01 01` on `registration/response`, `status/response`,
-  `status-secondary/response` and `statistic/response`. Per device, deterministic while the unit is in the
+- A 6-byte payload `fc ff ff 1f 01 01` on `registration/response` and `status-secondary/response`
+  (fixtures), once on `status/response` (a raw capture on 2026-09-17, not kept as a fixture), and on
+  `statistic/response` (reported in #42). Per device, deterministic while the unit is in the
   state it is in, correlated with, but not determined by, the unit **running** (a running unit went back to JSON once; details and timeline: `profile.json` →
   `non_json_answers`, and `tests/fixtures/observed_2026_09_16/README.md`).
 - Once, a 761-byte payload on `registration/response` that is a **raw MQTT byte stream**: a complete

@@ -14,7 +14,7 @@ status answers are only a few seconds apart.
 
 | file | what |
 |---|---|
-| `freeze_clean_timeline.jsonl` | Condensed from the three runs' full logs (about 500 KB, kept on the capture host). Kept rows: every `control` / `control_response` / `decision` / `scenario` / `unit_begin` / `unit_end` / `summary` event. For `status_response`: the first answer per unit per run, every answer where (`Switch`, `CleanSwitch`, `CleanStatus`, `CleanNotification`) changed, the answer just before each change (`"bracket": "last answer before the change"`), and the last answer of each run. `clock` is local time (UTC+8), taken when the answer arrived. |
+| `freeze_clean_timeline.jsonl` | Condensed from the three runs' full logs. Kept rows: every `control` / `control_response` / `decision` / `scenario` / `unit_begin` / `unit_end` / `summary` event. For `status_response`: the first answer per unit per run, every answer where (`Switch`, `CleanSwitch`, `CleanStatus`, `CleanNotification`) changed, the answer just before each change (`"bracket": "last answer before the change"`), and the last answer of each run. `clock` is local time (UTC+8), taken when the answer arrived. |
 | `control_response_clean_start_started.json` | `control/response` to `CleanSwitch: 1`, run 3 11:46:34, after which Device B **did** clean |
 | `control_response_clean_start_not_started.json` | `control/response` to `CleanSwitch: 1`, run 2 10:29:20, after which Device B **did not** clean |
 | `control_response_clean_stop.json` | `control/response` to `CleanSwitch: 0`, run 1 10:22:44 (interrupting a clean) |
@@ -63,8 +63,8 @@ official app briefly once; nothing in the log changed at that moment.
 - **Values seen.** `CleanStatus` went 0 → 1 → 2 on all three accepted starts, and back to 0 at the end
   of both completed cleans and at the interrupt. It stayed 1 for at most 28 s. `CleanNotification` went to 0 part-way through, about 33 min (A) and 25 min (B) after the
   command, not at the end. What 1 and 2 stand for is not stated by the cloud. The library reports
-  the raw number. The Home Assistant integration names them from this sequence (idle, starting,
-  cleaning) and keeps the raw number as an attribute.
+  the raw number; a consumer that wants names could derive them from this sequence (idle,
+  starting, cleaning).
 - **Rejected start while another unit cleaned (10:19:32).** This matches the clause for one-to-many
   systems in these indoor units' owner's manual (only one indoor unit can freeze clean at a time). The manual clause
   is recorded in `contract/profiles/ac-rad-fw6.0.032/profile.json`. It is a property of this system,
