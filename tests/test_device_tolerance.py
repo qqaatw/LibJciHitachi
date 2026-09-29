@@ -22,6 +22,16 @@ GW_B = "10416149025290813293"
 BINARY_FRAME = (
     b"\xfc\xff\xff\x1f\x01\x01"  # observed from three RAD-series ACs, 2026-08/09
 )
+# Shaped like the long answer seen on 2026-09-29: a raw MQTT PUBLISH frame whose topic holds an
+# identity id. Nothing of MARKER may reach a log line, a reason or an attention value.
+MARKER = b"ap-northeast-1:00000000-0000-4000-8000-00000000beef"
+LONG_FRAME = (
+    b"\x32\xc0\x05\x00\x40" + MARKER + b"/thing/registration/response" + bytes(600)
+)
+
+
+def _leaks_marker(text):
+    return MARKER.decode() in text or MARKER.hex() in text
 
 
 def _thing(name, gw):
@@ -71,6 +81,16 @@ class TestOnPublishUndecodable:
             "a per-device frame must not trigger reauth"
         )
         assert "fcffff1f0101" in caplog.text
+
+    def test_long_frame_is_logged_by_size_not_content(self, mqtt, caplog):
+        thing = f"{IDENTITY}_{GW_A}"
+        topic = f"{IDENTITY}/{thing}/registration/response"
+
+        with caplog.at_level(logging.DEBUG):
+            mqtt._on_publish(topic, LONG_FRAME, None, None, None)
+
+        assert f"{len(LONG_FRAME)} bytes, starts with 0x32" in caplog.text
+        assert not _leaks_marker(caplog.text)
 
     def test_binary_frame_on_unrequested_topic_does_not_raise(self, mqtt):
         thing = f"{IDENTITY}_{GW_A}"
@@ -298,20 +318,41 @@ class TestStructuredAttention:
             "cause": "undecodable",
             "payload_length": 6,
             "payload_hex": "fcffff1f0101",
+            "payload_preview": "hex fcffff1f0101",
         }
 
-    def test_long_payload_hex_is_capped_at_64_bytes(self, api):
+    def test_long_payload_is_summarised_not_dumped(self, api, caplog):
         a = api.things["Device A"].thing_name
         mock = self._api(api, [[a], [], [a], []])
         mock.mqtt_events.device_status = {a: JciHitachiAWSStatus({"DeviceType": 1})}
-        long_payload = bytes(range(256)) * 3 + bytes(range(25))  # 793 bytes
         mock.mqtt_events.device_undecodable = {
-            a: {"registration": (f"{IDENTITY}/{a}/registration/response", long_payload)}
+            a: {"registration": (f"{IDENTITY}/{a}/registration/response", LONG_FRAME)}
+        }
+        with caplog.at_level(logging.DEBUG):
+            api.refresh_status(refresh_support_code=True)
+        thing = api.things["Device A"]
+        preview = f"{len(LONG_FRAME)} bytes, starts with 0x32"
+        assert thing.attention["payload_length"] == len(LONG_FRAME)
+        assert thing.attention["payload_hex"] is None
+        assert thing.attention["payload_preview"] == preview
+        assert f"({preview})" in thing.attention_reason
+        for text in [
+            thing.attention_reason,
+            caplog.text,
+            *map(str, thing.attention.values()),
+        ]:
+            assert not _leaks_marker(text)
+
+    def test_sixteen_bytes_are_still_shown_in_full(self, api):
+        a = api.things["Device A"].thing_name
+        mock = self._api(api, [[a], [], [a], []])
+        mock.mqtt_events.device_status = {a: JciHitachiAWSStatus({"DeviceType": 1})}
+        frame = bytes(range(16))
+        mock.mqtt_events.device_undecodable = {
+            a: {"registration": (f"{IDENTITY}/{a}/registration/response", frame)}
         }
         api.refresh_status(refresh_support_code=True)
-        attention = api.things["Device A"].attention
-        assert attention["payload_length"] == 793
-        assert attention["payload_hex"] == long_payload[:64].hex()
+        assert api.things["Device A"].attention["payload_hex"] == frame.hex()
 
     def test_no_data_and_timeout(self, api):
         a = api.things["Device A"].thing_name
@@ -481,6 +522,19 @@ class TestNoStaleAnswers:
         assert thing.last_control_response == BINARY_FRAME
         assert thing.last_control_request["Switch"] == 1
         assert thing.last_control_at is not None
+
+    def test_long_undecodable_control_answer_is_logged_by_size(self, api, caplog):
+        def arrive(events, a):
+            events.device_undecodable[a]["control"] = (
+                f"{IDENTITY}/{a}/control/response",
+                LONG_FRAME,
+            )
+
+        self._control_mock(api, True, arrive)
+        with caplog.at_level(logging.DEBUG):
+            assert api.set_status("Switch", "Device A", status_str_value="on") is False
+        assert f"{len(LONG_FRAME)} bytes, starts with 0x32" in caplog.text
+        assert not _leaks_marker(caplog.text)
 
     def test_set_status_keeps_json_control_answer(self, api):
         def arrive(events, a):

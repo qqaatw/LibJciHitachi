@@ -29,6 +29,19 @@ QOS = awscrt.mqtt.QoS.AT_LEAST_ONCE
 
 _LOGGER = logging.getLogger(__name__)
 
+# An undecodable payload is shown in full only while it is short. A long one can be a raw MQTT
+# frame whose topic carries the account's identity id: a 755-byte PUBLISH frame (first byte
+# 0x32) arrived as a registration answer on 2026-09-29.
+PAYLOAD_HEX_LIMIT = 16
+
+
+def payload_preview(payload: bytes) -> str:
+    """``hex <payload>`` up to `PAYLOAD_HEX_LIMIT` bytes, otherwise its size and first byte."""
+    if len(payload) <= PAYLOAD_HEX_LIMIT:
+        return f"hex {payload.hex()}"
+    return f"{len(payload)} bytes, starts with 0x{payload[0]:02x}"
+
+
 # Topic kinds (split_topic[2]) whose responses are awaited by publish(); other kinds such as
 # `statistic` or `status-secondary` are only requested by the official app and are ignored here.
 _AWAITED_TOPIC_KINDS = ("status", "registration", "control")
@@ -639,8 +652,8 @@ class JciHitachiAWSMqttConnection:
             # attributable to a device -> DEBUG (refresh_status reports it once per device,
             # with the hex, when the device's state changes); otherwise ERROR as before
             (_LOGGER.debug if thing_name is not None else _LOGGER.error)(
-                f"Mqtt topic {topic} published with payload {payload!r} "
-                f"(hex {bytes(payload).hex()}) cannot be decoded: {e}"
+                f"Mqtt topic {topic} published a payload that cannot be decoded "
+                f"({payload_preview(bytes(payload))}): {e}"
             )
             if thing_name is None:
                 # Not attributable to a device: keep the old behaviour (reauth on next publish).

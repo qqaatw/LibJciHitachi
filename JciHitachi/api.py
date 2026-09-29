@@ -748,8 +748,11 @@ class AWSThing:
           ``"shadow/name/info/get"``
         - ``cause``: ``"undecodable"`` (an answer arrived that is not JSON), ``"no_data"`` (no
           JSON answer arrived in this refresh) or ``"timeout"`` (sending the request failed)
-        - ``payload_length`` / ``payload_hex``: size of the undecodable answer and the hex of at
-          most its first 64 bytes; None for the other causes
+        - ``payload_length``: size of the undecodable answer; None for the other causes
+        - ``payload_hex``: the answer in hex when it is at most 16 bytes, otherwise None (a long
+          answer can be a raw MQTT frame that carries the account's identity id)
+        - ``payload_preview``: the text `attention_reason` shows for the answer, ``hex ...`` or
+          ``<n> bytes, starts with 0x..``; None for the other causes
 
         ``no_data`` is what a timeout of the answer looks like with this library: the waiter in
         `JciHitachiAWSMqttConnection.publish()` does not check the result of ``Event.wait()``,
@@ -1393,7 +1396,8 @@ class JciHitachiAWSAPI:
                 # means is unknown (seen as fc ff ff 1f 01 01 from RAD-series ACs, 2026-08/09).
                 return (
                     f"{name} answered the {what} request on {kind}/response with a "
-                    f"payload that is not JSON (hex {payload.hex()}); its meaning is unknown.",
+                    f"payload that is not JSON ({aws_connection.payload_preview(payload)}); "
+                    "its meaning is unknown.",
                     self._attention(what, kind, "undecodable", payload),
                 )
             return (
@@ -1416,7 +1420,15 @@ class JciHitachiAWSAPI:
             "topic": f"{kind}/response" if kind is not None else "shadow/name/info/get",
             "cause": cause,
             "payload_length": len(payload) if payload is not None else None,
-            "payload_hex": payload[:64].hex() if payload is not None else None,
+            "payload_hex": (
+                payload.hex()
+                if payload is not None
+                and len(payload) <= aws_connection.PAYLOAD_HEX_LIMIT
+                else None
+            ),
+            "payload_preview": (
+                aws_connection.payload_preview(payload) if payload is not None else None
+            ),
         }
 
     def get_status(
@@ -1587,7 +1599,8 @@ class JciHitachiAWSAPI:
             _LOGGER.warning(
                 f"{device_name} did not acknowledge {status_name}: "
                 + (
-                    f"undecodable control response (hex {undecodable[1].hex()})"
+                    "undecodable control response "
+                    f"({aws_connection.payload_preview(undecodable[1])})"
                     if undecodable
                     else "control response carried no data"
                 )
