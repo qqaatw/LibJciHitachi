@@ -5,6 +5,7 @@ import warnings
 from typing import Optional, Union
 
 from . import aws_connection, connection, mqtt_connection
+from .aws_connection import JciHitachiAuthError  # noqa: F401 (re-exported)
 from .model import (
     JciHitachiAC,
     JciHitachiACSupport,
@@ -711,40 +712,40 @@ class AWSThing:
         self._available = x
 
     @property
-    def brand(self) -> str:
+    def brand(self) -> Optional[str]:
         """Device brand.
 
         Returns
         -------
-        str
-            Device brand.
+        str or None
+            Device brand; None until the support code has been read.
         """
 
-        return getattr(self._support_code, "Brand")
+        return getattr(self._support_code, "Brand", None)
 
     @property
-    def firmware_version(self) -> str:
+    def firmware_version(self) -> Optional[str]:
         """Firmware version.
 
         Returns
         -------
-        str
-            Device firmware version.
+        str or None
+            Device firmware version; None until the support code has been read.
         """
 
-        return getattr(self._support_code, "FirmwareVersion")
+        return getattr(self._support_code, "FirmwareVersion", None)
 
     @property
-    def firmware_code(self) -> str:
+    def firmware_code(self) -> Optional[int]:
         """Firmware code.
 
         Returns
         -------
-        str
-            Device firmware code.
+        int or None
+            Device firmware code; None until the support code has been read.
         """
 
-        return getattr(self._support_code, "FirmwareCode")
+        return getattr(self._support_code, "FirmwareCode", None)
 
     @property
     def gateway_mac_address(self) -> str:
@@ -759,16 +760,25 @@ class AWSThing:
         return self._json["ThingName"].split("_")[-1]
 
     @property
-    def model(self) -> str:
+    def model(self) -> Optional[str]:
         """Device model.
 
         Returns
         -------
-        str
-            Device model.
+        str or None
+            Device model; None until the support code has been read, or when the cloud sends a
+            value with control characters in it.
         """
 
-        return getattr(self._support_code, "Model")
+        model = getattr(self._support_code, "Model", None)
+        # Observed 2026-09-16 (RAD-series AC, FirmwareVersion 6.0.032): the cloud's
+        # registration/response carried Model values such as "RAD-\xff\x06" and
+        # "RAD-\xff\x06\x01R" (a 0xFF byte followed by control characters), i.e. the value is
+        # corrupted at the source. Return None rather than a string with control characters;
+        # the real model cannot be recovered from the payload.
+        if isinstance(model, str) and not model.isprintable():
+            return None
+        return model
 
     @property
     def name(self) -> str:
@@ -975,8 +985,10 @@ class JciHitachiAWSAPI:
 
         Raises
         ------
+        JciHitachiAuthError
+            If AWS Cognito rejects the credentials (subclass of RuntimeError).
         RuntimeError
-            If a login error occurs, RuntimeError will be raised.
+            If the device list cannot be retrieved or the MQTT connection fails.
         """
 
         conn = aws_connection.GetUser(
@@ -986,6 +998,10 @@ class JciHitachiAWSAPI:
         )
         self._aws_tokens = conn.aws_tokens
         conn_status, self._aws_identity = conn.get_data()
+        if conn_status != "OK":
+            raise aws_connection.cognito_error(
+                conn_status, "An error occurred when retrieving the user identity"
+            )
 
         conn = aws_connection.GetAllDevice(
             self._aws_tokens, print_response=self.print_response
