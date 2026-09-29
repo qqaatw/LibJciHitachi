@@ -1,6 +1,6 @@
 # Transport: how messages travel (observed with profile `ac-rad-fw6.0.032`)
 
-Everything below was seen on 2026-09-16/17 with LibJciHitachi 1.7.2 + the per-device-availability branch.
+Everything below was seen on 2026-09-16/17 with LibJciHitachi 1.7.2 plus the per-device availability change.
 "(code)" marks what is known only from reading `JciHitachi/aws_connection.py`; everything else was observed on
 the wire. Nothing here explains *why* the cloud behaves as it does.
 
@@ -33,7 +33,7 @@ The library subscribes once to `<identity>/+/+/response` (code). Requests are pu
 |---|---|---|---|
 | `<identity>/<thing>/registration/request` | `{"Timestamp": <epoch float>}` | `<identity>/<thing>/registration/response` | `registration_response.schema.json` — capability masks + `FirmwareVersion`, `Model`, unit info |
 | `<identity>/<thing>/status/request` | same | `<identity>/<thing>/status/response` | `status_response.schema.json` — current state |
-| `<identity>/<thing>/control/request` | `{<field>: <value>, "TaskID": n, "Timestamp": ...}` (code) | `<identity>/<thing>/control/response` | **not captured** |
+| `<identity>/<thing>/control/request` | `{<field>: <value>, "TaskID": n, "Timestamp": ...}` (code) | `<identity>/<thing>/control/response` | JSON echo of the field with `Error` (see `control_response_*.json` in the freeze-clean fixtures) |
 | (official app only) `.../status-secondary/request` | not seen | `.../status-secondary/response` | same key set as `status/response` (observed) |
 | (official app only) `.../statistic/request` | not seen | `.../statistic/response` | not captured as JSON |
 
@@ -57,7 +57,7 @@ Answers arrive **per device**; in the same poll one device can answer and anothe
   JSON (`profile.json` → `nested_mqtt_publish_answer`).
 
 Consequence for clients: a response event for a thing does not imply JSON; decode failures must be handled
-per thing (this is what the per-device-availability branch does).
+per thing (this is what the per-device availability change does).
 
 ### 3.3 Named shadow `info`
 
@@ -101,8 +101,8 @@ connects or disconnects. These are not replies to any request (observed every ti
 
 ## 4. Encoding facts
 
-- Payloads are JSON in UTF-8 **except** that `registration/response` carried one raw `0xFF` byte inside the
-  `Model` string on every unit (`"RAD-\xffR"`), so decoding must use `errors="replace"`
+- Payloads are JSON in UTF-8 **except** that `registration/response` carried one raw `0xFF` byte followed by
+  control characters inside the `Model` string on both units whose answer was JSON (`"RAD-\xff\x06"` (Device A) and `"RAD-\xff\x06\x01R"` (Device B)), so decoding must use `errors="replace"`
   (library PR #33) and `Model` cannot be trusted.
 - Whitespace: tab-indented, `"key":\t<value>` (as sent by the cloud; kept verbatim in the fixtures).
 - Integers everywhere; `PowerConsumption` is tenths of a kWh (library divides by 10, code).

@@ -718,10 +718,12 @@ class AWSThing:
 
     @property
     def attention_reason(self) -> Optional[str]:
-        """Why the device is unavailable, or None when the last refresh succeeded.
+        """Why the last refresh of this device did not fully succeed, or None when it did.
 
-        Set by `JciHitachiAWSAPI.refresh_status()` when this device (and only this device)
-        timed out or answered with a payload the library cannot decode.
+        Set by `JciHitachiAWSAPI.refresh_status()` when a request for this device (and only this
+        device) timed out or was answered with a payload the library cannot decode. When the
+        status request failed the device is also unavailable; when only the support code or the
+        shadow failed it stays available and this explains what is missing.
 
         Returns
         -------
@@ -785,25 +787,25 @@ class AWSThing:
         return getattr(self._support_code, "Brand", None)
 
     @property
-    def firmware_version(self) -> str:
+    def firmware_version(self) -> Optional[str]:
         """Firmware version.
 
         Returns
         -------
-        str
-            Device firmware version.
+        str or None
+            Device firmware version; None until the support code has been read.
         """
 
         return getattr(self._support_code, "FirmwareVersion", None)
 
     @property
-    def firmware_code(self) -> str:
+    def firmware_code(self) -> Optional[str]:
         """Firmware code.
 
         Returns
         -------
-        str
-            Device firmware code.
+        str or None
+            Device firmware code; None until the support code has been read.
         """
 
         return getattr(self._support_code, "FirmwareCode", None)
@@ -821,18 +823,20 @@ class AWSThing:
         return self._json["ThingName"].split("_")[-1]
 
     @property
-    def model(self) -> str:
+    def model(self) -> Optional[str]:
         """Device model.
 
         Returns
         -------
-        str
-            Device model.
+        str or None
+            Device model; None until the support code has been read, or when the cloud sends a
+            value with control characters in it.
         """
 
         model = getattr(self._support_code, "Model", None)
         # Observed 2026-09-16 (RAD-series AC, FirmwareVersion 6.0.032): the cloud's
-        # registration/response carried "Model": "RAD-\xffR", i.e. the value is
+        # registration/response carried Model values such as "RAD-\xff\x06" and
+        # "RAD-\xff\x06\x01R" (a 0xFF byte followed by control characters), i.e. the value is
         # corrupted at the source. Return None rather than a string with control characters;
         # the real model cannot be recovered from the payload.
         if isinstance(model, str) and not model.isprintable():
@@ -1593,7 +1597,7 @@ class JciHitachiAWSAPI:
         thing.last_control_response = dict(device_control)
         # The echo means the cloud accepted the request, not that the device carried it out:
         # on 2026-09-17 four CleanSwitch=1 commands were echoed with Error 0 while the units
-        # stayed idle (contract/profiles/ac-rad-fw6.0.032, freeze_clean). The value cached below
+        # stayed idle. The value cached below
         # is replaced by the device's own value on the next refresh_status.
         if device_control.get(status_name) == status_value:
             thing.status_code.set_new_status(status_name, status_value)

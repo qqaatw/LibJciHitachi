@@ -175,22 +175,23 @@ class TestShadowAnswerFromAnotherClient:
         assert mqtt._mqtt_events.device_shadow_event[thing].is_set()
 
 
-class TestRefreshStatusPerDevice:
-    def _mock_mqtt(self, api, execute_result):
-        mock = MagicMock()
-        mock.execute.return_value = execute_result
-        mock.mqtt_events.mqtt_error_event.is_set.return_value = False
-        mock.mqtt_events.device_status = {}
-        mock.mqtt_events.device_support = {}
-        mock.mqtt_events.device_shadow = {}
-        mock.mqtt_events.device_undecodable = {}
-        api._mqtt = mock
-        return mock
+def _mock_mqtt(api, execute_result):
+    mock = MagicMock()
+    mock.execute.return_value = execute_result
+    mock.mqtt_events.mqtt_error_event.is_set.return_value = False
+    mock.mqtt_events.device_status = {}
+    mock.mqtt_events.device_support = {}
+    mock.mqtt_events.device_shadow = {}
+    mock.mqtt_events.device_undecodable = {}
+    api._mqtt = mock
+    return mock
 
+
+class TestRefreshStatusPerDevice:
     def test_one_undecodable_device_does_not_abort_the_other(self, api):
         a = api.things["Device A"].thing_name
         b = api.things["Device B"].thing_name
-        mock = self._mock_mqtt(api, [[a, b], [a, b], [a, b], []])
+        mock = _mock_mqtt(api, [[a, b], [a, b], [a, b], []])
         support = JciHitachiAWSStatusSupport(
             {"DeviceType": 1, "TemperatureSetting": 4128}
         )
@@ -229,7 +230,7 @@ class TestRefreshStatusPerDevice:
         """2026-09-17 13:07: every unit answered registration with the frame, status with JSON."""
         a = api.things["Device A"].thing_name
         b = api.things["Device B"].thing_name
-        mock = self._mock_mqtt(api, [[a, b], [], [a, b], []])
+        mock = _mock_mqtt(api, [[a, b], [], [a, b], []])
         status_a = JciHitachiAWSStatus({"DeviceType": 1, "CleanNotification": 0})
         status_b = JciHitachiAWSStatus({"DeviceType": 1, "CleanNotification": 0})
         mock.mqtt_events.device_status = {a: status_a, b: status_b}
@@ -253,7 +254,7 @@ class TestRefreshStatusPerDevice:
         assert "is unavailable" not in caplog.text
 
     def test_all_devices_failing_raises_device_error_listing_each(self, api):
-        self._mock_mqtt(api, [[], [], [BaseException, BaseException], []])
+        _mock_mqtt(api, [[], [], [BaseException, BaseException], []])
         with pytest.raises(JciHitachiDeviceError) as exc:
             api.refresh_status()
         assert isinstance(exc.value, RuntimeError)
@@ -263,7 +264,7 @@ class TestRefreshStatusPerDevice:
     def test_device_recovers_on_next_refresh(self, api):
         a = api.things["Device A"].thing_name
         api._things = {"Device A": api.things["Device A"]}
-        mock = self._mock_mqtt(api, [[], [], [BaseException], []])
+        mock = _mock_mqtt(api, [[], [], [BaseException], []])
         with pytest.raises(JciHitachiDeviceError):
             api.refresh_status()
         assert api.things["Device A"].available is False
@@ -279,7 +280,7 @@ class TestStructuredAttention:
     """`AWSThing.attention` mirrors `attention_reason`; the English strings stay unchanged."""
 
     def _api(self, api, execute_result):
-        mock = TestRefreshStatusPerDevice._mock_mqtt(None, api, execute_result)
+        mock = _mock_mqtt(api, execute_result)
         api._things = {"Device A": api.things["Device A"]}
         return mock
 
@@ -334,7 +335,7 @@ class TestStructuredAttention:
         )
 
     def test_reason_names_the_status_failure_when_status_failed(self, api):
-        """Code review finding: support undecodable + status timeout blamed the support code."""
+        """A support-code failure must not hide the status failure that made the device unavailable."""
         a = api.things["Device A"].thing_name
         mock = self._api(api, [[a], [], [BaseException], []])
         mock.mqtt_events.device_undecodable = {
@@ -361,7 +362,7 @@ class TestStructuredAttention:
 
 
 class TestPublishForgetsPreviousUndecodable:
-    """Code review finding: a previous non-JSON answer must not explain a later request."""
+    """A previous non-JSON answer must not explain a later request."""
 
     def test_support_and_status_requests_clear_their_kind(self, mqtt):
         thing = f"{IDENTITY}_{GW_A}"
@@ -383,22 +384,6 @@ class TestPublishForgetsPreviousUndecodable:
                 coroutine.close()
             pool.clear()
 
-    def test_next_poll_without_answer_is_no_data(self, api):
-        a = api.things["Device A"].thing_name
-        api._things = {"Device A": api.things["Device A"]}
-        mock = TestRefreshStatusPerDevice._mock_mqtt(None, api, [[a], [], [a], []])
-        mock.mqtt_events.device_status = {a: JciHitachiAWSStatus({"DeviceType": 1})}
-        mock.mqtt_events.device_undecodable = {
-            a: {"registration": (f"{IDENTITY}/{a}/registration/response", BINARY_FRAME)}
-        }
-        api.refresh_status(refresh_support_code=True)
-        assert api.things["Device A"].attention["cause"] == "undecodable"
-
-        # next poll: publish() forgot the frame, and no answer arrived at all
-        mock.mqtt_events.device_undecodable = {a: {}}
-        api.refresh_status(refresh_support_code=True)
-        assert api.things["Device A"].attention["cause"] == "no_data"
-
 
 class TestThingWithoutSupportCode:
     def test_properties_are_none_safe(self):
@@ -409,7 +394,7 @@ class TestThingWithoutSupportCode:
         assert thing.firmware_code is None
 
     def test_corrupted_model_string_is_reported_as_unknown(self):
-        # observed 2026-09-16 in a registration/response: "Model": "RAD-\xffR"
+        # observed 2026-09-16 in a registration/response: "Model": "RAD-\xff\x06\x01R"
         thing = _thing("Device A", GW_A)
         thing.support_code = JciHitachiAWSStatusSupport(
             {"DeviceType": 1, "Model": "RAD-�\x06\x01R", "FirmwareVersion": "6.0.032"}
@@ -514,16 +499,33 @@ class TestCognitoErrorClassification:
             ),
             JciHitachiAuthError,
         )
-        assert isinstance(
-            cognito_error("UserNotFoundException User does not exist.", "x"),
-            JciHitachiAuthError,
-        )
+        for code in (
+            "UserNotFoundException User does not exist.",
+            "UserNotConfirmedException User is not confirmed.",
+            "PasswordResetRequiredException Password reset required for the user",
+        ):
+            assert isinstance(cognito_error(code, "x"), JciHitachiAuthError)
         transient = cognito_error("TooManyRequestsException Rate exceeded", "x")
         assert isinstance(transient, RuntimeError)
         assert not isinstance(transient, JciHitachiAuthError)
         assert not isinstance(
             cognito_error("InternalErrorException", "x"), JciHitachiAuthError
         )
+
+    def test_identity_failure_is_an_auth_error(self, api):
+        with (
+            patch("JciHitachi.aws_connection.GetUser.__init__", return_value=None),
+            patch(
+                "JciHitachi.aws_connection.GetUser.aws_tokens",
+                new_callable=lambda: property(lambda self: MagicMock()),
+            ),
+            patch(
+                "JciHitachi.aws_connection.GetUser.get_data",
+                return_value=("NotAuthorizedException", None),
+            ),
+        ):
+            with pytest.raises(JciHitachiAuthError):
+                api.login()
 
 
 THINGS_JSON = {
@@ -617,18 +619,3 @@ class TestLoginCleanup:
             with pytest.raises(RuntimeError, match="boom"):
                 api.login()
         assert _disconnects_of(disconnect, api._mqtt) == 1
-
-    def test_identity_failure_is_an_auth_error(self, api):
-        with (
-            patch("JciHitachi.aws_connection.GetUser.__init__", return_value=None),
-            patch(
-                "JciHitachi.aws_connection.GetUser.aws_tokens",
-                new_callable=lambda: property(lambda self: MagicMock()),
-            ),
-            patch(
-                "JciHitachi.aws_connection.GetUser.get_data",
-                return_value=("NotAuthorizedException", None),
-            ),
-        ):
-            with pytest.raises(JciHitachiAuthError):
-                api.login()

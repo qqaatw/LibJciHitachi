@@ -1,10 +1,10 @@
-# Observed freeze clean (凍結洗淨), 2026-09-17 (profile `ac-rad-fw6.0.032`)
+# Observed freeze clean, 2026-09-17 (profile `ac-rad-fw6.0.032`)
 
 Same account and units as `observed_2026_09_16/`. `Device A` and `Device B` are the same two units as
 there (both had `CleanNotification: 1`). The installer's paperwork lists the outdoor unit as a
 one-to-many (multi-split) system; `Device C` shares it and was not controlled.
 
-Commands were sent with this branch's `JciHitachiAWSAPI.set_status(status_name="CleanSwitch", ...)`
+Commands were sent with `JciHitachiAWSAPI.set_status(status_name="CleanSwitch", ...)` of this series
 from a script on the Home Assistant host, while the Home Assistant integration kept polling every
 30 s. Because every client of an account receives every `status/response`
 (`contract/transport.md` §3.3), the script also recorded the integration's polls, which is why many
@@ -14,7 +14,7 @@ status answers are only a few seconds apart.
 
 | file | what |
 |---|---|
-| `freeze_clean_timeline.jsonl` | Condensed from the three runs' full logs (about 500 KB, kept on the capture host). Kept rows: every `control` / `control_response` / `decision` / `scenario` / `unit_begin` / `unit_end` / `summary` event. For `status_response`: the first answer per unit per run, every answer where (`Switch`, `CleanSwitch`, `CleanStatus`, `CleanNotification`) changed, the answer just before each change (`"bracket": "last answer before the change"`), and the last answer of each run. `clock` is local time (UTC+8), taken when the answer arrived. In run 1 the `note` texts say `L` for Device B and `S` for Device A. |
+| `freeze_clean_timeline.jsonl` | Condensed from the three runs' full logs (about 500 KB, kept on the capture host). Kept rows: every `control` / `control_response` / `decision` / `scenario` / `unit_begin` / `unit_end` / `summary` event. For `status_response`: the first answer per unit per run, every answer where (`Switch`, `CleanSwitch`, `CleanStatus`, `CleanNotification`) changed, the answer just before each change (`"bracket": "last answer before the change"`), and the last answer of each run. `clock` is local time (UTC+8), taken when the answer arrived. |
 | `control_response_clean_start_started.json` | `control/response` to `CleanSwitch: 1`, run 3 11:46:34, after which Device B **did** clean |
 | `control_response_clean_start_not_started.json` | `control/response` to `CleanSwitch: 1`, run 2 10:29:20, after which Device B **did not** clean |
 | `control_response_clean_stop.json` | `control/response` to `CleanSwitch: 0`, run 1 10:22:44 (interrupting a clean) |
@@ -25,7 +25,7 @@ capture script dropped. So they are not listed as `status_response.schema.json` 
 ## Timeline
 
 A time range "a–b" means that a is the last answer with the old value and b the first with the new one.
-"Push" is the official app's iOS notification "<device name>凍結洗淨未執行，請確認是否要重新設定",
+"Push" is the official app's iOS notification "<device name>: freeze clean was not carried out, please check whether to set it again" (translated from Traditional Chinese),
 with the window in which the account owner received it.
 
 | run | time | action / observation |

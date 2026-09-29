@@ -327,6 +327,12 @@ class TestAWSAPI:
             ):
                 api.refresh_status(MOCK_DEVICE_AC)
 
+            # A failed support code or shadow no longer aborts the refresh: the status
+            # arrived, so the device stays available and the failure becomes its attention
+            # reason.
+            mock_mqtt.mqtt_events.device_status = {thing_name: ""}
+            thing = api.things[MOCK_DEVICE_AC]
+
             # support event timeout
             mock_mqtt.execute.return_value = [
                 [BaseException],
@@ -334,11 +340,11 @@ class TestAWSAPI:
                 [thing_name],
                 [],
             ]
-            with pytest.raises(
-                RuntimeError,
-                match=f"Timed out refreshing {MOCK_DEVICE_AC} support code. Please ensure the device is online and avoid opening the official app.",
-            ):
-                api.refresh_status(MOCK_DEVICE_AC, refresh_support_code=True)
+            api.refresh_status(MOCK_DEVICE_AC, refresh_support_code=True)
+            assert thing.available
+            assert thing.attention_reason.startswith(
+                f"Timed out refreshing {MOCK_DEVICE_AC} support code."
+            )
 
             # support not stored in dict
             mock_mqtt.execute.return_value = [
@@ -348,11 +354,11 @@ class TestAWSAPI:
                 [],
             ]
             mock_mqtt.mqtt_events.device_support = {}
-            with pytest.raises(
-                RuntimeError,
-                match=f"An event occurred but wasn't accompanied with data when refreshing {MOCK_DEVICE_AC} support code.",
-            ):
-                api.refresh_status(MOCK_DEVICE_AC, refresh_support_code=True)
+            api.refresh_status(MOCK_DEVICE_AC, refresh_support_code=True)
+            assert thing.available
+            assert thing.attention_reason.startswith(
+                f"An event occurred but wasn't accompanied with data when refreshing {MOCK_DEVICE_AC} support code."
+            )
 
             # shadow event timeout
             mock_mqtt.execute.return_value = [
@@ -361,11 +367,11 @@ class TestAWSAPI:
                 [thing_name],
                 [],
             ]
-            with pytest.raises(
-                RuntimeError,
-                match=f"Timed out refreshing {MOCK_DEVICE_AC} shadow. Please ensure the device is online and avoid opening the official app.",
-            ):
-                api.refresh_status(MOCK_DEVICE_AC, refresh_shadow=True)
+            api.refresh_status(MOCK_DEVICE_AC, refresh_shadow=True)
+            assert thing.available
+            assert thing.attention_reason.startswith(
+                f"Timed out refreshing {MOCK_DEVICE_AC} shadow."
+            )
 
             # shadow not stored in dict
             mock_mqtt.execute.return_value = [
@@ -375,11 +381,11 @@ class TestAWSAPI:
                 [],
             ]
             mock_mqtt.mqtt_events.device_shadow = {}
-            with pytest.raises(
-                RuntimeError,
-                match=f"An event occurred but wasn't accompanied with data when refreshing {MOCK_DEVICE_AC} shadow.",
-            ):
-                api.refresh_status(MOCK_DEVICE_AC, refresh_shadow=True)
+            api.refresh_status(MOCK_DEVICE_AC, refresh_shadow=True)
+            assert thing.available
+            assert thing.attention_reason.startswith(
+                f"An event occurred but wasn't accompanied with data when refreshing {MOCK_DEVICE_AC} shadow."
+            )
 
     def test_set_status(self, fixture_aws_mock_api, fixture_aws_identity):
         api = fixture_aws_mock_api

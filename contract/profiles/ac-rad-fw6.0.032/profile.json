@@ -1,13 +1,13 @@
 {
   "profile": "ac-rad-fw6.0.032",
-  "device_family": "Hitachi RAD-series ceiling-embedded air conditioners (Taiwan cloud 雲端智慧控); exact models withheld",
+  "device_family": "Hitachi RAD-series ceiling-embedded air conditioners (Taiwan cloud); exact models withheld",
   "units": 3,
   "DeviceType": "1",
   "FirmwareId": "3",
   "FirmwareVersion": "6.0.032",
   "LatestFirmwareVersion": "8.0.006:6",
   "captured": "2026-09-16 / 2026-09-17",
-  "captured_with": "LibJciHitachi 1.7.2 + fork fix/tolerate-undecodable-device-responses; awsiotsdk 1.31.0; official app 雲端智慧控 11.30.600 (iOS) used only to read prompts",
+  "captured_with": "LibJciHitachi 1.7.2 plus the per-device availability change; awsiotsdk 1.31.0; the official Taiwan app 11.30.600 (iOS) used only to read prompts",
   "fixtures": "tests/fixtures/observed_2026_09_16/",
   "messages": {
     "GetAllDevice": "get_all_device_thing.schema.json",
@@ -67,7 +67,7 @@
       "completed cleans took about 62 min (Device A) and 54 min (Device B) from the command; one sample each",
       "CleanNotification 1 -> 0 during the clean, 33 min (Device A) and 25 min (Device B) after the command",
       "Switch stayed 0 throughout",
-      "a start of Device A while Device B was cleaning was not carried out; the official app pushed '<device>凍結洗淨未執行，請確認是否要重新設定' within 30 s",
+      "a start of Device A while Device B was cleaning was not carried out; the official app pushed '<device>: freeze clean was not carried out, please check whether to set it again' (translated) within 30 s",
       "three starts of Device B 2, 7 and 17 min after interrupting its own clean were not carried out, with no other unit cleaning; cause unknown; a start 84 min after the interrupt was accepted",
       "Device B started 1 min after Device A completed a clean"
     ],

@@ -1,9 +1,10 @@
 # Cloud protocol contract (observed)
 
-This directory records what the Hitachi Taiwan cloud (雲端智慧控, AWS IoT) actually sends and accepts,
+This directory records what the Hitachi Taiwan cloud (AWS IoT) actually sends and accepts,
 **as captured from real devices**, so that the library can be developed and reviewed against a written
-contract instead of against memory. Every statement here is backed by a fixture under `tests/fixtures/`
-and is enforced by `tests/test_contract.py`.
+contract instead of against memory. The schemas are generated from the fixtures under `tests/fixtures/`
+and `tests/test_contract.py` checks every fixture against them. The transport notes, timings and
+manual clauses are written observations; they are not enforced by a test.
 
 Rules for this directory:
 
