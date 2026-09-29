@@ -1,0 +1,359 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AC status/response (and status-secondary/response)",
+  "description": "Payload of <identity>/<thing>/status/response, the answer to status/request {\"Timestamp\": ...}. status-secondary/response (requested by the official app, not by this library) had the identical key set.",
+  "x-profile": "ac-rad-fw6.0.032",
+  "x-sources": [
+    "status_response_gw-A.json",
+    "status_response_gw-B.json",
+    "status_response_gw-C.json",
+    "status-secondary_response_gw-A.json"
+  ],
+  "x-samples": 4,
+  "type": "object",
+  "required": [
+    "CleanNotification",
+    "CleanStatus",
+    "CleanSwitch",
+    "ControlTone",
+    "DeviceType",
+    "Error",
+    "FanSpeed",
+    "FilterElapsedHour",
+    "IndoorTemperature",
+    "MildewProof",
+    "Mode",
+    "PowerConsumption",
+    "PowerSaving",
+    "QuickMode",
+    "ReceiveTimestamp",
+    "RemoteControlProhibit",
+    "RequestTimestamp",
+    "ScheduleOff",
+    "ScheduleOn",
+    "SleepModeRemainingTime",
+    "Switch",
+    "TaiseiaError",
+    "TemperatureSetting",
+    "Timestamp",
+    "WiFiRSSI",
+    "WiFiSSID"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "CleanNotification": {
+      "type": "integer",
+      "x-observed-values": [
+        1,
+        0
+      ],
+      "x-library": {
+        "controllable": false,
+        "kind": "numeric"
+      },
+      "x-note": "status: 1 on exactly the two units for which the official app showed the freeze-clean prompt, 0 on the third (2026-09-16); went 1 -> 0 part-way through a freeze clean, 33 and 25 min after the command on the two units, not at its end (2026-09-17, tests/fixtures/observed_2026_09_17_freeze_clean/freeze_clean_timeline.jsonl); registration: 3 (support mask)"
+    },
+    "CleanStatus": {
+      "type": "integer",
+      "x-observed-values": [
+        0,
+        1,
+        2
+      ],
+      "x-library": {
+        "controllable": false,
+        "kind": "numeric"
+      },
+      "x-note": "observed sequence on every accepted start: 0 -> 1 within about 1 s of the command, 1 -> 2 at most 28 s later, 2 -> 0 when the clean ended or was interrupted. What 1 and 2 stand for is not stated by the cloud; shown raw by the library (tests/fixtures/observed_2026_09_17_freeze_clean/freeze_clean_timeline.jsonl)"
+    },
+    "CleanSwitch": {
+      "type": "integer",
+      "x-observed-values": [
+        0,
+        1
+      ],
+      "x-library": {
+        "controllable": true,
+        "kind": "enum",
+        "id2str": {
+          "0": "off",
+          "1": "on"
+        },
+        "legacy_name": "freeze_clean"
+      },
+      "x-note": "1 from the first status answer after an accepted start until the clean ended; stayed 0 after starts the unit did not carry out (tests/fixtures/observed_2026_09_17_freeze_clean/freeze_clean_timeline.jsonl, not a schema source: WiFiSSID was dropped there)"
+    },
+    "ControlTone": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": {
+        "controllable": true,
+        "kind": "enum",
+        "id2str": {
+          "0": "enabled",
+          "1": "disabled"
+        },
+        "legacy_name": "sound_prompt"
+      }
+    },
+    "DeviceType": {
+      "type": "integer",
+      "x-observed-values": [
+        1
+      ],
+      "x-library": {
+        "controllable": false,
+        "kind": "enum",
+        "id2str": {
+          "1": "AC",
+          "2": "DH",
+          "3": "HE",
+          "4": "PM25_PANEL"
+        },
+        "legacy_name": "DeviceType"
+      }
+    },
+    "Error": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": {
+        "controllable": false,
+        "kind": "numeric"
+      }
+    },
+    "FanSpeed": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": {
+        "controllable": true,
+        "kind": "enum",
+        "id2str": {
+          "0": "auto",
+          "1": "silent",
+          "2": "low",
+          "3": "moderate",
+          "4": "high",
+          "5": "rapid",
+          "6": "express"
+        },
+        "legacy_name": "air_speed"
+      }
+    },
+    "FilterElapsedHour": {
+      "type": "integer",
+      "x-observed-range": [
+        452,
+        800
+      ],
+      "x-library": {
+        "controllable": false,
+        "kind": "numeric"
+      }
+    },
+    "IndoorTemperature": {
+      "type": "integer",
+      "x-observed-range": [
+        24,
+        28
+      ],
+      "x-library": {
+        "controllable": false,
+        "kind": "numeric",
+        "legacy_name": "indoor_temp"
+      }
+    },
+    "MildewProof": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": {
+        "controllable": true,
+        "kind": "enum",
+        "id2str": {
+          "0": "disabled",
+          "1": "enabled"
+        },
+        "legacy_name": "mold_prev"
+      }
+    },
+    "Mode": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": {
+        "controllable": true,
+        "kind": "enum",
+        "id2str": {
+          "0": "cool",
+          "1": "dry",
+          "2": "fan",
+          "3": "auto",
+          "4": "heat"
+        },
+        "legacy_name": "mode"
+      }
+    },
+    "PowerConsumption": {
+      "type": "integer",
+      "x-observed-range": [
+        7,
+        14
+      ],
+      "x-library": {
+        "controllable": false,
+        "kind": "numeric",
+        "legacy_name": "power_kwh"
+      }
+    },
+    "PowerSaving": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": {
+        "controllable": true,
+        "kind": "enum",
+        "id2str": {
+          "0": "disabled",
+          "1": "enabled"
+        },
+        "legacy_name": "energy_save"
+      }
+    },
+    "QuickMode": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": {
+        "controllable": true,
+        "kind": "enum",
+        "id2str": {
+          "0": "disabled",
+          "1": "enabled"
+        },
+        "legacy_name": "fast_op"
+      }
+    },
+    "ReceiveTimestamp": {
+      "type": "integer",
+      "x-observed-range": [
+        1789574547,
+        1789574547
+      ],
+      "x-library": "not in STATUS_DICT"
+    },
+    "RemoteControlProhibit": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": "not in STATUS_DICT"
+    },
+    "RequestTimestamp": {
+      "type": "integer",
+      "x-observed-range": [
+        1789574544,
+        1789574544
+      ],
+      "x-library": "not in STATUS_DICT"
+    },
+    "ScheduleOff": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": "not in STATUS_DICT"
+    },
+    "ScheduleOn": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": "not in STATUS_DICT"
+    },
+    "SleepModeRemainingTime": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": {
+        "controllable": true,
+        "kind": "numeric",
+        "legacy_name": "sleep_timer"
+      }
+    },
+    "Switch": {
+      "type": "integer",
+      "x-observed-values": [
+        0,
+        1
+      ],
+      "x-library": {
+        "controllable": true,
+        "kind": "enum",
+        "id2str": {
+          "0": "off",
+          "1": "on"
+        },
+        "legacy_name": "power"
+      },
+      "x-note": "status: 1 = running. The only unit with Switch 1 in the 00:02 capture was the only one answering registration/request with the 6-byte frame (correlation, see profile.json)"
+    },
+    "TaiseiaError": {
+      "type": "integer",
+      "x-observed-values": [
+        0
+      ],
+      "x-library": {
+        "controllable": false,
+        "kind": "numeric"
+      }
+    },
+    "TemperatureSetting": {
+      "type": "integer",
+      "x-observed-range": [
+        26,
+        27
+      ],
+      "x-library": {
+        "controllable": true,
+        "kind": "numeric",
+        "legacy_name": "target_temp"
+      },
+      "x-note": "registration: 4128 = (max 32 << 8 | min 16) as decoded by JciHitachiAWSStatusSupport; status: current target in °C"
+    },
+    "Timestamp": {
+      "type": "integer",
+      "x-observed-range": [
+        1789574548,
+        1789574549
+      ],
+      "x-library": "not in STATUS_DICT"
+    },
+    "WiFiRSSI": {
+      "type": "integer",
+      "x-observed-range": [
+        -39,
+        -22
+      ],
+      "x-library": "not in STATUS_DICT"
+    },
+    "WiFiSSID": {
+      "type": "string",
+      "x-observed-values": [
+        "<ssid>"
+      ],
+      "x-placeholder": true,
+      "x-library": "not in STATUS_DICT"
+    }
+  }
+}
