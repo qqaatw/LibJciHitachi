@@ -16,7 +16,7 @@
     "status-secondary/response": "status_response.schema.json (same key set; topic is requested by the official app, not by the library)",
     "shadow info": "shadow_info.schema.json",
     "control/response": "control_response.schema.json (CleanSwitch commands only)",
-    "statistic/response": "NOT CAPTURED as JSON (only the 6-byte frame was seen on this topic, from a running unit)"
+    "statistic/response": "NOT CAPTURED here; issue #42 reports the 6-byte frame on this topic"
   },
   "non_json_answers": {
     "bytes_hex": "fcffff1f0101",
@@ -24,7 +24,7 @@
       "registration/response",
       "status/response (once, in a raw capture on 2026-09-17; not kept as a fixture)",
       "status-secondary/response",
-      "statistic/response"
+      "statistic/response (reported in issue #42, not captured here)"
     ],
     "observed": [
       "always exactly these 6 bytes, from three different units, 2026-09-03 .. 2026-09-17",
