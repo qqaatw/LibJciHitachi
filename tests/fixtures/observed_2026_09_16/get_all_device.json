@@ -1,0 +1,47 @@
+{
+  "status": {
+    "code": 0,
+    "error": "success"
+  },
+  "projectId": 1,
+  "results": {
+    "Things": [
+      {
+        "ThingName": "<identity>_<gw-A>",
+        "CustomDeviceName": "Device A",
+        "DeviceType": "1",
+        "GeoLoc": {
+          "Longitude": "<redacted>",
+          "Latitude": "<redacted>"
+        },
+        "TimeZone": "Asia/Taipei",
+        "FirmwareId": "3",
+        "LatestFirmwareVersion": "8.0.006:6"
+      },
+      {
+        "ThingName": "<identity>_<gw-B>",
+        "CustomDeviceName": "Device B",
+        "DeviceType": "1",
+        "GeoLoc": {
+          "Longitude": "<redacted>",
+          "Latitude": "<redacted>"
+        },
+        "TimeZone": "Asia/Taipei",
+        "FirmwareId": "3",
+        "LatestFirmwareVersion": "8.0.006:6"
+      },
+      {
+        "ThingName": "<identity>_<gw-C>",
+        "CustomDeviceName": "Device C",
+        "DeviceType": "1",
+        "GeoLoc": {
+          "Longitude": "<redacted>",
+          "Latitude": "<redacted>"
+        },
+        "TimeZone": "Asia/Taipei",
+        "FirmwareId": "3",
+        "LatestFirmwareVersion": "8.0.006:6"
+      }
+    ]
+  }
+}
