@@ -1,0 +1,56 @@
+[
+  {
+    "client_token": "<gw-B>",
+    "version": 5054,
+    "reported": {
+      "identityID": "<identity>",
+      "enableQAMode": false,
+      "regionID": "<uuid>",
+      "timeZone": 480,
+      "FilterElapsedHour": 800,
+      "CleanSecondaryFilterNotification": false,
+      "CleanNotification": true,
+      "CleanFilterNotification": true,
+      "AntiMoldNotification": true,
+      "googleHome": true,
+      "online": true,
+      "disconnectReason": ""
+    }
+  },
+  {
+    "client_token": "<gw-A>",
+    "version": 3694,
+    "reported": {
+      "identityID": "<identity>",
+      "enableQAMode": false,
+      "regionID": "<uuid>",
+      "timeZone": 480,
+      "FilterElapsedHour": 800,
+      "CleanSecondaryFilterNotification": false,
+      "CleanNotification": true,
+      "CleanFilterNotification": true,
+      "AntiMoldNotification": true,
+      "googleHome": true,
+      "online": true,
+      "disconnectReason": ""
+    }
+  },
+  {
+    "client_token": "<gw-C>",
+    "version": 4470,
+    "reported": {
+      "identityID": "<identity>",
+      "enableQAMode": false,
+      "regionID": "<uuid>",
+      "timeZone": 480,
+      "FilterElapsedHour": 0,
+      "CleanSecondaryFilterNotification": false,
+      "CleanNotification": true,
+      "CleanFilterNotification": true,
+      "AntiMoldNotification": true,
+      "googleHome": true,
+      "online": true,
+      "disconnectReason": ""
+    }
+  }
+]

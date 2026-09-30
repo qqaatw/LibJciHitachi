@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Named shadow `info`, state.reported",
+  "description": "state.reported of the AWS IoT named shadow `info` (GetNamedShadow accepted). Also pushed by the cloud itself with client_token=None and only {online, disconnectReason}.",
+  "x-profile": "ac-rad-fw6.0.032",
+  "x-sources": [
+    "shadow_info_get_accepted.json"
+  ],
+  "x-samples": 3,
+  "type": "object",
+  "required": [
+    "AntiMoldNotification",
+    "CleanFilterNotification",
+    "CleanNotification",
+    "CleanSecondaryFilterNotification",
+    "FilterElapsedHour",
+    "disconnectReason",
+    "enableQAMode",
+    "googleHome",
+    "identityID",
+    "online",
+    "regionID",
+    "timeZone"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "AntiMoldNotification": {
+      "type": "boolean",
+      "x-observed-values": [
+        true
+      ],
+      "x-note": "shadow: True for all three units; meaning not established"
+    },
+    "CleanFilterNotification": {
+      "type": "boolean",
+      "x-observed-values": [
+        true
+      ],
+      "x-note": "shadow: True for all three units regardless of the status field CleanNotification; meaning not established"
+    },
+    "CleanNotification": {
+      "type": "boolean",
+      "x-observed-values": [
+        true
+      ],
+      "x-note": "status: 1 on exactly the two units for which the official app showed the freeze-clean prompt, 0 on the third (2026-09-16); registration: 3 (support mask)"
+    },
+    "CleanSecondaryFilterNotification": {
+      "type": "boolean",
+      "x-observed-values": [
+        false
+      ],
+      "x-note": "shadow: False for all three units; meaning not established"
+    },
+    "FilterElapsedHour": {
+      "type": "integer",
+      "x-observed-range": [
+        0,
+        800
+      ]
+    },
+    "disconnectReason": {
+      "type": "string",
+      "x-observed-values": [
+        ""
+      ],
+      "x-note": "cloud-initiated shadow updates carry 'CLIENT_INITIATED_DISCONNECT' with online False and no client token when a client (the official app or this library) disconnects"
+    },
+    "enableQAMode": {
+      "type": "boolean",
+      "x-observed-values": [
+        false
+      ]
+    },
+    "googleHome": {
+      "type": "boolean",
+      "x-observed-values": [
+        true
+      ]
+    },
+    "identityID": {
+      "type": "string",
+      "x-observed-values": [
+        "<identity>"
+      ],
+      "x-placeholder": true
+    },
+    "online": {
+      "type": "boolean",
+      "x-observed-values": [
+        true
+      ],
+      "x-note": "shadow: True for all three units while one of them answered the 6-byte frame, so it does not mean 'answers JSON'"
+    },
+    "regionID": {
+      "type": "string",
+      "x-observed-values": [
+        "<uuid>"
+      ],
+      "x-placeholder": true
+    },
+    "timeZone": {
+      "type": "integer",
+      "x-observed-values": [
+        480
+      ]
+    }
+  }
+}
