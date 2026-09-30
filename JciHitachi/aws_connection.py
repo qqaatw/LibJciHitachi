@@ -30,6 +30,29 @@ QOS = awscrt.mqtt.QoS.AT_LEAST_ONCE
 _LOGGER = logging.getLogger(__name__)
 
 
+class JciHitachiAuthError(RuntimeError):
+    """The account could not be authenticated (AWS Cognito rejected the e-mail/password or token)."""
+
+
+# Cognito error types that mean "the credentials are wrong", as opposed to throttling or
+# a service error. https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html#API_InitiateAuth_Errors
+COGNITO_CREDENTIAL_ERRORS = (
+    "NotAuthorizedException",
+    "UserNotFoundException",
+    "UserNotConfirmedException",
+    "PasswordResetRequiredException",
+)
+
+
+def cognito_error(status: str, message: str) -> RuntimeError:
+    """Build the exception for a non-OK Cognito status: JciHitachiAuthError for credential
+    problems, plain RuntimeError for anything transient (throttling, 5xx, network)."""
+
+    if status.startswith(COGNITO_CREDENTIAL_ERRORS):
+        return JciHitachiAuthError(f"{message}: {status}")
+    return RuntimeError(f"{message}: {status}")
+
+
 @dataclass
 class AWSTokens:
     access_token: str
@@ -142,8 +165,9 @@ class JciHitachiAWSCognitoConnection(JciHitachiAWSHttpConnection):
         else:
             conn_status, self._aws_tokens = self.login()
             if conn_status != "OK":
-                raise RuntimeError(
-                    f"An error occurred when signing into AWS Cognito Service: {conn_status}"
+                raise cognito_error(
+                    conn_status,
+                    "An error occurred when signing into AWS Cognito Service",
                 )
 
     def _generate_headers(self, target: str) -> dict[str, str]:
@@ -604,13 +628,47 @@ class JciHitachiAWSMqttConnection:
                 self._mqtt_events.device_control[thing_name] = payload
                 self._mqtt_events.device_control_event[thing_name].set()
 
-    def _on_update_named_shadow_accepted(self, response):
-        try:
-            thing_name = self._client_tokens.pop(response.client_token)
-        except:
-            _LOGGER.error(
-                f"An unknown shadow response is received. Client token: {response.client_token}"
+    def _pop_shadow_token(self, client_token: str) -> Optional[str]:
+        """Match a shadow answer to a request of this client; None when it is not ours.
+
+        Every client subscribed to a thing's shadow topics receives every answer published there
+        (AWS IoT publishes the answer to the `/get/accepted` topic, not to the requester), and this
+        library uses the gateway id as client token, which AWS describes as "a string unique to the
+        device". So an answer to another client's request (the official app, a second Home
+        Assistant, a script) arrives here with a valid token that is not pending.
+
+        Verified with a controlled two-client experiment on 2026-09-17: a token only client B could
+        produce was received once by client A and once by a third client (Home Assistant); when A and
+        B asked for the same device at the same moment, each received two answers, matched the first
+        and found the second not pending. Both got the data; nothing was lost.
+        """
+        thing_name = self._client_tokens.pop(client_token, None)
+        if thing_name is not None:
+            return thing_name
+        if any(
+            name.endswith(f"_{client_token}")
+            for name in self._mqtt_events.device_shadow_event
+        ):
+            _LOGGER.debug(
+                f"Shadow answer for a known device (client token {client_token}) that this "
+                "client did not request; another client of the same account may have requested it."
             )
+        else:
+            _LOGGER.error(
+                f"An unknown shadow response is received. Client token: {client_token}"
+            )
+        return None
+
+    def _on_update_named_shadow_accepted(self, response):
+        if response.client_token is None:
+            # The cloud updates the shadow itself (e.g. `online` / `disconnectReason` when the
+            # official app connects or disconnects). Not a reply to us; nothing to match.
+            _LOGGER.debug(
+                f"Ignoring a cloud-initiated shadow update: {getattr(response.state, 'reported', None)}"
+            )
+            return
+        thing_name = self._pop_shadow_token(response.client_token)
+        if thing_name is None:
             return
 
         if self._print_response:
@@ -627,12 +685,11 @@ class JciHitachiAWSMqttConnection:
         )
 
     def _on_get_named_shadow_accepted(self, response):
-        try:
-            thing_name = self._client_tokens.pop(response.client_token)
-        except:
-            _LOGGER.error(
-                f"An unknown shadow response is received. Client token: {response.client_token}"
-            )
+        if response.client_token is None:
+            _LOGGER.debug("Ignoring a `get` shadow response without a client token.")
+            return
+        thing_name = self._pop_shadow_token(response.client_token)
+        if thing_name is None:
             return
 
         if self._print_response:
